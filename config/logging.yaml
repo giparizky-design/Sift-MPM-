@@ -1,0 +1,39 @@
+version: 1
+disable_existing_loggers: false
+
+formatters:
+  detailed:
+    format: "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
+    datefmt: "%Y-%m-%dT%H:%M:%S"
+  simple:
+    format: "%(levelname)s: %(message)s"
+
+handlers:
+  console:
+    class: logging.StreamHandler
+    level: INFO
+    formatter: simple
+    stream: ext://sys.stdout
+
+  file:
+    class: logging.handlers.RotatingFileHandler
+    level: DEBUG
+    formatter: detailed
+    filename: outputs/reports/mpm_pipeline.log
+    maxBytes: 10485760   # 10 MB
+    backupCount: 5
+    encoding: utf8
+
+root:
+  level: DEBUG
+  handlers: [console, file]
+
+loggers:
+  rasterio:
+    level: WARNING
+  fiona:
+    level: WARNING
+  pyproj:
+    level: WARNING
+  shapely:
+    level: WARNING

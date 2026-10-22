@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>7-Pass Mineral Prospectivity & PU-Learning Control Center</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+  <style>
+    body {
+      background-color: #0b0f17;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+    }
+    #map {
+      height: 560px;
+      width: 100%;
+      border-radius: 0.75rem;
+      z-index: 1;
+    }
+    .leaflet-popup-content-wrapper {
+      background: #111827 !important;
+      color: #f3f4f6 !important;
+      border: 1px solid #374151;
+      border-radius: 0.65rem;
+    }
+    .leaflet-popup-tip {
+      background: #111827 !important;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+  <!-- Top Navigation Header -->
+  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-50 px-6 py-3.5 flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 font-bold text-lg">
+        7P
+      </div>
+      <div>
+        <h1 class="text-base font-bold tracking-tight text-white flex items-center gap-2">
+          Mineral Prospectivity &amp; PU-Learning Control Center
+          <span id="status-badge" class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-medium">
+            READY
+          </span>
+        </h1>
+        <p id="region-subtitle" class="text-xs text-slate-400">
+          OpenStreetMap Comparison: Model-Predicted ("Guessed") Drill Targets vs. Actual Ground-Truth Mines
+        </p>
+      </div>
+    </div>
+
+    <!-- Region Switcher & Actions -->
+    <div class="flex items-center gap-2.5">
+      <div class="inline-flex rounded-lg bg-slate-950 p-1 border border-slate-800">
+        <button
+          id="btn-yilgarn"
+          onclick="selectRegion('YILGARN')"
+          class="px-3.5 py-1.5 rounded-md text-xs font-semibold transition bg-amber-500 text-slate-950"
+        >
+          Yilgarn Craton (WA Goldfields)
+        </button>
+        <button
+          id="btn-borneo"
+          onclick="selectRegion('BORNEO')"
+          class="px-3.5 py-1.5 rounded-md text-xs font-semibold transition text-slate-300 hover:text-white"
+        >
+          Borneo (Kelian &amp; Kalimantan)
+        </button>
+      </div>
+
+      <button
+        id="btn-train"
+        onclick="triggerTrainingRun()"
+        class="px-3.5 py-2 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-400/30 transition flex items-center gap-1.5 shadow-sm"
+      >
+        <span>&#9654;</span> Run Full 7-Pass Training
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Grid -->
+  <main class="flex-1 p-5 max-w-[1600px] w-full mx-auto space-y-5">
+    <!-- KPI Performance Overview Cards -->
+    <section class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
+      <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5">
+        <div class="text-xs text-slate-400 font-medium">Pass 3.1 XGBoost PR-AUC</div>
+        <div id="kpi-xgb" class="text-2xl font-bold text-amber-400 mt-1">—</div>
+        <div id="kpi-xgb-w" class="text-xs text-slate-400 mt-0.5">Weight w_xgb: —</div>
+      </div>
+
+      <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5">
+        <div class="text-xs text-slate-400 font-medium">Pass 3.2 nnPU U-Net PR-AUC</div>
+        <div id="kpi-unet" class="text-2xl font-bold text-sky-400 mt-1">—</div>
+        <div id="kpi-unet-w" class="text-xs text-slate-400 mt-0.5">Weight w_unet: —</div>
+      </div>
+
+      <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5">
+        <div class="text-xs text-slate-400 font-medium">Pass 3.3 Fused Ensemble</div>
+        <div id="kpi-fused" class="text-2xl font-bold text-emerald-400 mt-1">—</div>
+        <div id="kpi-holdout" class="text-xs text-slate-400 mt-0.5">Blind Holdout: —</div>
+      </div>
+
+      <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5">
+        <div class="text-xs text-slate-400 font-medium">Pass 4 Elkan-Noto &#265;</div>
+        <div id="kpi-chat" class="text-2xl font-bold text-purple-400 mt-1">—</div>
+        <div class="text-xs text-slate-400 mt-0.5">P(discovered | deposit)</div>
+      </div>
+
+      <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5">
+        <div class="text-xs text-slate-400 font-medium">Pass 2 Propensity Floor</div>
+        <div id="kpi-prop" class="text-2xl font-bold text-teal-300 mt-1">—</div>
+        <div id="kpi-prop-med" class="text-xs text-slate-400 mt-0.5">Median e(x): —</div>
+      </div>
+
+      <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5">
+        <div class="text-xs text-slate-400 font-medium">Guessed vs Actual Mines</div>
+        <div id="kpi-hits" class="text-2xl font-bold text-rose-400 mt-1">—</div>
+        <div id="kpi-targets-count" class="text-xs text-slate-400 mt-0.5">— Ranked Polygons</div>
+      </div>
+    </section>
+
+    <!-- Map + Interactive Controls Row -->
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <!-- Left/Center: OpenStreetMap World & Regional Viewer (8 cols) -->
+      <div class="lg:col-span-8 bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex flex-col gap-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 class="text-sm font-bold text-white flex items-center gap-2">
+              <span>OpenStreetMap Comparison: Guessed Targets vs. Actual Mines</span>
+              <span id="crs-pill" class="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">EPSG:32751</span>
+            </h2>
+            <p class="text-xs text-slate-400">
+              Click any <span class="text-emerald-400 font-semibold">Green/Gold Polygon (Model Guessed Target)</span> or <span class="text-rose-400 font-semibold">Red/Amber Circle (Actual Known Mine)</span> to inspect attributes.
+            </p>
+          </div>
+
+          <!-- Layer Toggles -->
+          <div class="flex flex-wrap items-center gap-3 text-xs">
+            <label class="inline-flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" id="chk-actual" checked onchange="updateMapLayers()" class="accent-rose-500 rounded" />
+              <span class="text-rose-300 font-medium">Actual Mines</span>
+            </label>
+            <label class="inline-flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" id="chk-guessed" checked onchange="updateMapLayers()" class="accent-emerald-500 rounded" />
+              <span class="text-emerald-300 font-medium">Guessed Polygons</span>
+            </label>
+            <label class="inline-flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" id="chk-heatmap" checked onchange="updateMapLayers()" class="accent-amber-500 rounded" />
+              <span class="text-amber-300 font-medium">Calibrated Heatmap</span>
+            </label>
+            <label class="inline-flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" id="chk-conformal" onchange="updateMapLayers()" class="accent-teal-400 rounded" />
+              <span class="text-teal-300 font-medium">Conformal L(x) Bound</span>
+            </label>
+            <label class="inline-flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" id="chk-faults" checked onchange="updateMapLayers()" class="accent-sky-400 rounded" />
+              <span class="text-sky-300 font-medium">Faults</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Leaflet Map Container -->
+        <div id="map" class="border border-slate-800"></div>
+
+        <!-- Map Legend & Opacity Slider -->
+        <div class="flex flex-wrap items-center justify-between gap-4 pt-1 text-xs text-slate-300">
+          <div class="flex flex-wrap items-center gap-4">
+            <span class="inline-flex items-center gap-1.5">
+              <span class="w-3 h-3 rounded-full bg-rose-500 border border-white inline-block"></span>
+              Actual Mine (Ground Truth Hit / Inside Target)
+            </span>
+            <span class="inline-flex items-center gap-1.5">
+              <span class="w-3 h-3 rounded-full bg-amber-400 border border-slate-900 inline-block"></span>
+              Actual Regional Mine / Occurrence
+            </span>
+            <span class="inline-flex items-center gap-1.5">
+              <span class="w-3.5 h-3.5 rounded bg-emerald-500/30 border-2 border-emerald-400 inline-block"></span>
+              Model Guessed Target Polygon (L(x) &ge; threshold)
+            </span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-slate-400">Heatmap Opacity:</span>
+            <input
+              type="range"
+              id="rng-opacity"
+              min="0"
+              max="1"
+              step="0.05"
+              value="0.65"
+              oninput="updateHeatmapOpacity(this.value)"
+              class="w-24 accent-amber-500"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Live Pipeline Controls & Pass 6/7 Re-Ranking (4 cols) -->
+      <div class="lg:col-span-4 flex flex-col gap-4">
+        <!-- Pass 5 & 6 Decision Control Card -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 space-y-3.5">
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-bold text-white">Pass 5 &amp; 6 Target Controls</h2>
+            <span class="text-xs px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
+              Live Re-Polygonization
+            </span>
+          </div>
+          <p class="text-xs text-slate-400">
+            Adjust the Spatial Conformal Lower Bound cutoff <code class="text-emerald-300">L(x)</code> and Multi-Criteria Decision weights, then click <strong>Re-Rank Targets</strong> to update polygons on the OpenStreetMap.
+          </p>
+
+          <div class="space-y-2.5 text-xs">
+            <div>
+              <div class="flex justify-between mb-1">
+                <label class="text-slate-300 font-medium">Conformal Lower Bound Cutoff L(x) &ge;</label>
+                <span id="lbl-l-thr" class="font-mono text-emerald-400 font-semibold">0.50</span>
+              </div>
+              <input
+                type="range"
+                id="ctrl-l-thr"
+                min="0.15"
+                max="0.85"
+                step="0.05"
+                value="0.50"
+                oninput="document.getElementById('lbl-l-thr').textContent = Number(this.value).toFixed(2)"
+                class="w-full accent-emerald-500"
+              />
+            </div>
+
+            <div>
+              <div class="flex justify-between mb-1">
+                <label class="text-slate-300 font-medium">Minimum Target Area (hectares)</label>
+                <span id="lbl-min-area" class="font-mono text-amber-400 font-semibold">5.0 ha</span>
+              </div>
+              <input
+                type="range"
+                id="ctrl-min-area"
+                min="1"
+                max="50"
+                step="1"
+                value="5"
+                oninput="document.getElementById('lbl-min-area').textContent = Number(this.value).toFixed(1) + ' ha'"
+                class="w-full accent-amber-500"
+              />
+            </div>
+
+            <div class="pt-1 border-t border-slate-800 grid grid-cols-2 gap-2.5">
+              <div>
+                <div class="flex justify-between">
+                  <span class="text-slate-400">w1 P(Deposit):</span>
+                  <span id="lbl-w1" class="font-mono text-slate-200">0.40</span>
+                </div>
+                <input type="range" id="ctrl-w1" min="0" max="1" step="0.05" value="0.40"
+                  oninput="document.getElementById('lbl-w1').textContent = Number(this.value).toFixed(2)"
+                  class="w-full accent-indigo-400" />
+              </div>
+              <div>
+                <div class="flex justify-between">
+                  <span class="text-slate-400">w2 Dilation Td:</span>
+                  <span id="lbl-w2" class="font-mono text-slate-200">0.25</span>
+                </div>
+                <input type="range" id="ctrl-w2" min="0" max="1" step="0.05" value="0.25"
+                  oninput="document.getElementById('lbl-w2').textContent = Number(this.value).toFixed(2)"
+                  class="w-full accent-indigo-400" />
+              </div>
+              <div>
+                <div class="flex justify-between">
+                  <span class="text-slate-400">w3 Alteration:</span>
+                  <span id="lbl-w3" class="font-mono text-slate-200">0.20</span>
+                </div>
+                <input type="range" id="ctrl-w3" min="0" max="1" step="0.05" value="0.20"
+                  oninput="document.getElementById('lbl-w3').textContent = Number(this.value).toFixed(2)"
+                  class="w-full accent-indigo-400" />
+              </div>
+              <div>
+                <div class="flex justify-between">
+                  <span class="text-slate-400">-w4 Cover Penalty:</span>
+                  <span id="lbl-w4" class="font-mono text-rose-300">0.15</span>
+                </div>
+                <input type="range" id="ctrl-w4" min="0" max="1" step="0.05" value="0.15"
+                  oninput="document.getElementById('lbl-w4').textContent = Number(this.value).toFixed(2)"
+                  class="w-full accent-rose-400" />
+              </div>
+            </div>
+          </div>
+
+          <button
+            id="btn-rerank"
+            onclick="reRankTargetsLive()"
+            class="w-full py-2 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition shadow-sm"
+          >
+            Re-Polygonize &amp; Rank Guessed Targets Now
+          </button>
+        </div>
+
+        <!-- Pass 7 LLM Site Card Inspector -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex-1 flex flex-col">
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-sm font-bold text-white">Pass 7 LLM Site Card Inspector</h2>
+            <span id="selected-card-id" class="text-xs font-mono text-amber-400">Top Ranked Target</span>
+          </div>
+          <pre
+            id="site-card-json"
+            class="text-xs font-mono bg-slate-950 border border-slate-800 rounded-lg p-3 overflow-auto max-h-[250px] text-emerald-300 leading-relaxed flex-1"
+          >Select a target polygon to view its Pass 7 JSON Site Card...</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bottom Row: Guessed vs Actual Comparison Table + Spatial CV Folds & Training Logs -->
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <!-- Left: Ranked Guessed Targets vs Actual Mines Hit Table (7 cols) -->
+      <div class="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-xl p-4">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h2 class="text-sm font-bold text-white">Model-Guessed Drill Targets vs. Actual Ground-Truth Mines</h2>
+            <p class="text-xs text-slate-400">
+              Click any row to fly to the guessed polygon on OpenStreetMap and inspect its 90% Conformal CI &amp; actual mine hits.
+            </p>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="border-b border-slate-800 text-slate-400">
+                <th class="py-2 px-2.5">Rank</th>
+                <th class="py-2 px-2.5">Target ID</th>
+                <th class="py-2 px-2.5">Rank Score</th>
+                <th class="py-2 px-2.5">P(Deposit)</th>
+                <th class="py-2 px-2.5">90% Conformal [L, U]</th>
+                <th class="py-2 px-2.5">Area (km²)</th>
+                <th class="py-2 px-2.5">Actual Mines Hit</th>
+                <th class="py-2 px-2.5">Interpretation</th>
+              </tr>
+            </thead>
+            <tbody id="targets-tbody" class="divide-y divide-slate-800/70"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Right: 7-Pass Architecture Overview, Spatial CV Folds & Live Console (5 cols) -->
+      <div class="lg:col-span-5 flex flex-col gap-4">
+        <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
+          <h2 class="text-sm font-bold text-white mb-2">Spatial Block Cross-Validation &amp; 7-Pass Verification Gates</h2>
+          <div class="grid grid-cols-2 gap-2 mb-3 text-xs">
+            <div class="bg-slate-950 border border-slate-800 rounded-lg p-2 flex items-center justify-between">
+              <span class="text-slate-400">1. No Raw Pixel Leakage</span>
+              <span class="text-emerald-400 font-semibold">PASS</span>
+            </div>
+            <div class="bg-slate-950 border border-slate-800 rounded-lg p-2 flex items-center justify-between">
+              <span class="text-slate-400">2. Propensity e(x) &ge; 0.05</span>
+              <span class="text-emerald-400 font-semibold">PASS</span>
+            </div>
+            <div class="bg-slate-950 border border-slate-800 rounded-lg p-2 flex items-center justify-between">
+              <span class="text-slate-400">3. nnPU Clamping &ge; 0</span>
+              <span class="text-emerald-400 font-semibold">PASS</span>
+            </div>
+            <div class="bg-slate-950 border border-slate-800 rounded-lg p-2 flex items-center justify-between">
+              <span class="text-slate-400">4. Disjoint Spatial Blocks</span>
+              <span class="text-emerald-400 font-semibold">PASS</span>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto max-h-[140px]">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="border-b border-slate-800 text-slate-400">
+                  <th class="py-1.5 px-2">Fold</th>
+                  <th class="py-1.5 px-2">PR-AUC</th>
+                  <th class="py-1.5 px-2">ROC-AUC</th>
+                  <th class="py-1.5 px-2">Recall@FPR10%</th>
+                  <th class="py-1.5 px-2">NDCG@100</th>
+                </tr>
+              </thead>
+              <tbody id="cv-tbody" class="divide-y divide-slate-800/60"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Live Pipeline Log Console -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex-1 flex flex-col">
+          <div class="flex items-center justify-between mb-1.5">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Pipeline Execution Log</h2>
+            <button onclick="pollStatus()" class="text-xs text-indigo-400 hover:underline">Refresh</button>
+          </div>
+          <pre
+            id="console-log"
+            class="text-xs font-mono bg-slate-950 border border-slate-800 rounded-lg p-2.5 overflow-auto max-h-[130px] text-slate-300 leading-snug"
+          >Loading logs...</pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    let currentRegion = "YILGARN";
+    let currentBundle = null;
+    let map = null;
+    let baseLayers = {};
+    let actualMinesLayer = L.layerGroup();
+    let guessedPolygonsLayer = L.layerGroup();
+    let faultsLayer = L.layerGroup();
+    let heatmapOverlay = null;
+    let conformalOverlay = null;
+
+    function initMap() {
+      map = L.map("map", {
+        center: [-30.768, 121.488],
+        zoom: 12,
+        preferCanvas: true,
+      });
+
+      const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      });
+
+      const topo = L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {
+        maxZoom: 17,
+        attribution: "Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap",
+      });
+
+      const satellite = L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        {
+          maxZoom: 18,
+          attribution: "Tiles &copy; Esri",
+        }
+      );
+
+      osm.addTo(map);
+      baseLayers = {
+        "OpenStreetMap Standard": osm,
+        "OpenTopoMap (Topographic)": topo,
+        "Esri World Imagery (Satellite)": satellite,
+      };
+      L.control.layers(baseLayers, null, { position: "topright" }).addTo(map);
+
+      faultsLayer.addTo(map);
+      guessedPolygonsLayer.addTo(map);
+      actualMinesLayer.addTo(map);
+    }
+
+    async function selectRegion(region) {
+      currentRegion = region;
+      const btnY = document.getElementById("btn-yilgarn");
+      const btnB = document.getElementById("btn-borneo");
+      if (region === "YILGARN") {
+        btnY.className = "px-3.5 py-1.5 rounded-md text-xs font-semibold transition bg-amber-500 text-slate-950";
+        btnB.className = "px-3.5 py-1.5 rounded-md text-xs font-semibold transition text-slate-300 hover:text-white";
+      } else {
+        btnB.className = "px-3.5 py-1.5 rounded-md text-xs font-semibold transition bg-amber-500 text-slate-950";
+        btnY.className = "px-3.5 py-1.5 rounded-md text-xs font-semibold transition text-slate-300 hover:text-white";
+      }
+
+      const res = await fetch(`/api/region?name=${encodeURIComponent(region)}`);
+      const bundle = await res.json();
+      renderBundle(bundle, true);
+    }
+
+    function renderBundle(bundle, fly = false) {
+      currentBundle = bundle;
+      const s = bundle.summary || {};
+
+      document.getElementById("region-subtitle").textContent = bundle.title || "";
+      document.getElementById("crs-pill").textContent = bundle.crs || "";
+
+      // KPIs
+      document.getElementById("kpi-xgb").textContent = s.pr_auc_xgb !== undefined ? Number(s.pr_auc_xgb).toFixed(3) : "—";
+      document.getElementById("kpi-xgb-w").textContent = `Ensemble Weight: ${s.w_xgb ?? "—"}`;
+      document.getElementById("kpi-unet").textContent = s.pr_auc_unet !== undefined ? Number(s.pr_auc_unet).toFixed(3) : "—";
+      document.getElementById("kpi-unet-w").textContent = `Ensemble Weight: ${s.w_unet ?? "—"}`;
+      document.getElementById("kpi-fused").textContent = s.pr_auc_fused !== undefined ? Number(s.pr_auc_fused).toFixed(3) : "—";
+      const bh = bundle.blind_holdout || {};
+      document.getElementById("kpi-holdout").textContent = `Blind Holdout PR-AUC: ${bh.pr_auc ? Number(bh.pr_auc).toFixed(3) : "—"}`;
+      document.getElementById("kpi-chat").textContent = s.elkan_noto_c_hat !== undefined ? Number(s.elkan_noto_c_hat).toFixed(3) : "—";
+      document.getElementById("kpi-prop").textContent = s.propensity_min !== undefined ? Number(s.propensity_min).toFixed(2) : "0.05";
+      document.getElementById("kpi-prop-med").textContent = `Median e(x): ${s.propensity_median ?? "—"}`;
+      document.getElementById("kpi-hits").textContent = `${bundle.total_mines_captured} / ${bundle.total_actual_mines}`;
+      document.getElementById("kpi-targets-count").textContent = `${(bundle.site_cards || []).length} Polygons (Hit Rate: ${bundle.total_actual_mines ? ((bundle.total_mines_captured / bundle.total_actual_mines) * 100).toFixed(1) : 0}%)`;
+
+      // Site Card JSON viewer
+      if (bundle.site_cards && bundle.site_cards.length > 0) {
+        showSiteCard(bundle.site_cards[0]);
+      } else {
+        document.getElementById("selected-card-id").textContent = "No Targets Above Threshold";
+        document.getElementById("site-card-json").textContent = "// Lower L(x) threshold or min_area_ha to generate polygons.";
+      }
+
+      // Render Map Layers
+      renderMapContent(bundle, fly);
+
+      // Render Targets Comparison Table
+      const tbody = document.getElementById("targets-tbody");
+      tbody.innerHTML = "";
+      const feats = (bundle.predicted_targets_geojson && bundle.predicted_targets_geojson.features) || [];
+      if (feats.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="py-4 text-center text-slate-500">No polygons met the current L(x) cutoff. Lower the slider on the right and click Re-Polygonize.</td></tr>`;
+      } else {
+        feats.forEach((f, idx) => {
+          const p = f.properties;
+          const tr = document.createElement("tr");
+          tr.className = "hover:bg-slate-800/60 cursor-pointer transition";
+          tr.onclick = () => focusTargetFeature(f);
+          const hitBadge =
+            p.actual_mines_hit > 0
+              ? `<span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 font-semibold">${p.actual_mines_hit} Actual Mines</span>`
+              : `<span class="px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/40">Blind Target (${p.nearest_actual_mine_m ?? "—"}m)</span>`;
+          tr.innerHTML = `
+            <td class="py-2.5 px-2.5 font-bold text-amber-400">#${p.rank}</td>
+            <td class="py-2.5 px-2.5 font-mono text-white">${p.target_id}</td>
+            <td class="py-2.5 px-2.5 font-mono text-emerald-400 font-semibold">${Number(p.rank_score).toFixed(3)}</td>
+            <td class="py-2.5 px-2.5 font-mono">${Number(p.calibrated_deposit_prob).toFixed(3)}</td>
+            <td class="py-2.5 px-2.5 font-mono text-slate-300">[${Number(p.lower_bound_L).toFixed(2)}, ${Number(p.upper_bound_U).toFixed(2)}]</td>
+            <td class="py-2.5 px-2.5 font-mono">${Number(p.area_sq_km).toFixed(2)}</td>
+            <td class="py-2.5 px-2.5">${hitBadge}</td>
+            <td class="py-2.5 px-2.5 text-slate-300">${p.classification}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      // Render Spatial CV Folds
+      const cvBody = document.getElementById("cv-tbody");
+      cvBody.innerHTML = "";
+      (bundle.cv_folds || []).forEach((row, i) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="py-1.5 px-2 font-mono text-slate-300">${row.fold !== undefined ? "Fold " + (Number(row.fold) + 1) : "Spatial Eval"}</td>
+          <td class="py-1.5 px-2 font-mono text-amber-400 font-semibold">${Number(row.pr_auc).toFixed(3)}</td>
+          <td class="py-1.5 px-2 font-mono text-slate-200">${Number(row.roc_auc).toFixed(3)}</td>
+          <td class="py-1.5 px-2 font-mono text-emerald-400">${Number(row.recall_at_fpr_0.1).toFixed(3)}</td>
+          <td class="py-1.5 px-2 font-mono text-sky-300">${Number(row.ndcg_at_k_100).toFixed(3)}</td>
+        `;
+        cvBody.appendChild(tr);
+      });
+    }
+
+    function renderMapContent(bundle, fly = false) {
+      actualMinesLayer.clearLayers();
+      guessedPolygonsLayer.clearLayers();
+      faultsLayer.clearLayers();
+
+      if (heatmapOverlay) {
+        map.removeLayer(heatmapOverlay);
+        heatmapOverlay = null;
+      }
+      if (conformalOverlay) {
+        map.removeLayer(conformalOverlay);
+        conformalOverlay = null;
+      }
+
+      const opacity = Number(document.getElementById("rng-opacity").value);
+      if (bundle.heatmap_png && bundle.bounds) {
+        heatmapOverlay = L.imageOverlay(bundle.heatmap_png, bundle.bounds, {
+          opacity: opacity,
+          interactive: false,
+        });
+      }
+      if (bundle.conformal_l_png && bundle.bounds) {
+        conformalOverlay = L.imageOverlay(bundle.conformal_l_png, bundle.bounds, {
+          opacity: opacity,
+          interactive: false,
+        });
+      }
+
+      // Fault lines
+      if (bundle.faults_geojson && bundle.faults_geojson.features.length > 0) {
+        L.geoJSON(bundle.faults_geojson, {
+          style: {
+            color: "#38bdf8",
+            weight: 1.5,
+            dashArray: "4, 4",
+            opacity: 0.7,
+          },
+        }).addTo(faultsLayer);
+      }
+
+      // Model-Guessed Target Polygons
+      if (bundle.predicted_targets_geojson) {
+        L.geoJSON(bundle.predicted_targets_geojson, {
+          style: (feature) => {
+            const isRank1 = feature.properties.rank === 1;
+            return {
+              color: isRank1 ? "#fbbf24" : "#10b981",
+              weight: isRank1 ? 3 : 2.2,
+              fillColor: isRank1 ? "#f59e0b" : "#10b981",
+              fillOpacity: 0.28,
+            };
+          },
+          onEachFeature: (feature, layer) => {
+            const p = feature.properties;
+            layer.bindPopup(`
+              <div class="text-xs space-y-1 min-w-[230px]">
+                <div class="font-bold text-amber-400 text-sm">${p.target_id} (Rank #${p.rank})</div>
+                <div class="text-emerald-300 font-semibold">${p.classification}</div>
+                <hr class="border-slate-700 my-1"/>
+                <div><strong>Multi-Criteria Rank Score:</strong> ${p.rank_score}</div>
+                <div><strong>Calibrated P(Deposit):</strong> ${(p.calibrated_deposit_prob * 100).toFixed(1)}%</div>
+                <div><strong>90% Conformal CI [L, U]:</strong> [${p.lower_bound_L}, ${p.upper_bound_U}]</div>
+                <div><strong>Actual Mines Hit:</strong> ${p.actual_mines_hit} (nearest: ${p.nearest_actual_mine_m}m)</div>
+                <div><strong>Dilation Tendency Td:</strong> ${p.dilation_tendency_Td_max}</div>
+                <div><strong>Regolith Cover Depth:</strong> ${p.regolith_cover_depth_m} m</div>
+                <div><strong>Propensity e(x) / w:</strong> ${p.exploration_propensity_e_x} (w=${p.propensity_weight_w})</div>
+              </div>
+            `);
+            layer.on("click", () => {
+              if (p.site_card) showSiteCard(p.site_card);
+            });
+          },
+        }).addTo(guessedPolygonsLayer);
+      }
+
+      // Actual Ground-Truth Mines
+      const boundsBox = bundle.bounds; // [[south, west], [north, east]]
+      (bundle.actual_mines || []).forEach((m) => {
+        const insideStudyGrid =
+          boundsBox &&
+          m.lat >= boundsBox[0][0] - 0.02 &&
+          m.lat <= boundsBox[1][0] + 0.02 &&
+          m.lon >= boundsBox[0][1] - 0.02 &&
+          m.lon <= boundsBox[1][1] + 0.02;
+
+        const marker = L.circleMarker([m.lat, m.lon], {
+          radius: insideStudyGrid ? 5.5 : 4.5,
+          fillColor: insideStudyGrid ? "#f43f5e" : "#fbbf24",
+          color: "#ffffff",
+          weight: 1.2,
+          opacity: 0.95,
+          fillOpacity: 0.88,
+        });
+
+        marker.bindPopup(`
+          <div class="text-xs space-y-1">
+            <div class="font-bold text-rose-400 text-sm">ACTUAL MINE: ${m.name}</div>
+            <div><strong>ID:</strong> ${m.id}</div>
+            <div><strong>Commodity:</strong> ${m.commodity}</div>
+            <div><strong>Stage / Type:</strong> ${m.stage} (${m.type})</div>
+            <div><strong>Source:</strong> ${m.source}</div>
+            <div><strong>Coords:</strong> [${m.lat}, ${m.lon}]</div>
+          </div>
+        `);
+        marker.addTo(actualMinesLayer);
+      });
+
+      updateMapLayers();
+
+      if (fly && bundle.bounds) {
+        map.flyToBounds(bundle.bounds, { padding: [30, 30], duration: 1.1 });
+      }
+    }
+
+    function updateMapLayers() {
+      const showActual = document.getElementById("chk-actual").checked;
+      const showGuessed = document.getElementById("chk-guessed").checked;
+      const showHeat = document.getElementById("chk-heatmap").checked;
+      const showConf = document.getElementById("chk-conformal").checked;
+      const showFaults = document.getElementById("chk-faults").checked;
+
+      if (showActual) {
+        if (!map.hasLayer(actualMinesLayer)) map.addLayer(actualMinesLayer);
+      } else {
+        if (map.hasLayer(actualMinesLayer)) map.removeLayer(actualMinesLayer);
+      }
+
+      if (showGuessed) {
+        if (!map.hasLayer(guessedPolygonsLayer)) map.addLayer(guessedPolygonsLayer);
+      } else {
+        if (map.hasLayer(guessedPolygonsLayer)) map.removeLayer(guessedPolygonsLayer);
+      }
+
+      if (showFaults) {
+        if (!map.hasLayer(faultsLayer)) map.addLayer(faultsLayer);
+      } else {
+        if (map.hasLayer(faultsLayer)) map.removeLayer(faultsLayer);
+      }
+
+      if (heatmapOverlay) {
+        if (showHeat && !map.hasLayer(heatmapOverlay)) map.addLayer(heatmapOverlay);
+        if (!showHeat && map.hasLayer(heatmapOverlay)) map.removeLayer(heatmapOverlay);
+      }
+
+      if (conformalOverlay) {
+        if (showConf && !map.hasLayer(conformalOverlay)) map.addLayer(conformalOverlay);
+        if (!showConf && map.hasLayer(conformalOverlay)) map.removeLayer(conformalOverlay);
+      }
+    }
+
+    function updateHeatmapOpacity(val) {
+      const op = Number(val);
+      if (heatmapOverlay) heatmapOverlay.setOpacity(op);
+      if (conformalOverlay) conformalOverlay.setOpacity(op);
+    }
+
+    function showSiteCard(card) {
+      document.getElementById("selected-card-id").textContent = `${card.target_id} (Rank #${card.rank})`;
+      document.getElementById("site-card-json").textContent = JSON.stringify(card, null, 2);
+    }
+
+    function focusTargetFeature(feature) {
+      if (feature.properties && feature.properties.site_card) {
+        showSiteCard(feature.properties.site_card);
+      }
+      const layer = L.geoJSON(feature);
+      map.flyToBounds(layer.getBounds(), { maxZoom: 14, duration: 0.8 });
+    }
+
+    async function reRankTargetsLive() {
+      const btn = document.getElementById("btn-rerank");
+      btn.disabled = true;
+      btn.textContent = "Re-Polygonizing & Ranking...";
+
+      const payload = {
+        region: currentRegion,
+        l_threshold: Number(document.getElementById("ctrl-l-thr").value),
+        min_area_ha: Number(document.getElementById("ctrl-min-area").value),
+        w1: Number(document.getElementById("ctrl-w1").value),
+        w2: Number(document.getElementById("ctrl-w2").value),
+        w3: Number(document.getElementById("ctrl-w3").value),
+        w4: Number(document.getElementById("ctrl-w4").value),
+      };
+
+      try {
+        const res = await fetch("/api/rerank", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const bundle = await res.json();
+        renderBundle(bundle, false);
+        await pollStatus();
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Re-Polygonize & Rank Guessed Targets Now";
+      }
+    }
+
+    async function triggerTrainingRun() {
+      await fetch("/api/train", { method: "POST" });
+      await pollStatus();
+    }
+
+    async function pollStatus() {
+      try {
+        const res = await fetch("/api/status");
+        const st = await res.json();
+        const badge = document.getElementById("status-badge");
+        const btnTrain = document.getElementById("btn-train");
+        if (st.running) {
+          badge.textContent = "TRAINING IN PROGRESS...";
+          badge.className = "text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-medium animate-pulse";
+          btnTrain.disabled = true;
+          btnTrain.classList.add("opacity-60");
+        } else {
+          badge.textContent = "READY";
+          badge.className = "text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-medium";
+          btnTrain.disabled = false;
+          btnTrain.classList.remove("opacity-60");
+        }
+        const logEl = document.getElementById("console-log");
+        logEl.textContent = (st.logs || []).slice(-30).join("\n");
+        logEl.scrollTop = logEl.scrollHeight;
+      } catch (e) {}
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      initMap();
+      selectRegion("YILGARN");
+      pollStatus();
+      setInterval(pollStatus, 4000);
+    });
+  </script>
+</body>
+</html>

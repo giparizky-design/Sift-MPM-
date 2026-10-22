@@ -1,0 +1,151 @@
+boundedBy,geometry,dep_id,site_name,dev_stat,fips_code,huc_code,quad_code,url,code_list,latitude,longitude,is_centroid_artifact
+"
+        	","
+          ",10037849,Riam Kanan River,Producer,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10037849, PGE_OS PGE_IR AU PGE_PT GEM_D PGE_RH PGE_RU SN,-3.40752,114.89474,False
+"
+        	","
+          ",10090203,Pengaron,Occurrence,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10090203, MN,-1.9982,113.99949,True
+"
+        	","
+          ",10097586,Pasir Angin,Past Producer,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10097586, MN,-1.9982,113.99949,True
+"
+        	","
+          ",10110043,Cempaka-Danau Seran Paleochannels,Producer,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10110043, GEM_D AU PGE,-3.49807,114.74946,False
+"
+        	","
+          ",10003824,Bargoah,Past Producer,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10003824, MN,-1.9982,113.99949,True
+"
+        	","
+          ",10003825,Burahol Mine,Past Producer,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10003825, MN,-1.9982,113.99949,True
+"
+        	","
+          ",10003827,Karangnunggal,Past Producer,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10003827, MN,-1.9982,113.99949,True
+"
+        	","
+          ",10003828,Kompeang,Past Producer,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10003828, MN,-1.9982,113.99949,True
+"
+        	","
+          ",10003829,Kliripan,Past Producer,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10003829, MN,-1.9982,113.99949,True
+"
+        	","
+          ",10003830,Mangani,Occurrence,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10003830, AU AG MN,-1.9982,113.99949,True
+"
+        	","
+          ",10003831,Puger,Occurrence,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10003831, MN,-1.9982,113.99949,True
+"
+        	","
+          ",10021442,Kijang Mine,Producer,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10021442, AL,-1.9982,113.99949,True
+"
+        	","
+          ",10021444,Kelapa Kampit Broken Hill Mine,Producer,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10021444, SN,-1.9982,113.99949,True
+"
+        	","
+          ",10021525,Cilegon Mine,Producer,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10021525, FE,-1.9982,113.99949,True
+"
+        	","
+          ",10021526,Pt Koba Tin Mine,Producer,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10021526, SN,-1.9982,113.99949,True
+"
+        	","
+          ",10021528,Pt Timah Bangka Mine,Producer,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10021528, SN,-1.9982,113.99949,True
+"
+        	","
+          ",10021529,Pt Timah Singkep Mine,Producer,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10021529, SN,-1.9982,113.99949,True
+"
+        	","
+          ",10021530,Pt Timah Bangkinang Mine,Producer,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10021530, SN,-1.9982,113.99949,True
+"
+        	","
+          ",10021531,Pt Timah Belitung Mine,Producer,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10021531, SN,-1.9982,113.99949,True
+"
+        	","
+          ",10022489,Kapuas Area,Occurrence,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10022489, AL,-1.9982,113.99949,True
+"
+        	","
+          ",10022490,Katni,Occurrence,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10022490, AL,-1.9982,113.99949,True
+"
+        	","
+          ",10023284,Kalimantan,Prospect,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10023284, GEM_D,-2.99811,113.99949,False
+"
+        	","
+          ",10068669,Bauxite - Indonesia,Occurrence,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10068669, AL,-0.9983,111.99954,False
+"
+        	","
+          ",10068670,Bauxite - Indonesia,Producer,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10068670, AL,-1.9982,113.99949,True
+"
+        	","
+          ",10097401,Bauxite - Sarawak,Prospect,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10097401, AL,-1.9982,113.99949,True
+"
+        	","
+          ",10097585,Djuratok,Past Producer,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10097585, MN,-1.9982,113.99949,True
+"
+        	","
+          ",10003826,Dai,Occurrence,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10003826, MN,-1.65443,116.27773,False
+"
+        	","
+          ",10081088,Mamut,Producer,fMY,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10081088, CU AU PB ZN,5.00111,117.9994,False
+"
+        	","
+          ",10097328,Kelian Gold Deposit,Prospect,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10097328, AU AG,-0.02063,115.45167,False
+"
+        	","
+          ",10134016,Mamut,Plant,fMY,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10134016, CU AU AG,6.0177,116.64942,False
+"
+        	","
+          ",10134145,Tavai Plateau,Past Producer,fMY,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10134145, FE NI,5.58434,117.3327,False
+"
+        	","
+          ",10159036,Pinanduan,Prospect,fMY,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10159036, CU,6.33427,117.08271,False
+"
+        	","
+          ",10206932,Busang,Prospect,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10206932, AU,1.25147,116.23273,False
+"
+        	","
+          ",10230816,Sebuku Island,Prospect,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10230816, AL CR FE NI,-3.49807,116.35943,False
+"
+        	","
+          ",10255990,Gunung Tanalang Iron Deposit,Prospect,fID,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10255990, FE,-2.59816,115.69944,False
+"
+        	","
+          ",10256745,(Facility) Penang Operations Smelter,Plant,fMY,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10256745, SN PB,5.15108,116.83271,False
+"
+        	","
+          ",10280775,Porog Tributary of the Labuk Vall,Prospect,fMY,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10280775, CR FE,5.93431,117.2327,False
+"
+        	","
+          ",10287985,"Banggi Island, North Borneo",Prospect,fMY,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10287985, CR FE,7.25088,117.1661,False
+"
+        	","
+          ",10021459,Bau Mine,Producer,fMY,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10021459, SB,2.5943,113.30325,False
+"
+        	","
+          ",10021562,Cons. Diamonds Mine,Producer,fMY,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10021562, GEM_D,2.0014,111.49954,False
+"
+        	","
+          ",10022455,Nangan,Unknown,fMY,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10022455, AL,2.0014,111.49954,False
+"
+        	","
+          ",10022499,Luneu Dist,Past Producer,fMY,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10022499, AL,2.5943,113.30325,False
+"
+        	","
+          ",10022501,Malacca,Past Producer,fMY,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10022501, AL,2.0014,111.49954,False
+"
+        	","
+          ",10022533,Sarawak,Past Producer,fMY,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10022533, AL,2.0014,111.49954,False
+"
+        	","
+          ",10068675,Bauxite - Sarawak,Producer,fMY,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10068675, AL,1.75142,109.83291,False
+"
+        	","
+          ",10079692,"Name Unknown, Malaysia",Occurrence,fMY,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10079692, TI_M,2.0014,111.49954,False
+"
+        	","
+          ",10093360,Bauxite - Malaya,Occurrence,fMY,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10093360, AL,2.0014,111.49954,False
+"
+        	","
+          ",10110370,Bauxite - Sarawak,Producer,fMY,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10110370, AL,1.75142,109.83291,False
+"
+        	","
+          ",10111418,Sarawak,Unknown,fMY,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10111418, AL,2.0014,111.49954,False
+"
+        	","
+          ",10256344,Singakawang,Unknown,,,,https://mrdata.usgs.gov/mrds/show-mrds.php?dep_id=10256344, AL FE,0.9515,108.9496,False

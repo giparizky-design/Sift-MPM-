@@ -1,0 +1,104 @@
+# =============================================================================
+# Borneo Pilot Configuration — Epithermal Gold & Porphyry Systems
+# =============================================================================
+# Pilot Region: Central Kalimantan & Sarawak Arc
+# Primary Commodity: Gold (Au) & Copper (Cu)
+# Deposit Style: Epithermal Low/Intermediate-Sulfidation Au-Ag & Porphyry Cu-Au
+#
+# Scientific Guardrails:
+#   - Dense tropical canopy masks optical SWIR; feature stack prioritizes
+#     L-band SAR (PALSAR-2), Copernicus DEM geomorphology, and regional magnetics.
+#   - Programmatic exclusion of USGS MRDS island centroid artifacts (-2.0°, 114.0°).
+#   - Prediction unit: 50 m cells with explicit data quality provenance tracking.
+# =============================================================================
+
+pilot:
+  name: "Borneo Epithermal & Porphyry Pilot"
+  region: "Central Kalimantan / East Malaysia"
+  commodity: "Gold (Au)"
+  deposit_style: "Epithermal Au-Ag and Porphyry Cu-Au"
+  primary_camp: "Kelian - Mt Muro Arc"
+  crs: "EPSG:32750"  # WGS 84 / UTM Zone 50S (covers Central & East Kalimantan)
+
+grid:
+  crs: "EPSG:32750"
+  cell_size_m: 50
+  # AOI centered over the Kelian epithermal gold district (East Kalimantan)
+  aoi_bounds_geo: [115.35, -0.15, 115.55, 0.05]
+  aoi_bounds_proj: [316000.0, 9983000.0, 338000.0, 10005000.0]
+
+sources:
+  sar:
+    name: "ALOS-2 PALSAR-2 L-Band SAR Mosaic"
+    provider: "JAXA"
+    polarizations: ["HH", "HV", "HH_HV_ratio"]
+    native_resolution_m: 25
+    canopy_penetration: "High (L-band penetrates foliage to ground surface)"
+    licence: "JAXA Open Access / Earthdata"
+
+  dem:
+    name: "Copernicus GLO-30 Digital Surface Model"
+    provider: "ESA / AWS Open Data"
+    access: "s3://copernicus-dem-30m"
+    native_resolution_m: 30
+    derived_products:
+      - "slope"
+      - "aspect"
+      - "topographic_position_index"
+      - "profile_curvature"
+      - "multiscale_lineaments"
+
+  magnetics:
+    name: "EMAG2v3 Earth Magnetic Anomaly Grid"
+    provider: "NOAA NCEI"
+    native_resolution_m: 3700  # 2 arc-minutes
+    licence: "Public Domain"
+    known_limitations:
+      - "Coarse regional crustal resolution (3.7 km); upsampled to 50 m"
+      - "Suitable for crustal suture/arc mapping, not local intrusive contacts"
+
+  optical:
+    name: "Sentinel-2 L2A (Dry Season Composite)"
+    provider: "ESA Copernicus"
+    native_resolution_m: 10
+    vegetation_filter: "ndvi_gt_0.4_masked_out"
+    usage: "Masked exclusively to bare soil and open clearings"
+
+  labels:
+    positive:
+      name: "USGS MRDS Verified Deposits + Regional Mining Concessions (ESDM)"
+      centroid_exclusion_filter:
+        center_lat: -1.9982
+        center_lon: 113.9995
+        radius_km: 15.0
+      min_deposit_criteria:
+        confirmed_production_or_resource: true
+        spatial_precision: "< 250 m"
+    reliable_negative:
+      source: "Sterilized barren drillholes or non-prospective Quaternary alluvium"
+
+features:
+  structural:
+    - "sar_hh_backscatter"
+    - "sar_hv_backscatter"
+    - "sar_texture_contrast"
+    - "dem_slope"
+    - "dem_tpi"
+    - "dem_curvature"
+    - "dist_lineaments_m"
+  geophysical:
+    - "mag_emag2_anomaly"
+    - "mag_analytic_signal"
+  spectral:
+    - "s2_bare_soil_iron_oxide"
+
+pu_learning:
+  contamination_factor: 0.05
+  n_bagging_iterations: 10
+  unlabeled_sampling_ratio: 3.0
+
+evaluation:
+  cv_method: "spatial_block_cv"
+  n_folds: 5
+  block_size_m: 5000
+  holdout_camp: "Kelian Deposit Holdout"

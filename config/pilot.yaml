@@ -1,0 +1,356 @@
+# =============================================================================
+# MPM Pilot Configuration — Orogenic Gold, Yilgarn Craton, Western Australia
+# =============================================================================
+# Pilot selection rationale:
+#   - Geoscience Australia provides open, high-resolution aeromagnetics (50–200 m
+#     line spacing) and radiometrics under Creative Commons licences.
+#   - The WA DMIRS WAMEX database has mandatory exploration reporting with
+#     sub-100 m drillhole collar coordinates.
+#   - The Yilgarn is predominantly arid, minimising vegetation masking of ASTER.
+#   - Extensive documented camp-scale drilling at Kalgoorlie, St Ives, Granny
+#     Smith, and Laverton provides a quality positive + reliable-negative label set.
+# =============================================================================
+
+pilot:
+  name: yilgarn_orogenic_gold_v1
+  version: "1.0.0"
+  commodity: Au
+  deposit_type: orogenic_gold
+  description: >
+    Pilot prospectivity model for orogenic (lode) gold mineralisation across the
+    Eastern Goldfields Superterrane of the Yilgarn Craton, Western Australia.
+    50 m prediction grid. PU-learning framing. XGBoost baseline + U-Net challenger.
+
+# ---------------------------------------------------------------------------
+# Spatial Reference & Grid
+# ---------------------------------------------------------------------------
+grid:
+  cell_size_m: 50
+  # GDA2020 / MGA Zone 51 — equal-area for WA Eastern Goldfields
+  crs: "EPSG:7851"
+  # Pilot bounding box in GDA2020 geographic (degrees)
+  aoi_bounds_geo:
+    - 121.4
+    - -30.8
+    - 121.55
+    - -30.7
+  # Bounding box in projected MGA51 metres (10 km x 10 km test block in Eastern Goldfields)
+  aoi_bounds_proj:
+    - 350000.0
+    - 6590000.0
+    - 360000.0
+    - 6600000.0
+
+# ---------------------------------------------------------------------------
+# Data Sources
+# ---------------------------------------------------------------------------
+sources:
+
+  aster:
+    name: ASTER L2 Surface Reflectance & Emissivity (AST_07XT, AST_05)
+    provider: NASA LP DAAC / METI
+    access: earthdata.nasa.gov  (requires free Earthdata account)
+    licence: Open (US Government)
+    native_resolution_m: 15   # VNIR bands 1-3
+    swir_resolution_m: 30     # bands 4-9 (SWIR detector failed 2008; use archive)
+    tir_resolution_m: 90      # bands 10-14
+    crs: WGS84 / UTM
+    format: HDF4 / GeoTIFF
+    date_range: "2000-2008"   # SWIR; TIR still active
+    known_limitations:
+      - SWIR detector failed April 2008; all SWIR data is pre-2008
+      - Atmospheric correction quality varies; prefer ACIX-validated scenes
+      - Band 6 (1.6 µm) anomalies exist in some tiles — cross-check metadata
+    pilot_bands_used: [B1, B3, B4, B5, B6, B7, B8, B9, B10, B11, B14]
+    vegetation_filter: ndvi_threshold_lt_0.2   # mask NDVI ≥ 0.2 before ratio calc
+
+  sentinel2:
+    name: Sentinel-2 MSI L2A (Bottom-of-Atmosphere)
+    provider: ESA Copernicus / Element84 / Google Earth Engine
+    access: open via Copernicus Data Space Ecosystem or AWS s3://sentinel-cogs
+    licence: Copernicus Open Access (CC-BY SA 3.0 IGO)
+    native_resolution_m: 10   # B2/B3/B4/B8
+    red_edge_resolution_m: 20 # B5/B6/B7/B8A/B11/B12
+    crs: WGS84 / UTM
+    format: Cloud-Optimized GeoTIFF (COG)
+    date_range: "2015-present"
+    revisit_days: 5
+    known_limitations:
+      - No SWIR bands beyond 2.2 µm — cannot resolve kaolinite vs illite
+      - Cirrus contamination in B10; use SCL cloud mask
+      - Compositing needed; use dry-season median (Jan–Mar for Yilgarn)
+    pilot_bands_used: [B2, B3, B4, B8, B8A, B11, B12]
+
+  aeromagnetics:
+    name: Geoscience Australia — National Coverages Aeromagnetic Survey
+    provider: Geoscience Australia (GA)
+    access: https://www.ga.gov.au/scientific-topics/national-location-information/geophysics
+    licence: Creative Commons Attribution 4.0 (CC BY 4.0)
+    native_resolution_m: 80   # Eastern Goldfields merged grid (80 m cell)
+    format: ERMapper Grid (.ers) / GeoTIFF
+    datum: GDA94 (upgrading to GDA2020 in GA's 2024 release)
+    known_limitations:
+      - Merged multi-vintage surveys; line-tie errors at survey boundaries
+      - Older surveys (pre-1990) flown at 400 m line spacing, degrading local detail
+      - Diurnal and IGRF removal quality varies by survey vintage
+    derived_products:
+      - Total Magnetic Intensity (TMI)
+      - Reduced-to-Pole (RTP)
+      - First Vertical Derivative (1VD)
+      - Analytic Signal (AS)
+      - Tilt Derivative (TDR)
+
+  radiometrics:
+    name: Geoscience Australia — Radiometric Survey (K, U, Th)
+    provider: Geoscience Australia (GA)
+    access: same as aeromagnetics portal
+    licence: CC BY 4.0
+    native_resolution_m: 100  # 100 m grid (merged national coverage)
+    channels: [potassium_pct, uranium_ppm_equiv, thorium_ppm_equiv, dose_rate_nGy_h]
+    known_limitations:
+      - Penetration depth ~45 cm; blind to buried mineralisation
+      - Requires weathered outcrop for meaningful signal
+      - Radon emanation artefacts near swamps/lakes
+
+  gravity:
+    name: Geoscience Australia — National Gravity Grid
+    provider: GA
+    access: https://www.ga.gov.au
+    licence: CC BY 4.0
+    native_resolution_m: 400  # national merged Bouguer grid
+    known_limitations:
+      - 400 m cells — must be upsampled to 50 m with explicit uncertainty flag
+      - Station spacing highly variable (dense in goldfields, sparse in deserts)
+    derived_products:
+      - Bouguer anomaly
+      - Free-air anomaly
+      - Horizontal gradient magnitude (HGM)
+
+  dem:
+    name: ALOS World 3D (AW3D30) — 30 m DEM
+    provider: JAXA / OpenTopography
+    access: https://www.eorc.jaxa.jp/ALOS/en/aw3d30/
+    licence: Free for research/commercial (registration required)
+    native_resolution_m: 30
+    format: GeoTIFF (1° tiles)
+    known_limitations:
+      - Canopy height bias in forested areas (negligible in Yilgarn)
+      - Artefacts over water bodies — mask using GA coastline/lake polygons
+
+  geology:
+    name: WA GSWA 1:500 000 Interpreted Bedrock Geology
+    provider: Geological Survey of Western Australia (GSWA)
+    access: https://dasc.dmirs.wa.gov.au
+    licence: CC BY 4.0
+    native_scale: 1:500000
+    format: Shapefile / Geopackage
+    known_limitations:
+      - Polygon boundaries generalised — not suitable for 50 m litho discrimination
+      - Regolith mapping incomplete in deep weathering zones
+    attributes_used:
+      - rock_type_simplified  # granite, greenstone, sediment, mafic-ultramafic
+      - age_era
+      - structural_domain
+
+  labels:
+    positive:
+      name: GSWA MINEDEX + WAMEX Drillhole Database
+      provider: GSWA / DMIRS WA
+      access: https://minedex.dmirs.wa.gov.au / https://wamex.dmirs.wa.gov.au
+      licence: CC BY 4.0 / CC BY-NC 4.0
+      spatial_precision: "10–100 m for modern collar coordinates; ±500 m for pre-1990"
+      known_biases:
+        - Preferential reporting around known camps (Kalgoorlie, Laverton belt)
+        - Small historical workings often absent
+      min_deposit_criteria:
+        au_contained_oz: 100000    # >100 koz Au to qualify as positive P
+        drill_verified: true
+    reliable_negative:
+      source: WAMEX drillhole assays
+      criteria: >
+        Cells with ≥3 documented RC or diamond drillholes intersecting prospective
+        greenstone basement to ≥50 m depth, with best assay <0.05 g/t Au (5× below
+        regional background of ~0.01 g/t). Must have no recorded prospect within
+        1 km radius.
+
+# ---------------------------------------------------------------------------
+# Feature Engineering
+# ---------------------------------------------------------------------------
+features:
+
+  alteration_indices:
+    # Mineral systems component: DEPOSITION (hydrothermal footprint)
+    - name: aster_aloh_content         # phyllic / argillic alteration (muscovite/sericite)
+      formula: "(B5+B7) / B6"
+      bands: [B5, B6, B7]
+      mask: ndvi_lt_0.2
+    - name: aster_carbonate_chlorite   # propylitic (carbonate + chlorite)
+      formula: "(B6+B9) / (B7+B8)"
+      bands: [B6, B7, B8, B9]
+    - name: aster_ferric_oxide         # iron oxide (gossans, supergene)
+      formula: "B2 / B1"
+      bands: [B1, B2]
+    - name: aster_ferrous_silicate     # chlorite/epidote (propylitic)
+      formula: "B5 / B4"
+      bands: [B4, B5]
+    - name: s2_clay_index             # Sentinel-2 approximate clay (B11/B12)
+      formula: "B11 / B12"
+      bands: [B11, B12]
+      note: "coarse proxy only; cannot resolve clay species"
+
+  structural_proximity:
+    # Mineral systems component: TRAP (structural controls)
+    - name: dist_major_fault_m
+      method: euclidean_distance
+      source: ga_interpreted_faults_l1
+      note: "Faults extracted from TMI/gravity gradient intersections + GSWA mapping"
+    - name: dist_fault_intersection_m
+      method: euclidean_distance
+      source: ga_fault_intersections
+    - name: mag_tdr_rad               # Tilt Derivative highlights contacts & edges
+      source: aeromagnetics
+      product: TDR
+    - name: mag_as_nT_per_m          # Analytic Signal proxy for magnetite destruction
+      source: aeromagnetics
+      product: AS
+    - name: grav_hgm_mGal_per_km     # Gravity Horizontal Gradient — density contrasts
+      source: gravity
+      product: HGM
+
+  radiometric_indices:
+    # Mineral systems component: SOURCE (crustal architecture)
+    - name: k_pct
+      source: radiometrics
+    - name: th_u_ratio               # Th/U — mafic vs felsic discrimination
+      formula: "Th / (U + 1e-6)"
+    - name: k_u_ratio
+      formula: "K / (U + 1e-6)"
+
+  topographic:
+    # Mineral systems component: STRUCTURAL TEXTURE & DRAINAGE
+    - name: slope_deg
+      source: dem
+      method: horn_gradient
+    - name: aspect_deg
+      source: dem
+    - name: tpi_200m                 # Topographic Position Index (200 m radius)
+      source: dem
+    - name: curvature_plan
+      source: dem
+    - name: flow_accumulation_log    # log10 of flow accumulation (structural drains)
+      source: dem
+
+  data_quality:
+    - name: mag_survey_vintage_flag   # 0=pre-1990, 1=1990-2010, 2=post-2010
+    - name: mag_line_spacing_m        # native line spacing of contributing survey
+    - name: grav_station_density_per_km2
+    - name: aster_swir_available      # boolean: pre-2008 tile exists
+    - name: cover_thickness_m_est     # regolith thickness from GA regolith map
+
+# ---------------------------------------------------------------------------
+# PU Learning
+# ---------------------------------------------------------------------------
+pu_learning:
+  strategy: two_step
+  step1_model: isolation_forest     # anomaly detector to rank U cells
+  step1_contamination: 0.05
+  rn_percentile_threshold: 10.0     # % of U (most background-like) kept as pseudo-RN
+  random_state: 42
+  step2_model: xgboost_pu           # bagging wrapper on P + RN
+  reliable_negative_buffer_m: 2000  # exclude cells within 2 km of any P
+
+# ---------------------------------------------------------------------------
+# Evaluation
+# ---------------------------------------------------------------------------
+evaluation:
+  method: spatial_block_cv
+  block_size_km: 50          # capped at runtime so the AOI holds >= ~4 blocks per side
+  n_folds: 5
+  # Whole district withheld from training AND from CV. Cells within buffer_m of the
+  # box are dropped from training too (spatial autocorrelation). Bounds are in the
+  # grid CRS: [xmin, ymin, xmax, ymax]. Synthetic-block value; replace with a real
+  # metallogenic district (e.g. Laverton belt) when real data is used.
+  blind_holdout:
+    name: synthetic_east_district
+    bounds_proj: [356500.0, 6591500.0, 360000.0, 6595500.0]
+    buffer_m: 500
+  primary_metric: pr_auc
+  secondary_metrics:
+    - roc_auc             # reported but not used for model selection
+    - recall_at_fpr_0.1   # recall when FPR ≤ 10%
+    - ndcg_at_k_100       # ranking quality: top-100 cells
+
+# ---------------------------------------------------------------------------
+# Models
+# ---------------------------------------------------------------------------
+models:
+  baseline:
+    type: xgboost
+    hyperparams:
+      n_estimators: 500
+      max_depth: 6
+      learning_rate: 0.05
+      subsample: 0.8
+      colsample_bytree: 0.8
+      scale_pos_weight: auto   # set from P:RN ratio at runtime
+      missing: NaN             # native NaN handling — no imputation
+      tree_method: hist
+    uncertainty: ensemble_variance   # 10-member bagging ensemble
+    explainability: shap_tree
+
+  challenger:
+    type: unet_2d
+    input_window_px: 64       # 64 × 64 pixels = 3.2 × 3.2 km context window
+    in_channels: 18           # all continuous features stacked as image channels
+    out_channels: 1           # sigmoid prospectivity score
+    encoder: resnet34
+    pretrained: false         # no ImageNet weights — geophysical data domain
+    uncertainty: mc_dropout   # p=0.3, 50 forward passes
+    activation_decision: >
+      Only deploy if spatial-CV PR-AUC > XGBoost PR-AUC + 0.05 (5 pp) with
+      p < 0.05 under Wilcoxon signed-rank test across folds.
+
+# ---------------------------------------------------------------------------
+# Outputs
+# ---------------------------------------------------------------------------
+outputs:
+  prospectivity_map:
+    format: GeoTIFF (COG)
+    dtype: float32
+    nodata: -9999
+    range: [0.0, 1.0]
+    crs: "EPSG:7851"
+  uncertainty_map:
+    type: epistemic_ensemble_variance
+    format: GeoTIFF (COG)
+    dtype: float32
+  data_provenance_mask:
+    layers:
+      - mag_resolution_flag    # uint8: native survey line spacing class
+      - grav_interpolated_flag # bool: cell relies on upsampled gravity
+      - aster_swir_flag        # bool: ASTER SWIR available (pre-2008)
+      - cover_mask             # bool: regolith thickness > 30 m
+    format: GeoTIFF multi-band (COG)
+  shap_map:
+    top_n_features: 5
+    format: GeoTIFF multi-band (COG)
+    note: "One band per top feature; value = SHAP contribution at that cell"
+  target_polygons:
+    min_prospectivity: 0.70
+    max_uncertainty: 0.20
+    min_area_ha: 25
+    format: Geopackage (.gpkg)
+
+# ---------------------------------------------------------------------------
+# Compute & Storage Estimates (50 m grid, ~600 × 400 km AOI)
+# ---------------------------------------------------------------------------
+compute:
+  grid_cells_approx: 960_000_000     # ~960 M cells at 50 m
+  # NOTE: most cells are under cover or ocean — effective cells << 960 M
+  # Yilgarn greenstone belt area ≈ 100 000 km² → ~40 M active cells
+  active_cells_estimate: 40_000_000
+  feature_matrix_size_GB: 12.0       # 40M cells × 18 features × float32 × 1 copy
+  training_subset_fraction: 0.10     # sample 10% for initial training
+  recommended_instance: "8-core CPU, 64 GB RAM, 500 GB SSD"
+  gpu_optional: true                 # only required for U-Net challenger
+  gpu_spec: "NVIDIA A10 or equivalent (24 GB VRAM)"

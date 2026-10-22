@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+.pytest_cache/
+
+# Synthetic interim data
+data/raw/
+data/interim/
+data/external/
+
+# Tracked pilot datasets & outputs for immediate reproducibility and UI demo:
+# data/raw_real/, data/borneo/ (*.csv, *.gpkg), outputs/seven_pass_*/, outputs/reports/
+outputs/reports/*.log
+outputs/models/
+outputs/borneo/models/
+*.pkl
+*.pt
+*.pth
+
+# Notebooks checkpoints
+.ipynb_checkpoints/
+notebooks/*.html
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Credentials — NEVER commit tokens
+*.env
+.env
+earthdata_token.txt
