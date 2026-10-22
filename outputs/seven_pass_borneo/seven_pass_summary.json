@@ -1,39 +1,39 @@
 {
   "region": "BORNEO",
   "n_cells": 193600,
-  "n_positives": 312,
-  "pr_auc_xgb": 0.881,
-  "pr_auc_unet": 0.4769,
-  "pr_auc_fused": 0.8136,
-  "w_xgb": 0.649,
-  "w_unet": 0.351,
-  "elkan_noto_c_hat": 0.732,
-  "conformal_q_hat_90": 0.8071,
+  "n_positives": 1382,
+  "pr_auc_xgb": 0.5244,
+  "pr_auc_unet": 0.5353,
+  "pr_auc_fused": 0.5363,
+  "w_xgb": 0.495,
+  "w_unet": 0.505,
+  "elkan_noto_c_hat": 0.5458,
+  "conformal_q_hat_90": 4.9294,
   "propensity_min": 0.05,
   "propensity_median": 0.05,
-  "n_ranked_targets": 4,
+  "n_ranked_targets": 112,
   "top_target_card": {
     "target_id": "BORNEO_TGT_0001",
     "rank": 1,
     "rank_score": 0.95,
     "geometry": {
       "centroid_lat_lon": [
-        -0.0104,
-        115.4465
+        -0.1102,
+        115.3687
       ],
-      "area_sq_km": 9.367,
+      "area_sq_km": 1.103,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.801,
-      "elkan_noto_c_hat": 0.732,
-      "calibrated_deposit_prob": 0.929,
+      "fused_raw_score": 0.794,
+      "elkan_noto_c_hat": 0.546,
+      "calibrated_deposit_prob": 0.99,
       "conformal_90_ci": {
-        "lower_bound_L": 0.877,
-        "upper_bound_U": 0.957
+        "lower_bound_L": 0.733,
+        "upper_bound_U": 0.999
       },
-      "exploration_propensity_e_x": 0.094,
-      "propensity_weight_w": 17.48
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
     },
     "physics_and_geology_summary": {
       "alteration": {
@@ -41,16 +41,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.362
+        "fe_oxide_intensity": 0.674
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.528,
+        "dilation_tendency_Td_max": 0.991,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 58.9,
+        "regolith_cover_depth_m": 61.7,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }

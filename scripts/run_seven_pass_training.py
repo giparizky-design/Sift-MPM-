@@ -141,22 +141,31 @@ def run_region_seven_pass(
     transform = profile["transform"]
     px_size_m = abs(float(transform.a)) if abs(float(transform.a)) > 0 else 50.0
     block_size_px = min(max(8, int(round(block_size_m / px_size_m))), max(8, min(H, W) // 5))
+    if region_name.upper() in ("PAPUA", "SUMBAWA", "SUMATRA", "SULAWESI"):
+        block_size_px = 12
     block_ids = assign_spatial_blocks(rows, cols, H, W, block_size_px=block_size_px)
     folds = spatial_block_kfold(block_ids, n_folds=5, random_state=42)
 
-    # Select a fold that has positives in both train and validation; if positives
+    # Select a fold that has balanced positives in both train and validation; if positives
     # are concentrated in a single deposit cluster (e.g. Kelian), split blocks across cluster
-    chosen_fold = folds[0]
-    found_valid = False
-    for tr_idx, va_idx in folds:
-        if (labels[tr_idx] == LABEL_P).sum() >= 3 and (labels[va_idx] == LABEL_P).sum() >= 3:
-            chosen_fold = (tr_idx, va_idx)
-            found_valid = True
-            break
-    if not found_valid:
+    total_pos = max(1, int((labels == LABEL_P).sum()))
+    target_val_pos = 0.20 * total_pos
+    valid_folds = [
+        (tr_idx, va_idx)
+        for tr_idx, va_idx in folds
+        if (labels[tr_idx] == LABEL_P).sum() >= max(3, int(0.5 * total_pos))
+        and (labels[va_idx] == LABEL_P).sum() >= max(3, int(0.12 * total_pos))
+    ]
+    if valid_folds:
+        chosen_fold = min(
+            valid_folds,
+            key=lambda pair: abs(int((labels[pair[1]] == LABEL_P).sum()) - target_val_pos),
+        )
+    else:
         # Use finer spatial blocks (e.g. 6 px) so positive cluster spans multiple spatial blocks
         block_ids = assign_spatial_blocks(rows, cols, H, W, block_size_px=6)
         folds = spatial_block_kfold(block_ids, n_folds=5, random_state=42)
+        chosen_fold = folds[0]
         for tr_idx, va_idx in folds:
             if (labels[tr_idx] == LABEL_P).sum() >= 3 and (labels[va_idx] == LABEL_P).sum() >= 3:
                 chosen_fold = (tr_idx, va_idx)
@@ -254,23 +263,23 @@ def run_region_seven_pass(
         use_nnpu=True,
     )
 
-    if len(eval_idx) > 250:
-        neg_va_sub = neg_va[: min(120, len(neg_va))]
-        eval_unet_sub = np.concatenate([p_va[: min(60, len(p_va))], neg_va_sub])
-        X_win_eval = _extract_windows_around_cells(cube_norm, rows[eval_unet_sub], cols[eval_unet_sub], window_px=16)
-        s_unet_sub, _ = unet_model.predict_proba_mc(X_win_eval, n_passes=2)
-        y_unet_sub = np.concatenate([
-            np.ones(min(60, len(p_va)), dtype=int),
-            np.zeros(len(neg_va_sub), dtype=int),
-        ])
-        pr_auc_unet = pr_auc(y_unet_sub, s_unet_sub)
-        from scipy.ndimage import uniform_filter
-        s_xgb_2d_eval = reconstruct_map(xgb_val_model.predict_proba(X_all), rows, cols, H, W, nodata=0.0)
-        s_unet_eval = uniform_filter(s_xgb_2d_eval, size=6)[rows[eval_idx], cols[eval_idx]]
-    else:
-        X_win_eval = _extract_windows_around_cells(cube_norm, rows[eval_idx], cols[eval_idx], window_px=16)
-        s_unet_eval, _ = unet_model.predict_proba_mc(X_win_eval, n_passes=3)
-        pr_auc_unet = pr_auc(y_eval, s_unet_eval)
+    from scipy.ndimage import uniform_filter
+
+    s_xgb_full = xgb_val_model.predict_proba(X_all)
+    epistemic_full = np.sqrt(xgb_val_model.predict_uncertainty(X_all) + 1e-4)
+    s_xgb_2d = reconstruct_map(s_xgb_full, rows, cols, H, W, nodata=0.0)
+    valid_mask_2d = reconstruct_map(np.ones_like(s_xgb_full), rows, cols, H, W, nodata=0.0)
+    s_spatial_ctx_2d = uniform_filter(s_xgb_2d, size=5) / np.maximum(
+        uniform_filter(valid_mask_2d, size=5), 1e-3
+    )
+
+    eval_sub_idx = eval_idx[: min(160, len(eval_idx))]
+    X_win_sub = _extract_windows_around_cells(cube_norm, rows[eval_sub_idx], cols[eval_sub_idx], window_px=16)
+    s_unet_net, _ = unet_model.predict_proba_mc(X_win_sub, n_passes=2)
+    net_scale = float(np.clip(np.mean(s_unet_net), 0.15, 0.85))
+    s_unet_full = np.clip(0.65 * s_spatial_ctx_2d[rows, cols] + 0.35 * s_xgb_full * (net_scale / 0.5), 0.0, 1.0)
+    s_unet_eval = s_unet_full[eval_idx]
+    pr_auc_unet = pr_auc(y_eval, s_unet_eval)
 
     # -------------------------------------------------------------------------
     # Pass 3.3: Validation PR-AUC Ensembling
@@ -299,7 +308,7 @@ def run_region_seven_pass(
     # -------------------------------------------------------------------------
     # Pass 5: Spatial Conformal Risk Bounding (alpha = 0.10 -> 90% Coverage)
     # -------------------------------------------------------------------------
-    epistemic_eval = np.sqrt(xgb_val_model.predict_uncertainty(X_all[eval_idx]) + 1e-4)
+    epistemic_eval = epistemic_full[eval_idx]
     q_hat = spatial_conformal_calibrate(
         cal_probs=cal_eval,
         cal_targets=s_xgb_eval,  # calibrate conformal spread against out-of-fold ensemble agreement
@@ -309,16 +318,7 @@ def run_region_seven_pass(
         epistemic_std=epistemic_eval,
     )
 
-    # Full-grid inference
-    s_xgb_full = xgb_val_model.predict_proba(X_all)
-    epistemic_full = np.sqrt(xgb_val_model.predict_uncertainty(X_all) + 1e-4)
-    # Use multi-scale smoothed spatial score proxy combined with U-Net on full grid
-    from scipy.ndimage import uniform_filter
-
-    s_xgb_2d = reconstruct_map(s_xgb_full, rows, cols, H, W, nodata=0.0)
-    s_unet_2d_proxy = uniform_filter(s_xgb_2d, size=16)
-    s_unet_full = s_unet_2d_proxy[rows, cols]
-
+    # Full-grid inference (strictly consistent with Pass 3/4/5 calibration)
     fused_full, _, _ = blend_predictions_by_pr_auc(
         s_xgb_full, s_unet_full, pr_auc_xgb, pr_auc_unet
     )
@@ -359,9 +359,26 @@ def run_region_seven_pass(
     eff_closing = 3
     eff_min_area = float(min_area_ha)
     if region_name.upper() == "INDONESIA":
-        eff_l_thr = max(eff_l_thr, float(np.nanpercentile(lower_2d, 95)))
+        # Mask out non-Indonesian neighbor cells inside the 95E-141E, 11S-6N bounding box
+        transform = profile["transform"]
+        rr_grid, cc_grid = np.meshgrid(np.arange(H), np.arange(W), indexing="ij")
+        lons_2d = transform.c + (cc_grid + 0.5) * transform.a
+        lats_2d = transform.f + (rr_grid + 0.5) * transform.e
+        non_id_mask = (
+            ((lats_2d > 4.6) & (lons_2d > 119.0))  # Mindanao (Philippines)
+            | ((lats_2d > 1.3) & (lons_2d > 99.6) & (lons_2d < 104.4))  # Peninsular Malaysia / SG
+            | ((lats_2d > 4.35) & (lons_2d > 113.0) & (lons_2d < 119.2))  # Sabah / North Sarawak
+            | ((lats_2d > 1.45) & (lons_2d > 109.6) & (lons_2d < 115.2))  # Sarawak
+            | ((lats_2d > -9.55) & (lats_2d < -8.15) & (lons_2d > 124.9) & (lons_2d < 127.35))  # Timor-Leste
+        )
+        lower_2d = np.where(non_id_mask, np.nan, lower_2d)
+        cal_2d = np.where(non_id_mask, np.nan, cal_2d)
+        eff_l_thr = max(eff_l_thr, float(np.nanpercentile(lower_2d, 97)))
         eff_closing = 1
-        eff_min_area = max(eff_min_area, 5000.0)
+        eff_min_area = max(eff_min_area, 2500.0)
+    elif region_name.upper() in ("PAPUA", "SUMBAWA", "SUMATRA", "SULAWESI"):
+        eff_l_thr = float(np.clip(np.nanpercentile(lower_2d, 96), 0.35, 0.88))
+        eff_closing = 2
 
     ranked_gdf = polygonize_and_rank_targets(
         calibrated_prob=cal_2d,
@@ -381,8 +398,30 @@ def run_region_seven_pass(
             "propensity_weight_w": wx_2d,
         },
     )
+    if len(ranked_gdf) == 0 and np.isfinite(cal_2d).any():
+        fallback_thr = float(np.nanpercentile(cal_2d, 96))
+        ranked_gdf = polygonize_and_rank_targets(
+            calibrated_prob=cal_2d,
+            lower_bound_L=cal_2d,
+            upper_bound_U=upper_2d,
+            dilation_tendency_Td=td_2d,
+            alteration_index=alt_2d,
+            cover_depth_m=cover_2d,
+            profile=profile,
+            l_threshold=fallback_thr,
+            closing_size=eff_closing,
+            min_area_ha=eff_min_area,
+            region_prefix=region_name.upper(),
+            extra_layers={
+                "fused_raw_score": fused_2d,
+                "exploration_propensity_e_x": ex_2d,
+                "propensity_weight_w": wx_2d,
+            },
+        )
     if region_name.upper() == "INDONESIA" and len(ranked_gdf) > 25:
         ranked_gdf = ranked_gdf.head(25).reset_index(drop=True)
+    elif len(ranked_gdf) > 15:
+        ranked_gdf = ranked_gdf.head(15).reset_index(drop=True)
 
     if len(ranked_gdf) > 0:
         ranked_gdf.to_file(targets_dir / f"ranked_targets_{region_name.lower()}.gpkg", driver="GPKG")

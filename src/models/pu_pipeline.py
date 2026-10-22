@@ -250,6 +250,14 @@ _FORBIDDEN_RAW_BAND_PATTERNS: tuple[str, ...] = (
     "dn_",
     "radiance_",
     "reflectance_band",
+    "kelian",
+    "georima",
+    "mrds",
+    "minedex",
+    "mine_dist",
+    "deposit_dist",
+    "regional_fe",
+    "regional_coal",
 )
 
 

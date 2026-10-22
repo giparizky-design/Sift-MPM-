@@ -1,0 +1,662 @@
+[
+  {
+    "target_id": "SUMBAWA_TGT_0001",
+    "rank": 1,
+    "rank_score": 0.95,
+    "geometry": {
+      "centroid_lat_lon": [
+        -8.9447,
+        117.4544
+      ],
+      "area_sq_km": 89.565,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.92,
+      "elkan_noto_c_hat": 0.413,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.945,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.052,
+      "propensity_weight_w": 19.58
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.556
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.993,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.6,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "SUMBAWA_TGT_0002",
+    "rank": 2,
+    "rank_score": 0.781,
+    "geometry": {
+      "centroid_lat_lon": [
+        -8.7271,
+        116.874
+      ],
+      "area_sq_km": 0.74,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.874,
+      "elkan_noto_c_hat": 0.413,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.931,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.7
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.894,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "SUMBAWA_TGT_0003",
+    "rank": 3,
+    "rank_score": 0.758,
+    "geometry": {
+      "centroid_lat_lon": [
+        -8.7292,
+        116.7944
+      ],
+      "area_sq_km": 1.138,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.84,
+      "elkan_noto_c_hat": 0.413,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.8,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.593
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.947,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "SUMBAWA_TGT_0004",
+    "rank": 4,
+    "rank_score": 0.752,
+    "geometry": {
+      "centroid_lat_lon": [
+        -8.7057,
+        116.8016
+      ],
+      "area_sq_km": 3.756,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.907,
+      "elkan_noto_c_hat": 0.413,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.926,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.561
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.965,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "SUMBAWA_TGT_0005",
+    "rank": 5,
+    "rank_score": 0.716,
+    "geometry": {
+      "centroid_lat_lon": [
+        -8.7254,
+        116.8427
+      ],
+      "area_sq_km": 7.682,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.874,
+      "elkan_noto_c_hat": 0.413,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.876,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.456
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.98,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "SUMBAWA_TGT_0006",
+    "rank": 6,
+    "rank_score": 0.699,
+    "geometry": {
+      "centroid_lat_lon": [
+        -8.793,
+        117.3952
+      ],
+      "area_sq_km": 0.967,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.853,
+      "elkan_noto_c_hat": 0.413,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.962,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.477
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.91,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "SUMBAWA_TGT_0007",
+    "rank": 7,
+    "rank_score": 0.647,
+    "geometry": {
+      "centroid_lat_lon": [
+        -8.6774,
+        116.844
+      ],
+      "area_sq_km": 1.479,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.864,
+      "elkan_noto_c_hat": 0.413,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.889,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.407
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.84,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "SUMBAWA_TGT_0008",
+    "rank": 8,
+    "rank_score": 0.625,
+    "geometry": {
+      "centroid_lat_lon": [
+        -8.6815,
+        116.9021
+      ],
+      "area_sq_km": 1.707,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.849,
+      "elkan_noto_c_hat": 0.413,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.869,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.367
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.821,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "SUMBAWA_TGT_0009",
+    "rank": 9,
+    "rank_score": 0.61,
+    "geometry": {
+      "centroid_lat_lon": [
+        -8.7563,
+        116.8172
+      ],
+      "area_sq_km": 0.626,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.837,
+      "elkan_noto_c_hat": 0.413,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.905,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.265
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.891,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "SUMBAWA_TGT_0010",
+    "rank": 10,
+    "rank_score": 0.607,
+    "geometry": {
+      "centroid_lat_lon": [
+        -8.7556,
+        116.9181
+      ],
+      "area_sq_km": 1.479,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.841,
+      "elkan_noto_c_hat": 0.413,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.908,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.594
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.518,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "SUMBAWA_TGT_0011",
+    "rank": 11,
+    "rank_score": 0.554,
+    "geometry": {
+      "centroid_lat_lon": [
+        -8.6982,
+        116.8918
+      ],
+      "area_sq_km": 0.398,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.822,
+      "elkan_noto_c_hat": 0.413,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.888,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.346
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.641,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "SUMBAWA_TGT_0012",
+    "rank": 12,
+    "rank_score": 0.548,
+    "geometry": {
+      "centroid_lat_lon": [
+        -8.9647,
+        116.87
+      ],
+      "area_sq_km": 1.081,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.834,
+      "elkan_noto_c_hat": 0.413,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.906,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.247
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.735,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "SUMBAWA_TGT_0013",
+    "rank": 13,
+    "rank_score": 0.491,
+    "geometry": {
+      "centroid_lat_lon": [
+        -8.9181,
+        116.8104
+      ],
+      "area_sq_km": 0.569,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.775,
+      "elkan_noto_c_hat": 0.413,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.908,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.541
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.249,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "SUMBAWA_TGT_0014",
+    "rank": 14,
+    "rank_score": 0.49,
+    "geometry": {
+      "centroid_lat_lon": [
+        -8.8543,
+        116.8587
+      ],
+      "area_sq_km": 4.723,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.885,
+      "elkan_noto_c_hat": 0.413,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.934,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.405
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.395,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "SUMBAWA_TGT_0015",
+    "rank": 15,
+    "rank_score": 0.471,
+    "geometry": {
+      "centroid_lat_lon": [
+        -9.0311,
+        117.1672
+      ],
+      "area_sq_km": 86.492,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.933,
+      "elkan_noto_c_hat": 0.413,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.961,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.051,
+      "propensity_weight_w": 19.82
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.109
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.474,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.7,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  }
+]

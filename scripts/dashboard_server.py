@@ -412,14 +412,75 @@ def _load_region_bundle(region: str) -> dict:
         heatmap_b64, idn_bounds = _raster_to_rgba_base64(prosp_tif, band=1, cmap="inferno")
         conformal_b64, _ = _raster_to_rgba_base64(conf_tif, band=1, cmap="emerald")
 
+        # Also bundle all 5 HD Camp-Scale Indonesian Districts (Kelian, Grasberg, Batu Hijau, Martabe, Minahasa)
+        hd_sub_overlays = []
+        for hd_code, hd_label in [
+            ("BORNEO", "Kelian HD (50m East Kalimantan)"),
+            ("PAPUA", "Grasberg–Wabu HD (200m Papua)"),
+            ("SUMBAWA", "Batu Hijau–Elang HD (230m Sumbawa)"),
+            ("SUMATRA", "Martabe–Toru HD (240m North Sumatra)"),
+            ("SULAWESI", "Toka Tindung–Minahasa HD (290m North Sulawesi)"),
+        ]:
+            hd_dir = ROOT_DIR / "outputs" / f"seven_pass_{hd_code.lower()}"
+            hd_prosp = hd_dir / "maps" / "calibrated_prospectivity.tif"
+            hd_conf = hd_dir / "maps" / "conformal_bounds_90ci.tif"
+            hd_gpkg = hd_dir / "targets" / f"ranked_targets_{hd_code.lower()}.gpkg"
+            hd_cards_p = hd_dir / "targets" / "site_cards.json"
+            if hd_prosp.exists() and hd_conf.exists():
+                hm_png, hm_bnds = _raster_to_rgba_base64(hd_prosp, band=1, cmap="inferno", alpha_scale=0.85)
+                cf_png, _ = _raster_to_rgba_base64(hd_conf, band=1, cmap="emerald", alpha_scale=0.85)
+                hd_sub_overlays.append(
+                    {
+                        "code": hd_code,
+                        "label": hd_label,
+                        "bounds": hm_bnds,
+                        "heatmap_png": hm_png,
+                        "conformal_l_png": cf_png,
+                    }
+                )
+            if hd_gpkg.exists():
+                gdf_hd = gpd.read_file(hd_gpkg).to_crs("EPSG:4326")
+                hd_cards = json.loads(hd_cards_p.read_text()) if hd_cards_p.exists() else []
+                hd_card_map = {c["target_id"]: c for c in hd_cards}
+                for idx_h, row_h in gdf_hd.head(8).iterrows():
+                    tid_h = str(row_h.get("target_id", f"{hd_code}_TGT_{idx_h+1:04d}"))
+                    geom_h = row_h.geometry
+                    c_h = geom_h.centroid
+                    d_deg_h = np.hypot(mine_coords[:, 0] - c_h.x, mine_coords[:, 1] - c_h.y) if len(mine_coords) > 0 else np.array([0.05])
+                    hits_h = int((d_deg_h <= 0.035).sum())
+                    predicted_features.append(
+                        {
+                            "type": "Feature",
+                            "geometry": mapping(geom_h),
+                            "properties": {
+                                "target_id": tid_h,
+                                "rank": int(row_h.get("rank", idx_h + 1)),
+                                "rank_score": round(float(row_h.get("rank_score", 0.0)), 3),
+                                "area_sq_km": round(float(row_h.get("area_sq_km", 0.0)), 3),
+                                "calibrated_deposit_prob": round(float(row_h.get("calibrated_deposit_prob", 0.0)), 3),
+                                "lower_bound_L": round(float(row_h.get("lower_bound_L", 0.0)), 3),
+                                "upper_bound_U": round(float(row_h.get("upper_bound_U", 1.0)), 3),
+                                "dilation_tendency_Td_max": round(float(row_h.get("dilation_tendency_Td_max", 0.0)), 3),
+                                "regolith_cover_depth_m": round(float(row_h.get("regolith_cover_depth_m", 0.0)), 1),
+                                "exploration_propensity_e_x": round(float(row_h.get("exploration_propensity_e_x", 0.1)), 3),
+                                "propensity_weight_w": round(float(row_h.get("propensity_weight_w", 10.0)), 2),
+                                "actual_mines_hit": hits_h,
+                                "nearest_actual_mine_m": round(float(d_deg_h.min()) * 111_000.0, 1),
+                                "classification": f"{hd_label} ({'Known Deposit Hit' if hits_h > 0 else 'HD Step-Out Target'})",
+                                "site_card": hd_card_map.get(tid_h),
+                            },
+                        }
+                    )
+
         return {
             "region": "INDONESIA_GEORIMA",
-            "title": "National Indonesia 7-Pass Prospectivity & ESDM GeoRIMA Atlas (12,020 Geological/Mine Nodes across 92 Layers)",
+            "title": "National Indonesia HD (544×1472 @ 3.45km + 5 HD 50m–240m Camp Zooms) & ESDM GeoRIMA Atlas",
             "crs": "EPSG:4326 (95°E–141°E, 11°S–6°N)",
             "center": [-2.2, 118.0],
             "zoom": 5,
             "bounds": idn_bounds or [[-11.0, 95.0], [6.0, 141.0]],
             "heatmap_bounds": idn_bounds or [[-11.0, 95.0], [6.0, 141.0]],
+            "hd_sub_overlays": hd_sub_overlays,
             "summary": summary,
             "cv_folds": cv_rows,
             "blind_holdout": holdout,
@@ -432,6 +493,139 @@ def _load_region_bundle(region: str) -> dict:
             },
             "faults_geojson": faults_geojson,
             "site_cards": site_cards[:35],
+            "heatmap_png": heatmap_b64,
+            "conformal_l_png": conformal_b64,
+        }
+
+    elif region_up in ("PAPUA", "SUMBAWA", "SUMATRA", "SULAWESI"):
+        hd_meta = {
+            "PAPUA": {
+                "title": "Papua Central Range HD — Grasberg–Wabu Porphyry Cu-Au Camp (200m HD)",
+                "center": [-4.05, 137.15],
+                "zoom": 11,
+                "bbox": (136.85, -4.35, 137.45, -3.75),
+            },
+            "SUMBAWA": {
+                "title": "Sumbawa Arc HD — Batu Hijau–Elang Porphyry Cu-Au Camp (230m HD)",
+                "center": [-8.85, 117.15],
+                "zoom": 10,
+                "bbox": (116.70, -9.10, 117.60, -8.50),
+            },
+            "SUMATRA": {
+                "title": "North Sumatra HD — Martabe–Toru Great Sumatran Fault Au-Ag Camp (240m HD)",
+                "center": [1.52, 99.20],
+                "zoom": 11,
+                "bbox": (98.90, 1.20, 99.60, 1.90),
+            },
+            "SULAWESI": {
+                "title": "North Sulawesi HD — Toka Tindung–Minahasa Epithermal Au-Cu Camp (290m HD)",
+                "center": [1.20, 124.85],
+                "zoom": 10,
+                "bbox": (124.40, 0.80, 125.25, 1.65),
+            },
+        }[region_up]
+        code_low = region_up.lower()
+        out_dir = ROOT_DIR / "outputs" / f"seven_pass_{code_low}"
+        summary_path = out_dir / "seven_pass_summary.json"
+        cards_path = out_dir / "targets" / "site_cards.json"
+        targets_gpkg = out_dir / "targets" / f"ranked_targets_{code_low}.gpkg"
+        prosp_tif = out_dir / "maps" / "calibrated_prospectivity.tif"
+        conf_tif = out_dir / "maps" / "conformal_bounds_90ci.tif"
+        cv_csv = out_dir / "spatial_cv_metrics.csv"
+        bh_json = out_dir / "blind_holdout.json"
+
+        summary = json.loads(summary_path.read_text()) if summary_path.exists() else {}
+        site_cards = json.loads(cards_path.read_text()) if cards_path.exists() else []
+        cv_rows = pd.read_csv(cv_csv).to_dict(orient="records") if cv_csv.exists() else []
+        holdout = json.loads(bh_json.read_text()) if bh_json.exists() else {}
+
+        lon0, lat0, lon1, lat1 = hd_meta["bbox"]
+        actual_mines = []
+        all_nodes_csv = ROOT_DIR / "data" / "indonesia" / "georima_all_indonesia_nodes.csv"
+        if all_nodes_csv.exists():
+            df_geo = pd.read_csv(all_nodes_csv)
+            sub = df_geo[
+                (df_geo["lon"] >= lon0 - 0.1)
+                & (df_geo["lon"] <= lon1 + 0.1)
+                & (df_geo["lat"] >= lat0 - 0.1)
+                & (df_geo["lat"] <= lat1 + 0.1)
+            ]
+            for _, r in sub.iterrows():
+                actual_mines.append(
+                    {
+                        "id": str(r.get("georima_id", ""))[:16],
+                        "name": f"GeoRIMA {r.get('commodity_label', 'Node')} ({r.get('island_region', '')})",
+                        "commodity": f"{r.get('commodity_label', '')} [{r.get('layer_code', '')}]",
+                        "resource": str(r.get("resource_group", "OTHER")),
+                        "layer": str(r.get("layer_code", "")),
+                        "stage": f"Official ESDM GeoRIMA ({r.get('potensi_type', '').upper()})",
+                        "type": str(r.get("geological_role", "")),
+                        "source": "ESDM GeoRIMA National Atlas",
+                        "lat": round(float(r["lat"]), 5),
+                        "lon": round(float(r["lon"]), 5),
+                    }
+                )
+
+        mine_coords = np.array([[m["lon"], m["lat"]] for m in actual_mines], dtype=np.float64) if actual_mines else np.empty((0, 2))
+        captured_idx: set[int] = set()
+        predicted_features = []
+        if targets_gpkg.exists():
+            gdf_t = gpd.read_file(targets_gpkg).to_crs("EPSG:4326")
+            card_by_id = {c["target_id"]: c for c in site_cards}
+            for idx, row in gdf_t.iterrows():
+                tid = str(row.get("target_id", f"{region_up}_TGT_{idx+1:04d}"))
+                geom = row.geometry
+                c_ll = geom.centroid
+                hits = 0
+                nearest_m = 2500.0
+                if len(mine_coords) > 0:
+                    d_deg = np.hypot(mine_coords[:, 0] - c_ll.x, mine_coords[:, 1] - c_ll.y)
+                    hit_mask = d_deg <= 0.04
+                    hits = int(hit_mask.sum())
+                    captured_idx.update(np.where(hit_mask)[0].tolist())
+                    nearest_m = round(float(d_deg.min()) * 111_000.0, 1)
+                predicted_features.append(
+                    {
+                        "type": "Feature",
+                        "geometry": mapping(geom),
+                        "properties": {
+                            "target_id": tid,
+                            "rank": int(row.get("rank", idx + 1)),
+                            "rank_score": round(float(row.get("rank_score", 0.0)), 3),
+                            "area_sq_km": round(float(row.get("area_sq_km", 0.0)), 3),
+                            "calibrated_deposit_prob": round(float(row.get("calibrated_deposit_prob", 0.0)), 3),
+                            "lower_bound_L": round(float(row.get("lower_bound_L", 0.0)), 3),
+                            "upper_bound_U": round(float(row.get("upper_bound_U", 1.0)), 3),
+                            "dilation_tendency_Td_max": round(float(row.get("dilation_tendency_Td_max", 0.0)), 3),
+                            "regolith_cover_depth_m": round(float(row.get("regolith_cover_depth_m", 0.0)), 1),
+                            "exploration_propensity_e_x": round(float(row.get("exploration_propensity_e_x", 0.1)), 3),
+                            "propensity_weight_w": round(float(row.get("propensity_weight_w", 10.0)), 2),
+                            "actual_mines_hit": hits,
+                            "nearest_actual_mine_m": nearest_m,
+                            "classification": "Known Deposit Feeder Hit" if hits > 0 else "HD Camp Step-Out Target",
+                            "site_card": card_by_id.get(tid),
+                        },
+                    }
+                )
+
+        heatmap_b64, bounds = _raster_to_rgba_base64(prosp_tif, band=1, cmap="inferno")
+        conformal_b64, _ = _raster_to_rgba_base64(conf_tif, band=1, cmap="emerald")
+        return {
+            "region": region_up,
+            "title": hd_meta["title"],
+            "crs": "EPSG:4326 (AWS Terrarium / Copernicus SRTM HD)",
+            "center": hd_meta["center"],
+            "zoom": hd_meta["zoom"],
+            "bounds": bounds,
+            "summary": summary,
+            "cv_folds": cv_rows,
+            "blind_holdout": holdout,
+            "actual_mines": actual_mines,
+            "total_actual_mines": len(actual_mines),
+            "total_mines_captured": len(captured_idx),
+            "predicted_targets_geojson": {"type": "FeatureCollection", "features": predicted_features},
+            "faults_geojson": {"type": "FeatureCollection", "features": []},
+            "site_cards": site_cards,
             "heatmap_png": heatmap_b64,
             "conformal_l_png": conformal_b64,
         }
@@ -621,6 +815,10 @@ def _recompute_targets_live(
         data_dir = ROOT_DIR / "data" / "indonesia" / "processed"
         out_dir = ROOT_DIR / "outputs" / "seven_pass_indonesia"
         prefix = "INDONESIA"
+    elif region_up in ("PAPUA", "SUMBAWA", "SUMATRA", "SULAWESI"):
+        data_dir = ROOT_DIR / "data" / region_up.lower() / "processed"
+        out_dir = ROOT_DIR / "outputs" / f"seven_pass_{region_up.lower()}"
+        prefix = region_up
     else:
         data_dir = ROOT_DIR / "data" / "borneo" / "processed"
         out_dir = ROOT_DIR / "outputs" / "seven_pass_borneo"

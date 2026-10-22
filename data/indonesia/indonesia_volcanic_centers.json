@@ -1,194 +1,929 @@
 [
   {
-    "name": "Seulawah Agam (Miwah Au-Ag Arc)",
-    "lon": 95.658,
-    "lat": 5.448,
-    "arc": "Sumatra"
+    "name": "Peuet Sague",
+    "lon": 96.289,
+    "lat": 4.903,
+    "elevation_m": 2785,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Sinabung-Toba Caldera Complex",
+    "name": "Telong, Bur ni",
+    "lon": 96.821,
+    "lat": 4.769,
+    "elevation_m": 2617,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Singkut",
+    "lon": 98.5127,
+    "lat": 3.2379,
+    "elevation_m": 2181,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Sinabung",
     "lon": 98.392,
     "lat": 3.17,
-    "arc": "Sumatra"
+    "elevation_m": 2460,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Sorikmarapi (Martabe High-Sulfidation Au)",
-    "lon": 99.539,
-    "lat": 0.686,
-    "arc": "Sumatra"
+    "name": "Malintang",
+    "lon": 99.6628,
+    "lat": 0.4756,
+    "elevation_m": 1988,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Marapi-Talang Magmatic Belt",
+    "name": "Sorikmarapi",
+    "lon": 99.5409,
+    "lat": 0.6834,
+    "elevation_m": 2145,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Talakmau",
+    "lon": 99.984,
+    "lat": 0.0787,
+    "elevation_m": 2911,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Marapi",
     "lon": 100.474,
-    "lat": -0.381,
-    "arc": "Sumatra"
+    "lat": -0.38,
+    "elevation_m": 2885,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Kerinci-Seblat Epithermal Corridor",
+    "name": "Tandikat-Singgalang",
+    "lon": 100.3192,
+    "lat": -0.4311,
+    "elevation_m": 2879,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Talang",
+    "lon": 100.681,
+    "lat": -0.979,
+    "elevation_m": 2575,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Kerinci",
     "lon": 101.264,
     "lat": -1.697,
-    "arc": "Sumatra"
+    "elevation_m": 3800,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Kaba-Lebong Donok Gold District",
-    "lon": 102.615,
-    "lat": -3.522,
-    "arc": "Sumatra"
+    "name": "Sumbing",
+    "lon": 101.728,
+    "lat": -2.414,
+    "elevation_m": 2507,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Rajabasa-Way Linggo Epithermal",
-    "lon": 105.625,
-    "lat": -5.782,
-    "arc": "Sumatra"
+    "name": "Kaba",
+    "lon": 102.6261,
+    "lat": -3.5156,
+    "elevation_m": 1962,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Halimun-Pongkor Epithermal Dome",
-    "lon": 106.55,
-    "lat": -6.72,
-    "arc": "Java"
+    "name": "Patah",
+    "lon": 103.306,
+    "lat": -4.257,
+    "elevation_m": 2836,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Tangkuban Parahu-Papandayan Hydrothermal",
+    "name": "Dempo",
+    "lon": 103.121,
+    "lat": -4.016,
+    "elevation_m": 3142,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Ranau",
+    "lon": 103.925,
+    "lat": -4.871,
+    "elevation_m": 1854,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Suoh",
+    "lon": 104.27,
+    "lat": -5.25,
+    "elevation_m": 1000,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Krakatau",
+    "lon": 105.4233,
+    "lat": -6.1009,
+    "elevation_m": 285,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Pulosari",
+    "lon": 105.978,
+    "lat": -6.343,
+    "elevation_m": 1324,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Karang",
+    "lon": 106.05,
+    "lat": -6.268,
+    "elevation_m": 1768,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Perbakti-Gagak",
+    "lon": 106.675,
+    "lat": -6.75,
+    "elevation_m": 1726,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Salak",
+    "lon": 106.733,
+    "lat": -6.716,
+    "elevation_m": 2218,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Gede-Pangrango",
+    "lon": 106.983,
+    "lat": -6.786,
+    "elevation_m": 3026,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Patuha",
+    "lon": 107.4,
+    "lat": -7.162,
+    "elevation_m": 2422,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Tangkuban Parahu",
     "lon": 107.6,
     "lat": -6.77,
-    "arc": "Java"
+    "elevation_m": 2084,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Slamet-Dieng Geothermal Complex",
+    "name": "Papandayan",
+    "lon": 107.7306,
+    "lat": -7.3175,
+    "elevation_m": 2643,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Tampomas",
+    "lon": 107.9612,
+    "lat": -6.7639,
+    "elevation_m": 1690,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Guntur",
+    "lon": 107.841,
+    "lat": -7.143,
+    "elevation_m": 2251,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Galunggung",
+    "lon": 108.058,
+    "lat": -7.25,
+    "elevation_m": 2168,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Talagabodas",
+    "lon": 108.07,
+    "lat": -7.208,
+    "elevation_m": 2201,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Ciremai",
+    "lon": 108.408,
+    "lat": -6.895,
+    "elevation_m": 3039,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Slamet",
     "lon": 109.208,
     "lat": -7.242,
-    "arc": "Java"
+    "elevation_m": 3428,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Merapi-Pacitan Porphyry Belt",
+    "name": "Dieng Volcanic Complex",
+    "lon": 109.879,
+    "lat": -7.2,
+    "elevation_m": 2565,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Sundoro",
+    "lon": 109.997,
+    "lat": -7.3014,
+    "elevation_m": 3149,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Sumbing",
+    "lon": 110.0747,
+    "lat": -7.3819,
+    "elevation_m": 3370,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Merbabu",
+    "lon": 110.44,
+    "lat": -7.454,
+    "elevation_m": 3118,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Merapi",
     "lon": 110.446,
     "lat": -7.54,
-    "arc": "Java"
+    "elevation_m": 2910,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Semeru-Bromo-Tengger Complex",
+    "name": "Lawu",
+    "lon": 111.192,
+    "lat": -7.625,
+    "elevation_m": 3265,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Kawi-Butak",
+    "lon": 112.45,
+    "lat": -7.92,
+    "elevation_m": 2651,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Kelud",
+    "lon": 112.314,
+    "lat": -7.935,
+    "elevation_m": 1730,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Penanggungan",
+    "lon": 112.62,
+    "lat": -7.616,
+    "elevation_m": 1631,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Arjuno-Welirang",
+    "lon": 112.575,
+    "lat": -7.733,
+    "elevation_m": 3343,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Semeru",
     "lon": 112.922,
     "lat": -8.108,
-    "arc": "Java"
+    "elevation_m": 3657,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Ijen-Raung-Tumpangpitu Porphyry Cu-Au",
+    "name": "Tengger Caldera",
+    "lon": 112.95,
+    "lat": -7.942,
+    "elevation_m": 2329,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Lamongan",
+    "lon": 113.341,
+    "lat": -7.981,
+    "elevation_m": 1641,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Iyang-Argapura",
+    "lon": 113.57,
+    "lat": -7.97,
+    "elevation_m": 3088,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Raung",
+    "lon": 114.056,
+    "lat": -8.119,
+    "elevation_m": 3260,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Baluran",
+    "lon": 114.37,
+    "lat": -7.85,
+    "elevation_m": 1247,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Ijen",
     "lon": 114.242,
     "lat": -8.058,
-    "arc": "Java"
+    "elevation_m": 2769,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Rinjani-Pelangan Epithermal Belt (Lombok)",
-    "lon": 116.46,
+    "name": "Buyan-Bratan",
+    "lon": 115.133,
+    "lat": -8.283,
+    "elevation_m": 2244,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Batur",
+    "lon": 115.3775,
+    "lat": -8.2403,
+    "elevation_m": 1711,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Agung",
+    "lon": 115.508,
+    "lat": -8.343,
+    "elevation_m": 2997,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Rinjani",
+    "lon": 116.47,
     "lat": -8.42,
-    "arc": "Nusa Tenggara"
+    "elevation_m": 3726,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Tambora-Batu Hijau-Elang Porphyry Belt (Sumbawa)",
-    "lon": 117.99,
+    "name": "Tambora",
+    "lon": 118.0,
     "lat": -8.25,
-    "arc": "Nusa Tenggara"
+    "elevation_m": 2850,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Hu'u-Onto Porphyry Cu-Au Complex (Dompu)",
-    "lon": 118.45,
-    "lat": -8.75,
-    "arc": "Nusa Tenggara"
+    "name": "Sangeang Api",
+    "lon": 119.07,
+    "lat": -8.2,
+    "elevation_m": 1912,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Kelimutu-Inerie Volcanogenic Belt (Flores)",
+    "name": "Sano, Wai",
+    "lon": 120.0074,
+    "lat": -8.7345,
+    "elevation_m": 1319,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Ranakah",
+    "lon": 120.5302,
+    "lat": -8.637,
+    "elevation_m": 2288,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Inierie",
+    "lon": 120.95,
+    "lat": -8.875,
+    "elevation_m": 2245,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Crustal thickness unknown",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Inielika",
+    "lon": 120.98,
+    "lat": -8.73,
+    "elevation_m": 1559,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Crustal thickness unknown",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Ebulobo",
+    "lon": 121.191,
+    "lat": -8.817,
+    "elevation_m": 2096,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Crustal thickness unknown",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Iya",
+    "lon": 121.641,
+    "lat": -8.891,
+    "elevation_m": 618,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Crustal thickness unknown",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Kelimutu",
     "lon": 121.82,
     "lat": -8.77,
-    "arc": "Nusa Tenggara"
+    "elevation_m": 1639,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Crustal thickness unknown",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Wetar-Lerokis VMS Au-Ag-Cu Island Arc",
-    "lon": 126.25,
-    "lat": -7.8,
-    "arc": "Banda"
+    "name": "Paluweh",
+    "lon": 121.708,
+    "lat": -8.32,
+    "elevation_m": 875,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Crustal thickness unknown",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Kelian-Muro Tertiary Calc-Alkaline Belt",
-    "lon": 115.442,
-    "lat": -0.095,
-    "arc": "Kalimantan"
+    "name": "Egon",
+    "lon": 122.455,
+    "lat": -8.676,
+    "elevation_m": 1661,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Crustal thickness unknown",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Mt Muro-Barito Epithermal Complex",
-    "lon": 114.55,
-    "lat": -0.65,
-    "arc": "Kalimantan"
+    "name": "Lewotobi",
+    "lon": 122.775,
+    "lat": -8.542,
+    "elevation_m": 1703,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Crustal thickness unknown",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Schwaner Batholith Porphyry-Epithermal Belt",
-    "lon": 112.5,
-    "lat": -1.35,
-    "arc": "Kalimantan"
+    "name": "Iliboleng",
+    "lon": 123.258,
+    "lat": -8.342,
+    "elevation_m": 1659,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Crustal thickness unknown",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Meratus Ultramafic-Porphyry Complex",
-    "lon": 115.5,
-    "lat": -3.15,
-    "arc": "Kalimantan"
+    "name": "Lewotolok",
+    "lon": 123.508,
+    "lat": -8.274,
+    "elevation_m": 1431,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Crustal thickness unknown",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Awak Mas-Latimojong Metamorphic-Intrusive Belt",
-    "lon": 120.05,
-    "lat": -3.35,
-    "arc": "Sulawesi"
+    "name": "Ililabalekan",
+    "lon": 123.38,
+    "lat": -8.55,
+    "elevation_m": 1018,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Crustal thickness unknown",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Poboya-Palu Pull-Apart Hydrothermal System",
-    "lon": 119.95,
-    "lat": -0.83,
-    "arc": "Sulawesi"
+    "name": "Iliwerung",
+    "lon": 123.573,
+    "lat": -8.532,
+    "elevation_m": 583,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Crustal thickness unknown",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Pani-Tombulilato Porphyry-Epithermal Belt",
-    "lon": 121.95,
-    "lat": 0.65,
-    "arc": "Sulawesi"
+    "name": "Tara, Batu",
+    "lon": 123.585,
+    "lat": -7.791,
+    "elevation_m": 633,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Oceanic crust (< 15 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Soputan-Toka Tindung Epithermal District",
-    "lon": 124.73,
+    "name": "Sirung",
+    "lon": 124.1306,
+    "lat": -8.4972,
+    "elevation_m": 1347,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Crustal thickness unknown",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Wurlali",
+    "lon": 128.675,
+    "lat": -7.125,
+    "elevation_m": 868,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Oceanic crust (< 15 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Teon",
+    "lon": 129.144,
+    "lat": -6.976,
+    "elevation_m": 728,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Oceanic crust (< 15 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Nila",
+    "lon": 129.5,
+    "lat": -6.73,
+    "elevation_m": 781,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Oceanic crust (< 15 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Serua",
+    "lon": 130.017,
+    "lat": -6.312,
+    "elevation_m": 608,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Oceanic crust (< 15 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Manuk",
+    "lon": 130.303,
+    "lat": -5.543,
+    "elevation_m": 257,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Oceanic crust (< 15 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Banda Api",
+    "lon": 129.881,
+    "lat": -4.523,
+    "elevation_m": 596,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Oceanic crust (< 15 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Colo",
+    "lon": 121.601,
+    "lat": -0.162,
+    "elevation_m": 404,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Ambang",
+    "lon": 124.42,
+    "lat": 0.75,
+    "elevation_m": 1795,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Soputan",
+    "lon": 124.737,
     "lat": 1.112,
-    "arc": "Sulawesi"
+    "elevation_m": 1785,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Karangetang-Sangihe Island Arc",
+    "name": "Lokon-Empung",
+    "lon": 124.7992,
+    "lat": 1.3644,
+    "elevation_m": 1580,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Mahawu",
+    "lon": 124.865,
+    "lat": 1.352,
+    "elevation_m": 1299,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Klabat",
+    "lon": 125.031,
+    "lat": 1.454,
+    "elevation_m": 1968,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Tangkoko-Duasudara",
+    "lon": 125.185,
+    "lat": 1.518,
+    "elevation_m": 1334,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Ruang",
+    "lon": 125.3671,
+    "lat": 2.3058,
+    "elevation_m": 703,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Oceanic crust (< 15 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Karangetang",
     "lon": 125.407,
     "lat": 2.781,
-    "arc": "Sulawesi"
+    "elevation_m": 1797,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Oceanic crust (< 15 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Gamkonora-Gosowong Epithermal Au-Ag District",
+    "name": "Banua Wuhu",
+    "lon": 125.4422,
+    "lat": 3.1463,
+    "elevation_m": -5,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Oceanic crust (< 15 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Awu",
+    "lon": 125.447,
+    "lat": 3.689,
+    "elevation_m": 1318,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Oceanic crust (< 15 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Tarakan",
+    "lon": 127.825,
+    "lat": 1.832,
+    "elevation_m": 317,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Oceanic crust (< 15 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Dukono",
+    "lon": 127.8783,
+    "lat": 1.6992,
+    "elevation_m": 1273,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Oceanic crust (< 15 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Tobaru",
+    "lon": 127.67,
+    "lat": 1.63,
+    "elevation_m": 1035,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Oceanic crust (< 15 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Ibu",
+    "lon": 127.6324,
+    "lat": 1.4941,
+    "elevation_m": 1357,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Oceanic crust (< 15 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Gamkonora",
     "lon": 127.53,
     "lat": 1.38,
-    "arc": "Halmahera"
+    "elevation_m": 1635,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Oceanic crust (< 15 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Dukono-North Halmahera Porphyry Belt",
-    "lon": 127.894,
-    "lat": 1.693,
-    "arc": "Halmahera"
+    "name": "Jailolo",
+    "lon": 127.439,
+    "lat": 1.08,
+    "elevation_m": 993,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Oceanic crust (< 15 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Sudirman Range-Grasberg-Erstberg Intrusive Complex",
-    "lon": 137.117,
-    "lat": -4.053,
-    "arc": "Papua"
+    "name": "Hiri",
+    "lon": 127.317,
+    "lat": 0.8971,
+    "elevation_m": 687,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Oceanic crust (< 15 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Wabu-Enarotali High-Grade Skarn-Porphyry Belt",
-    "lon": 136.85,
-    "lat": -3.85,
-    "arc": "Papua"
+    "name": "Todoko-Ranu",
+    "lon": 127.4556,
+    "lat": 1.2389,
+    "elevation_m": 979,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Oceanic crust (< 15 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   },
   {
-    "name": "Bird's Head Netoni-Arfak Porphyry Corridor",
-    "lon": 133.5,
-    "lat": -1.1,
-    "arc": "Papua"
+    "name": "Kie Matubu",
+    "lon": 127.4029,
+    "lat": 0.6623,
+    "elevation_m": 1713,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Oceanic crust (< 15 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Mare",
+    "lon": 127.4,
+    "lat": 0.57,
+    "elevation_m": 308,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Oceanic crust (< 15 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Moti",
+    "lon": 127.411,
+    "lat": 0.454,
+    "elevation_m": 927,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Oceanic crust (< 15 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Gamalama",
+    "lon": 127.3322,
+    "lat": 0.81,
+    "elevation_m": 1714,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Oceanic crust (< 15 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Kie Besi",
+    "lon": 127.4,
+    "lat": 0.32,
+    "elevation_m": 1357,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Oceanic crust (< 15 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Melebingoy",
+    "lon": 124.892,
+    "lat": 6.113,
+    "elevation_m": 1824,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
+  },
+  {
+    "name": "Matutum",
+    "lon": 125.0765,
+    "lat": 6.3604,
+    "elevation_m": 2262,
+    "rock_type": "Andesite / Basaltic Andesite",
+    "tectonic_setting": "Subduction zone / Continental crust (> 25 km)",
+    "source": "Smithsonian Global Volcanism Program (GVP)"
   }
 ]

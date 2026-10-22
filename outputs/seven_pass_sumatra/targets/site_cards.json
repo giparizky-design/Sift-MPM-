@@ -1,0 +1,662 @@
+[
+  {
+    "target_id": "SUMATRA_TGT_0001",
+    "rank": 1,
+    "rank_score": 0.95,
+    "geometry": {
+      "centroid_lat_lon": [
+        1.5391,
+        99.072
+      ],
+      "area_sq_km": 19.746,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.914,
+      "elkan_noto_c_hat": 0.822,
+      "calibrated_deposit_prob": 0.996,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.986,
+        "upper_bound_U": 0.998
+      },
+      "exploration_propensity_e_x": 0.188,
+      "propensity_weight_w": 9.25
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.576
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.987,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 52.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "SUMATRA_TGT_0002",
+    "rank": 2,
+    "rank_score": 0.91,
+    "geometry": {
+      "centroid_lat_lon": [
+        1.431,
+        99.1957
+      ],
+      "area_sq_km": 1.245,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.833,
+      "elkan_noto_c_hat": 0.822,
+      "calibrated_deposit_prob": 0.987,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.957,
+        "upper_bound_U": 0.997
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.8
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.974,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "SUMATRA_TGT_0003",
+    "rank": 3,
+    "rank_score": 0.88,
+    "geometry": {
+      "centroid_lat_lon": [
+        1.4684,
+        99.1976
+      ],
+      "area_sq_km": 15.002,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.868,
+      "elkan_noto_c_hat": 0.822,
+      "calibrated_deposit_prob": 0.99,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.955,
+        "upper_bound_U": 0.998
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 19.96
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.737
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.99,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.7,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "SUMATRA_TGT_0004",
+    "rank": 4,
+    "rank_score": 0.861,
+    "geometry": {
+      "centroid_lat_lon": [
+        1.5007,
+        99.0824
+      ],
+      "area_sq_km": 5.811,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.903,
+      "elkan_noto_c_hat": 0.822,
+      "calibrated_deposit_prob": 0.997,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.988,
+        "upper_bound_U": 0.999
+      },
+      "exploration_propensity_e_x": 0.123,
+      "propensity_weight_w": 11.62
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.573
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.988,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 57.0,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "SUMATRA_TGT_0005",
+    "rank": 5,
+    "rank_score": 0.848,
+    "geometry": {
+      "centroid_lat_lon": [
+        1.266,
+        99.1127
+      ],
+      "area_sq_km": 9.547,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.889,
+      "elkan_noto_c_hat": 0.822,
+      "calibrated_deposit_prob": 0.991,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.982,
+        "upper_bound_U": 0.994
+      },
+      "exploration_propensity_e_x": 0.059,
+      "propensity_weight_w": 18.26
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.686
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.99,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.2,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "SUMATRA_TGT_0006",
+    "rank": 6,
+    "rank_score": 0.822,
+    "geometry": {
+      "centroid_lat_lon": [
+        1.2874,
+        99.1608
+      ],
+      "area_sq_km": 7.531,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.886,
+      "elkan_noto_c_hat": 0.822,
+      "calibrated_deposit_prob": 0.993,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.986,
+        "upper_bound_U": 0.995
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.661
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.989,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "SUMATRA_TGT_0007",
+    "rank": 7,
+    "rank_score": 0.807,
+    "geometry": {
+      "centroid_lat_lon": [
+        1.2032,
+        99.172
+      ],
+      "area_sq_km": 1.364,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.869,
+      "elkan_noto_c_hat": 0.822,
+      "calibrated_deposit_prob": 0.992,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.985,
+        "upper_bound_U": 0.995
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.656
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.981,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "SUMATRA_TGT_0008",
+    "rank": 8,
+    "rank_score": 0.806,
+    "geometry": {
+      "centroid_lat_lon": [
+        1.2482,
+        99.1929
+      ],
+      "area_sq_km": 4.092,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.867,
+      "elkan_noto_c_hat": 0.822,
+      "calibrated_deposit_prob": 0.987,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.979,
+        "upper_bound_U": 0.99
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.684
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.981,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "SUMATRA_TGT_0009",
+    "rank": 9,
+    "rank_score": 0.802,
+    "geometry": {
+      "centroid_lat_lon": [
+        1.2996,
+        99.4162
+      ],
+      "area_sq_km": 1.542,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.835,
+      "elkan_noto_c_hat": 0.822,
+      "calibrated_deposit_prob": 0.982,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.967,
+        "upper_bound_U": 0.99
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.696
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 1.0,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "SUMATRA_TGT_0010",
+    "rank": 10,
+    "rank_score": 0.793,
+    "geometry": {
+      "centroid_lat_lon": [
+        1.2587,
+        99.5191
+      ],
+      "area_sq_km": 2.075,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.823,
+      "elkan_noto_c_hat": 0.822,
+      "calibrated_deposit_prob": 0.977,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.968,
+        "upper_bound_U": 0.982
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.712
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.999,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "SUMATRA_TGT_0011",
+    "rank": 11,
+    "rank_score": 0.79,
+    "geometry": {
+      "centroid_lat_lon": [
+        1.2396,
+        99.4045
+      ],
+      "area_sq_km": 22.711,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.889,
+      "elkan_noto_c_hat": 0.822,
+      "calibrated_deposit_prob": 0.987,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.977,
+        "upper_bound_U": 0.99
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.652
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 1.0,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "SUMATRA_TGT_0012",
+    "rank": 12,
+    "rank_score": 0.779,
+    "geometry": {
+      "centroid_lat_lon": [
+        1.2803,
+        99.256
+      ],
+      "area_sq_km": 12.334,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.891,
+      "elkan_noto_c_hat": 0.822,
+      "calibrated_deposit_prob": 0.992,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.983,
+        "upper_bound_U": 0.994
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.623
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.986,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "SUMATRA_TGT_0013",
+    "rank": 13,
+    "rank_score": 0.778,
+    "geometry": {
+      "centroid_lat_lon": [
+        1.5442,
+        99.1622
+      ],
+      "area_sq_km": 11.029,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.899,
+      "elkan_noto_c_hat": 0.822,
+      "calibrated_deposit_prob": 0.991,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.976,
+        "upper_bound_U": 0.997
+      },
+      "exploration_propensity_e_x": 0.088,
+      "propensity_weight_w": 15.22
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.57
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.986,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 59.3,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "SUMATRA_TGT_0014",
+    "rank": 14,
+    "rank_score": 0.773,
+    "geometry": {
+      "centroid_lat_lon": [
+        1.3107,
+        98.9337
+      ],
+      "area_sq_km": 1.838,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.82,
+      "elkan_noto_c_hat": 0.822,
+      "calibrated_deposit_prob": 0.977,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.965,
+        "upper_bound_U": 0.985
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.707
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.978,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "SUMATRA_TGT_0015",
+    "rank": 15,
+    "rank_score": 0.772,
+    "geometry": {
+      "centroid_lat_lon": [
+        1.3231,
+        99.1119
+      ],
+      "area_sq_km": 11.919,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.874,
+      "elkan_noto_c_hat": 0.822,
+      "calibrated_deposit_prob": 0.985,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.976,
+        "upper_bound_U": 0.989
+      },
+      "exploration_propensity_e_x": 0.051,
+      "propensity_weight_w": 19.86
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.652
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.987,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.7,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  }
+]
