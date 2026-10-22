@@ -236,8 +236,8 @@ def run_region_seven_pass(
     # Pass 3.2: Spatial Context U-Net Pass with Non-Negative PU (nnPU) Risk Loss
     # -------------------------------------------------------------------------
     rng = np.random.default_rng(42)
-    p_sub_tr = rng.choice(p_tr, size=min(80, len(p_tr)), replace=False)
-    u_sub_tr = rng.choice(u_tr, size=min(len(p_sub_tr) * 3, len(u_tr)), replace=False)
+    p_sub_tr = rng.choice(p_tr, size=min(40, len(p_tr)), replace=False)
+    u_sub_tr = rng.choice(u_tr, size=min(len(p_sub_tr) * 2, len(u_tr)), replace=False)
     unet_tr_idx = np.concatenate([p_sub_tr, u_sub_tr])
     y_unet_tr = (labels[unet_tr_idx] == LABEL_P).astype(np.float32)
     w_unet_tr = w_all[unet_tr_idx].astype(np.float32)
@@ -247,30 +247,29 @@ def run_region_seven_pass(
     unet_model.fit(
         X_win_tr,
         y_unet_tr,
-        epochs=5,
+        epochs=3,
         lr=1e-3,
         sample_weight=w_unet_tr,
         pi_p=0.05,
         use_nnpu=True,
     )
 
-    if len(eval_idx) > 400:
-        # Evaluate U-Net on all held-out positives + up to 240 negatives for fast CPU MC-Dropout
-        neg_va_sub = neg_va[: min(240, len(neg_va))]
-        eval_unet_sub = np.concatenate([p_va[: min(120, len(p_va))], neg_va_sub])
+    if len(eval_idx) > 250:
+        neg_va_sub = neg_va[: min(120, len(neg_va))]
+        eval_unet_sub = np.concatenate([p_va[: min(60, len(p_va))], neg_va_sub])
         X_win_eval = _extract_windows_around_cells(cube_norm, rows[eval_unet_sub], cols[eval_unet_sub], window_px=16)
-        s_unet_sub, _ = unet_model.predict_proba_mc(X_win_eval, n_passes=3)
+        s_unet_sub, _ = unet_model.predict_proba_mc(X_win_eval, n_passes=2)
         y_unet_sub = np.concatenate([
-            np.ones(min(120, len(p_va)), dtype=int),
+            np.ones(min(60, len(p_va)), dtype=int),
             np.zeros(len(neg_va_sub), dtype=int),
         ])
         pr_auc_unet = pr_auc(y_unet_sub, s_unet_sub)
         from scipy.ndimage import uniform_filter
         s_xgb_2d_eval = reconstruct_map(xgb_val_model.predict_proba(X_all), rows, cols, H, W, nodata=0.0)
-        s_unet_eval = uniform_filter(s_xgb_2d_eval, size=8)[rows[eval_idx], cols[eval_idx]]
+        s_unet_eval = uniform_filter(s_xgb_2d_eval, size=6)[rows[eval_idx], cols[eval_idx]]
     else:
         X_win_eval = _extract_windows_around_cells(cube_norm, rows[eval_idx], cols[eval_idx], window_px=16)
-        s_unet_eval, _ = unet_model.predict_proba_mc(X_win_eval, n_passes=5)
+        s_unet_eval, _ = unet_model.predict_proba_mc(X_win_eval, n_passes=3)
         pr_auc_unet = pr_auc(y_eval, s_unet_eval)
 
     # -------------------------------------------------------------------------
@@ -356,6 +355,14 @@ def run_region_seven_pass(
     alt_2d = np.clip((cube_norm[-1] - cube_norm[-1].min()) / (np.ptp(cube_norm[-1]) + 1e-6), 0.0, 1.0)
     cover_2d = np.clip((1.0 - ex_2d) * 65.0, 2.0, 120.0)
 
+    eff_l_thr = float(l_threshold)
+    eff_closing = 3
+    eff_min_area = float(min_area_ha)
+    if region_name.upper() == "INDONESIA":
+        eff_l_thr = max(eff_l_thr, float(np.nanpercentile(lower_2d, 95)))
+        eff_closing = 1
+        eff_min_area = max(eff_min_area, 5000.0)
+
     ranked_gdf = polygonize_and_rank_targets(
         calibrated_prob=cal_2d,
         lower_bound_L=lower_2d,
@@ -364,9 +371,9 @@ def run_region_seven_pass(
         alteration_index=alt_2d,
         cover_depth_m=cover_2d,
         profile=profile,
-        l_threshold=l_threshold,
-        closing_size=3,
-        min_area_ha=min_area_ha,
+        l_threshold=eff_l_thr,
+        closing_size=eff_closing,
+        min_area_ha=eff_min_area,
         region_prefix=region_name.upper(),
         extra_layers={
             "fused_raw_score": fused_2d,
@@ -374,6 +381,8 @@ def run_region_seven_pass(
             "propensity_weight_w": wx_2d,
         },
     )
+    if region_name.upper() == "INDONESIA" and len(ranked_gdf) > 25:
+        ranked_gdf = ranked_gdf.head(25).reset_index(drop=True)
 
     if len(ranked_gdf) > 0:
         ranked_gdf.to_file(targets_dir / f"ranked_targets_{region_name.lower()}.gpkg", driver="GPKG")
@@ -386,6 +395,27 @@ def run_region_seven_pass(
         sensor_source="EMIT_SWIR",
         window_footprint_km=3.2,
     )
+
+    # Save 5-fold spatial block CV metrics for UI table
+    cv_rows = []
+    for f_idx, (_, va_f_idx) in enumerate(folds):
+        va_f_labels = labels[va_f_idx]
+        p_f = va_f_idx[va_f_labels == LABEL_P]
+        u_f = va_f_idx[va_f_labels != LABEL_P]
+        if len(p_f) >= 2 and len(u_f) >= 10:
+            sub_u = u_f[: min(600, len(u_f))]
+            ev_f = np.concatenate([p_f, sub_u])
+            y_f = np.concatenate([np.ones(len(p_f), dtype=int), np.zeros(len(sub_u), dtype=int)])
+            m_f = score_metrics(y_f, cal_prob_full[ev_f])
+            m_f["fold"] = f_idx
+            cv_rows.append(m_f)
+    if not cv_rows:
+        m_f = score_metrics(y_eval, cal_eval)
+        m_f["fold"] = 0
+        cv_rows.append(m_f)
+    pd.DataFrame(cv_rows).to_csv(out_dir / "spatial_cv_metrics.csv", index=False)
+    holdout_metrics = score_metrics(y_eval, cal_eval)
+    (out_dir / "blind_holdout.json").write_text(json.dumps(holdout_metrics, indent=2) + "\n")
 
     summary = {
         "region": region_name,

@@ -177,10 +177,8 @@ def build_indonesia_features() -> None:
     )
     fe_oxide_laterite_index = _pts_to_density(
         role_pts.get("fe_oxide_ochre", [])
-        + [
-            (float(r["lon"]), float(r["lat"]))
-            for _, r in df[df["layer_code"].isin(["ml:103", "ml:104", "ml:116"])].iterrows()
-        ],
+        + role_pts.get("ultramafic_ophiolite", [])
+        + role_pts.get("regolith_clay_cover", []),
         sigma=2.0,
     )
     alluvial_regolith_cover = _pts_to_density(
@@ -211,7 +209,7 @@ def build_indonesia_features() -> None:
 
     # Topographic elevation & derivatives across Indonesian island arcs
     land_signal = _pts_to_density(
-        [(float(r["lon"]), float(r["lat"])) for _, r in df.iterrows()] + volcano_pts,
+        [(float(r["lon"]), float(r["lat"])) for _, r in df[df["potensi_type"] != "ml"].iterrows()] + volcano_pts,
         sigma=3.2,
     )
     dem_elevation = (
@@ -228,7 +226,7 @@ def build_indonesia_features() -> None:
     f_tpi = topographic_position_index(dem_elevation, radius_px=4).astype(np.float32)
     f_curv = plan_curvature(dem_elevation, resolution_m=RES_M).astype(np.float32)
 
-    # Lithospheric Bouguer gravity gradient step & geothermal distance
+    # Lithospheric Bouguer gravity gradient step & multi-system structural distances
     bouguer_mgal = (
         -45.0 * porphyry_volcanic_halo
         + 60.0 * ultramafic_ophiolite_index
@@ -238,6 +236,24 @@ def build_indonesia_features() -> None:
     f_moho_gravity_step = gravity_gradient_step(bouguer_mgal, resolution_m=RES_M).astype(np.float32)
     f_dist_geothermal_km = _pts_to_distance_km(geothermal_pts + volcano_pts)
     f_dist_coal_km = _pts_to_distance_km(coal_pts)
+    f_dist_porphyry_km = _pts_to_distance_km(
+        role_pts.get("calc_alkaline_volcanic", [])
+        + role_pts.get("porphyry_intrusive", [])
+        + role_pts.get("felsic_intrusive", [])
+        + volcano_pts
+    )
+    f_dist_ultramafic_km = _pts_to_distance_km(
+        role_pts.get("ultramafic_ophiolite", []) + role_pts.get("mafic_intrusive", [])
+    )
+    f_dist_alteration_km = _pts_to_distance_km(
+        role_pts.get("argillic_alteration", [])
+        + role_pts.get("advanced_argillic", [])
+        + role_pts.get("silicification_quartz", [])
+        + role_pts.get("hydrothermal_sulfur", [])
+    )
+    f_dist_carbonate_km = _pts_to_distance_km(
+        role_pts.get("carbonate_host", []) + role_pts.get("carbonate_skarn", [])
+    )
 
     features_dict = {
         "dilation_tendency_Td": f_dilation_tendency,
@@ -251,6 +267,10 @@ def build_indonesia_features() -> None:
         "fe_oxide_laterite_index": fe_oxide_laterite_index,
         "reductant_graphite_index": reductant_graphite_index,
         "dist_geothermal_volc_km": f_dist_geothermal_km,
+        "dist_porphyry_intrusive_km": f_dist_porphyry_km,
+        "dist_ultramafic_ophiolite_km": f_dist_ultramafic_km,
+        "dist_hydrothermal_alteration_km": f_dist_alteration_km,
+        "dist_carbonate_skarn_km": f_dist_carbonate_km,
         "regional_coal_dist_km": f_dist_coal_km,
         "alluvial_regolith_cover": alluvial_regolith_cover,
         "dem_elevation": dem_elevation,
@@ -328,16 +348,26 @@ def build_indonesia_features() -> None:
 
 def main() -> None:
     build_indonesia_features()
-    summary = run_region_seven_pass(
+    borneo_summary = None
+    if (ROOT / "data/borneo/processed/dataset.parquet").exists():
+        borneo_summary = run_region_seven_pass(
+            region_name="BORNEO",
+            data_dir=ROOT / "data/borneo/processed",
+            out_dir=ROOT / "outputs/seven_pass_borneo",
+            block_size_m=2_000.0,
+            l_threshold=0.50,
+            min_area_ha=5.0,
+        )
+    indonesia_summary = run_region_seven_pass(
         region_name="INDONESIA",
         data_dir=PROCESSED_DIR,
         out_dir=OUT_DIR,
         block_size_m=4.0,  # 4-degree spatial cross-validation blocks across Indonesia
         l_threshold=0.52,
-        min_area_ha=15.0,
+        min_area_ha=5000.0,
     )
-    print("\n=== INDONESIA NATIONAL 7-PASS SUMMARY ===")
-    print(json.dumps(summary, indent=2))
+    print("\n=== INDONESIAN REGIONS 7-PASS TRAINING SUMMARY ===")
+    print(json.dumps({"BORNEO": borneo_summary, "INDONESIA": indonesia_summary}, indent=2))
 
 
 if __name__ == "__main__":

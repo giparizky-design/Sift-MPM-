@@ -2,25 +2,25 @@
   {
     "target_id": "BORNEO_TGT_0001",
     "rank": 1,
-    "rank_score": 0.526,
+    "rank_score": 0.95,
     "geometry": {
       "centroid_lat_lon": [
-        -0.0094,
-        115.4476
+        -0.0104,
+        115.4465
       ],
-      "area_sq_km": 6.355,
+      "area_sq_km": 9.367,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.651,
-      "elkan_noto_c_hat": 0.653,
-      "calibrated_deposit_prob": 0.996,
+      "fused_raw_score": 0.801,
+      "elkan_noto_c_hat": 0.732,
+      "calibrated_deposit_prob": 0.929,
       "conformal_90_ci": {
-        "lower_bound_L": 0.803,
-        "upper_bound_U": 1.0
+        "lower_bound_L": 0.877,
+        "upper_bound_U": 0.957
       },
-      "exploration_propensity_e_x": 0.229,
-      "propensity_weight_w": 4.42
+      "exploration_propensity_e_x": 0.094,
+      "propensity_weight_w": 17.48
     },
     "physics_and_geology_summary": {
       "alteration": {
@@ -28,7 +28,7 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.352
+        "fe_oxide_intensity": 0.362
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
@@ -37,7 +37,139 @@
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 50.1,
+        "regolith_cover_depth_m": 58.9,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "BORNEO_TGT_0002",
+    "rank": 2,
+    "rank_score": 0.576,
+    "geometry": {
+      "centroid_lat_lon": [
+        -0.0274,
+        115.4503
+      ],
+      "area_sq_km": 0.092,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.551,
+      "elkan_noto_c_hat": 0.732,
+      "calibrated_deposit_prob": 0.753,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.671,
+        "upper_bound_U": 0.836
+      },
+      "exploration_propensity_e_x": 0.134,
+      "propensity_weight_w": 9.03
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.483
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.279,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 56.3,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "BORNEO_TGT_0003",
+    "rank": 3,
+    "rank_score": 0.54,
+    "geometry": {
+      "centroid_lat_lon": [
+        -0.0299,
+        115.4373
+      ],
+      "area_sq_km": 0.765,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.554,
+      "elkan_noto_c_hat": 0.732,
+      "calibrated_deposit_prob": 0.757,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.658,
+        "upper_bound_U": 0.855
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.526
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.381,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "BORNEO_TGT_0004",
+    "rank": 4,
+    "rank_score": 0.25,
+    "geometry": {
+      "centroid_lat_lon": [
+        -0.0401,
+        115.4409
+      ],
+      "area_sq_km": 0.217,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.502,
+      "elkan_noto_c_hat": 0.732,
+      "calibrated_deposit_prob": 0.685,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.599,
+        "upper_bound_U": 0.772
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.564
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.191,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 61.8,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
