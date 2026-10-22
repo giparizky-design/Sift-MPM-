@@ -5,18 +5,18 @@
     "rank_score": 0.95,
     "geometry": {
       "centroid_lat_lon": [
-        2.7168,
-        125.4062
+        2.7067,
+        125.4207
       ],
-      "area_sq_km": 193.627,
+      "area_sq_km": 314.644,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.953,
-      "elkan_noto_c_hat": 0.8,
+      "fused_raw_score": 0.665,
+      "elkan_noto_c_hat": 0.623,
       "calibrated_deposit_prob": 1.0,
       "conformal_90_ci": {
-        "lower_bound_L": 0.991,
+        "lower_bound_L": 1.0,
         "upper_bound_U": 1.0
       },
       "exploration_propensity_e_x": 0.05,
@@ -28,7 +28,7 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.37
+        "fe_oxide_intensity": 0.8
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
@@ -37,7 +37,7 @@
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 61.8,
+        "regolith_cover_depth_m": 55.3,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -46,21 +46,21 @@
   {
     "target_id": "INDONESIA_TGT_0002",
     "rank": 2,
-    "rank_score": 0.915,
+    "rank_score": 0.913,
     "geometry": {
       "centroid_lat_lon": [
-        -3.8333,
-        127.2083
+        2.8925,
+        131.7877
       ],
-      "area_sq_km": 72.61,
+      "area_sq_km": 205.729,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.953,
-      "elkan_noto_c_hat": 0.8,
+      "fused_raw_score": 0.654,
+      "elkan_noto_c_hat": 0.623,
       "calibrated_deposit_prob": 1.0,
       "conformal_90_ci": {
-        "lower_bound_L": 0.991,
+        "lower_bound_L": 1.0,
         "upper_bound_U": 1.0
       },
       "exploration_propensity_e_x": 0.05,
@@ -72,16 +72,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.475
+        "fe_oxide_intensity": 0.906
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.754,
+        "dilation_tendency_Td_max": 0.998,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 61.8,
+        "regolith_cover_depth_m": 70.6,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -90,21 +90,21 @@
   {
     "target_id": "INDONESIA_TGT_0003",
     "rank": 3,
-    "rank_score": 0.902,
+    "rank_score": 0.88,
     "geometry": {
       "centroid_lat_lon": [
-        0.7988,
-        127.3379
+        3.5918,
+        125.5934
       ],
-      "area_sq_km": 193.627,
+      "area_sq_km": 1464.306,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.953,
-      "elkan_noto_c_hat": 0.8,
+      "fused_raw_score": 0.656,
+      "elkan_noto_c_hat": 0.623,
       "calibrated_deposit_prob": 1.0,
       "conformal_90_ci": {
-        "lower_bound_L": 0.991,
+        "lower_bound_L": 1.0,
         "upper_bound_U": 1.0
       },
       "exploration_propensity_e_x": 0.05,
@@ -116,16 +116,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.342
+        "fe_oxide_intensity": 0.758
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.941,
+        "dilation_tendency_Td_max": 1.0,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 61.8,
+        "regolith_cover_depth_m": 68.4,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -134,21 +134,21 @@
   {
     "target_id": "INDONESIA_TGT_0004",
     "rank": 4,
-    "rank_score": 0.869,
+    "rank_score": 0.874,
     "geometry": {
       "centroid_lat_lon": [
-        2.1156,
-        125.3844
+        -6.2059,
+        120.4328
       ],
-      "area_sq_km": 60.509,
+      "area_sq_km": 2287.222,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.953,
-      "elkan_noto_c_hat": 0.8,
+      "fused_raw_score": 0.662,
+      "elkan_noto_c_hat": 0.623,
       "calibrated_deposit_prob": 1.0,
       "conformal_90_ci": {
-        "lower_bound_L": 0.991,
+        "lower_bound_L": 1.0,
         "upper_bound_U": 1.0
       },
       "exploration_propensity_e_x": 0.05,
@@ -160,16 +160,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.261
+        "fe_oxide_intensity": 0.828
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.999,
+        "dilation_tendency_Td_max": 1.0,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 61.8,
+        "regolith_cover_depth_m": 74.6,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -178,21 +178,21 @@
   {
     "target_id": "INDONESIA_TGT_0005",
     "rank": 5,
-    "rank_score": 0.869,
+    "rank_score": 0.874,
     "geometry": {
       "centroid_lat_lon": [
-        2.3242,
-        125.4141
+        2.1049,
+        125.3772
       ],
-      "area_sq_km": 96.814,
+      "area_sq_km": 84.712,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.953,
-      "elkan_noto_c_hat": 0.8,
+      "fused_raw_score": 0.664,
+      "elkan_noto_c_hat": 0.623,
       "calibrated_deposit_prob": 1.0,
       "conformal_90_ci": {
-        "lower_bound_L": 0.991,
+        "lower_bound_L": 1.0,
         "upper_bound_U": 1.0
       },
       "exploration_propensity_e_x": 0.05,
@@ -204,16 +204,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.27
+        "fe_oxide_intensity": 0.75
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.985,
+        "dilation_tendency_Td_max": 0.999,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 61.8,
+        "regolith_cover_depth_m": 69.3,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -222,21 +222,21 @@
   {
     "target_id": "INDONESIA_TGT_0006",
     "rank": 6,
-    "rank_score": 0.845,
+    "rank_score": 0.873,
     "geometry": {
       "centroid_lat_lon": [
-        0.6682,
-        127.4145
+        -2.655,
+        103.8507
       ],
-      "area_sq_km": 205.729,
+      "area_sq_km": 370493.593,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.953,
-      "elkan_noto_c_hat": 0.8,
+      "fused_raw_score": 0.676,
+      "elkan_noto_c_hat": 0.623,
       "calibrated_deposit_prob": 1.0,
       "conformal_90_ci": {
-        "lower_bound_L": 0.991,
+        "lower_bound_L": 1.0,
         "upper_bound_U": 1.0
       },
       "exploration_propensity_e_x": 0.05,
@@ -248,16 +248,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.257
+        "fe_oxide_intensity": 0.463
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.954,
+        "dilation_tendency_Td_max": 1.0,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 61.8,
+        "regolith_cover_depth_m": 50.2,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -266,21 +266,21 @@
   {
     "target_id": "INDONESIA_TGT_0007",
     "rank": 7,
-    "rank_score": 0.843,
+    "rank_score": 0.872,
     "geometry": {
       "centroid_lat_lon": [
-        3.5233,
-        125.5535
+        -1.9563,
+        121.3133
       ],
-      "area_sq_km": 738.204,
+      "area_sq_km": 218992.391,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.953,
-      "elkan_noto_c_hat": 0.8,
+      "fused_raw_score": 0.691,
+      "elkan_noto_c_hat": 0.623,
       "calibrated_deposit_prob": 1.0,
       "conformal_90_ci": {
-        "lower_bound_L": 0.991,
+        "lower_bound_L": 1.0,
         "upper_bound_U": 1.0
       },
       "exploration_propensity_e_x": 0.05,
@@ -292,7 +292,7 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.226
+        "fe_oxide_intensity": 0.464
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
@@ -301,7 +301,7 @@
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 61.8,
+        "regolith_cover_depth_m": 50.5,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -310,21 +310,21 @@
   {
     "target_id": "INDONESIA_TGT_0008",
     "rank": 8,
-    "rank_score": 0.842,
+    "rank_score": 0.866,
     "geometry": {
       "centroid_lat_lon": [
-        -5.8326,
-        132.9152
+        5.7997,
+        95.3153
       ],
-      "area_sq_km": 169.424,
+      "area_sq_km": 266.237,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.952,
-      "elkan_noto_c_hat": 0.8,
+      "fused_raw_score": 0.664,
+      "elkan_noto_c_hat": 0.623,
       "calibrated_deposit_prob": 1.0,
       "conformal_90_ci": {
-        "lower_bound_L": 0.991,
+        "lower_bound_L": 1.0,
         "upper_bound_U": 1.0
       },
       "exploration_propensity_e_x": 0.05,
@@ -336,16 +336,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.226
+        "fe_oxide_intensity": 0.705
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.998,
+        "dilation_tendency_Td_max": 1.0,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 61.8,
+        "regolith_cover_depth_m": 68.0,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -354,21 +354,21 @@
   {
     "target_id": "INDONESIA_TGT_0009",
     "rank": 9,
-    "rank_score": 0.841,
+    "rank_score": 0.858,
     "geometry": {
       "centroid_lat_lon": [
-        -1.4036,
-        133.9356
+        2.3499,
+        125.3784
       ],
-      "area_sq_km": 4308.206,
+      "area_sq_km": 278.339,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.953,
-      "elkan_noto_c_hat": 0.8,
+      "fused_raw_score": 0.664,
+      "elkan_noto_c_hat": 0.623,
       "calibrated_deposit_prob": 1.0,
       "conformal_90_ci": {
-        "lower_bound_L": 0.991,
+        "lower_bound_L": 1.0,
         "upper_bound_U": 1.0
       },
       "exploration_propensity_e_x": 0.05,
@@ -380,16 +380,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.223
+        "fe_oxide_intensity": 0.711
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 1.0,
+        "dilation_tendency_Td_max": 0.999,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 61.8,
+        "regolith_cover_depth_m": 70.2,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -398,21 +398,21 @@
   {
     "target_id": "INDONESIA_TGT_0010",
     "rank": 10,
-    "rank_score": 0.838,
+    "rank_score": 0.847,
     "geometry": {
       "centroid_lat_lon": [
-        1.5938,
-        128.7344
+        4.142,
+        126.7706
       ],
-      "area_sq_km": 48.407,
+      "area_sq_km": 1899.967,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.953,
-      "elkan_noto_c_hat": 0.8,
+      "fused_raw_score": 0.675,
+      "elkan_noto_c_hat": 0.623,
       "calibrated_deposit_prob": 1.0,
       "conformal_90_ci": {
-        "lower_bound_L": 0.991,
+        "lower_bound_L": 1.0,
         "upper_bound_U": 1.0
       },
       "exploration_propensity_e_x": 0.05,
@@ -424,16 +424,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.226
+        "fe_oxide_intensity": 0.685
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.988,
+        "dilation_tendency_Td_max": 0.999,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 61.8,
+        "regolith_cover_depth_m": 71.0,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -442,21 +442,21 @@
   {
     "target_id": "INDONESIA_TGT_0011",
     "rank": 11,
-    "rank_score": 0.836,
+    "rank_score": 0.843,
     "geometry": {
       "centroid_lat_lon": [
-        -4.1877,
-        140.1382
+        -2.8743,
+        136.5036
       ],
-      "area_sq_km": 6910.072,
+      "area_sq_km": 222392.97,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.953,
-      "elkan_noto_c_hat": 0.8,
+      "fused_raw_score": 0.672,
+      "elkan_noto_c_hat": 0.623,
       "calibrated_deposit_prob": 1.0,
       "conformal_90_ci": {
-        "lower_bound_L": 0.991,
+        "lower_bound_L": 1.0,
         "upper_bound_U": 1.0
       },
       "exploration_propensity_e_x": 0.05,
@@ -468,7 +468,7 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.217
+        "fe_oxide_intensity": 0.282
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
@@ -477,7 +477,7 @@
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 61.8,
+        "regolith_cover_depth_m": 44.9,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -486,25 +486,25 @@
   {
     "target_id": "INDONESIA_TGT_0012",
     "rank": 12,
-    "rank_score": 0.836,
+    "rank_score": 0.834,
     "geometry": {
       "centroid_lat_lon": [
-        -2.6009,
-        106.5043
+        2.7135,
+        128.4635
       ],
-      "area_sq_km": 266.237,
+      "area_sq_km": 36.305,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.953,
-      "elkan_noto_c_hat": 0.8,
+      "fused_raw_score": 0.663,
+      "elkan_noto_c_hat": 0.623,
       "calibrated_deposit_prob": 1.0,
       "conformal_90_ci": {
-        "lower_bound_L": 0.991,
+        "lower_bound_L": 1.0,
         "upper_bound_U": 1.0
       },
-      "exploration_propensity_e_x": 0.108,
-      "propensity_weight_w": 9.94
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
     },
     "physics_and_geology_summary": {
       "alteration": {
@@ -512,16 +512,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.07
+        "fe_oxide_intensity": 0.793
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.639,
+        "dilation_tendency_Td_max": 0.959,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 58.0,
+        "regolith_cover_depth_m": 78.3,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -530,21 +530,21 @@
   {
     "target_id": "INDONESIA_TGT_0013",
     "rank": 13,
-    "rank_score": 0.836,
+    "rank_score": 0.827,
     "geometry": {
       "centroid_lat_lon": [
-        -7.0156,
-        120.4219
+        -3.0216,
+        118.2126
       ],
-      "area_sq_km": 36.305,
+      "area_sq_km": 956.034,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.953,
-      "elkan_noto_c_hat": 0.8,
+      "fused_raw_score": 0.639,
+      "elkan_noto_c_hat": 0.623,
       "calibrated_deposit_prob": 1.0,
       "conformal_90_ci": {
-        "lower_bound_L": 0.991,
+        "lower_bound_L": 1.0,
         "upper_bound_U": 1.0
       },
       "exploration_propensity_e_x": 0.05,
@@ -556,16 +556,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.218
+        "fe_oxide_intensity": 0.754
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.997,
+        "dilation_tendency_Td_max": 1.0,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 61.8,
+        "regolith_cover_depth_m": 80.4,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -574,21 +574,21 @@
   {
     "target_id": "INDONESIA_TGT_0014",
     "rank": 14,
-    "rank_score": 0.834,
+    "rank_score": 0.818,
     "geometry": {
       "centroid_lat_lon": [
-        5.8056,
-        95.309
+        -5.1337,
+        118.1372
       ],
-      "area_sq_km": 217.831,
+      "area_sq_km": 108.915,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.953,
-      "elkan_noto_c_hat": 0.8,
+      "fused_raw_score": 0.658,
+      "elkan_noto_c_hat": 0.623,
       "calibrated_deposit_prob": 1.0,
       "conformal_90_ci": {
-        "lower_bound_L": 0.991,
+        "lower_bound_L": 1.0,
         "upper_bound_U": 1.0
       },
       "exploration_propensity_e_x": 0.05,
@@ -600,16 +600,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.214
+        "fe_oxide_intensity": 0.702
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 1.0,
+        "dilation_tendency_Td_max": 0.997,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 61.8,
+        "regolith_cover_depth_m": 78.7,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -618,21 +618,21 @@
   {
     "target_id": "INDONESIA_TGT_0015",
     "rank": 15,
-    "rank_score": 0.831,
+    "rank_score": 0.814,
     "geometry": {
       "centroid_lat_lon": [
-        3.8294,
-        126.7469
+        -3.3883,
+        126.6497
       ],
-      "area_sq_km": 302.543,
+      "area_sq_km": 9790.277,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.953,
-      "elkan_noto_c_hat": 0.8,
+      "fused_raw_score": 0.68,
+      "elkan_noto_c_hat": 0.623,
       "calibrated_deposit_prob": 1.0,
       "conformal_90_ci": {
-        "lower_bound_L": 0.991,
+        "lower_bound_L": 1.0,
         "upper_bound_U": 1.0
       },
       "exploration_propensity_e_x": 0.05,
@@ -644,16 +644,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.211
+        "fe_oxide_intensity": 0.337
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.998,
+        "dilation_tendency_Td_max": 0.831,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 61.8,
+        "regolith_cover_depth_m": 42.5,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -662,21 +662,21 @@
   {
     "target_id": "INDONESIA_TGT_0016",
     "rank": 16,
-    "rank_score": 0.827,
+    "rank_score": 0.81,
     "geometry": {
       "centroid_lat_lon": [
-        -4.5079,
-        123.0507
+        3.0924,
+        125.5436
       ],
-      "area_sq_km": 689.797,
+      "area_sq_km": 580.882,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.952,
-      "elkan_noto_c_hat": 0.8,
+      "fused_raw_score": 0.66,
+      "elkan_noto_c_hat": 0.623,
       "calibrated_deposit_prob": 1.0,
       "conformal_90_ci": {
-        "lower_bound_L": 0.991,
+        "lower_bound_L": 1.0,
         "upper_bound_U": 1.0
       },
       "exploration_propensity_e_x": 0.05,
@@ -688,16 +688,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.207
+        "fe_oxide_intensity": 0.688
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.995,
+        "dilation_tendency_Td_max": 0.998,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 61.8,
+        "regolith_cover_depth_m": 79.6,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -706,21 +706,21 @@
   {
     "target_id": "INDONESIA_TGT_0017",
     "rank": 17,
-    "rank_score": 0.826,
+    "rank_score": 0.804,
     "geometry": {
       "centroid_lat_lon": [
-        -3.8652,
-        132.9884
+        -3.2773,
+        132.6107
       ],
-      "area_sq_km": 2069.391,
+      "area_sq_km": 13069.838,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.953,
-      "elkan_noto_c_hat": 0.8,
+      "fused_raw_score": 0.668,
+      "elkan_noto_c_hat": 0.623,
       "calibrated_deposit_prob": 1.0,
       "conformal_90_ci": {
-        "lower_bound_L": 0.991,
+        "lower_bound_L": 1.0,
         "upper_bound_U": 1.0
       },
       "exploration_propensity_e_x": 0.05,
@@ -732,16 +732,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.235
+        "fe_oxide_intensity": 0.496
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.948,
+        "dilation_tendency_Td_max": 0.959,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 61.8,
+        "regolith_cover_depth_m": 65.0,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -750,21 +750,21 @@
   {
     "target_id": "INDONESIA_TGT_0018",
     "rank": 18,
-    "rank_score": 0.825,
+    "rank_score": 0.804,
     "geometry": {
       "centroid_lat_lon": [
-        0.3156,
-        127.3844
+        -3.832,
+        127.1992
       ],
-      "area_sq_km": 121.017,
+      "area_sq_km": 96.814,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.953,
-      "elkan_noto_c_hat": 0.8,
+      "fused_raw_score": 0.661,
+      "elkan_noto_c_hat": 0.623,
       "calibrated_deposit_prob": 1.0,
       "conformal_90_ci": {
-        "lower_bound_L": 0.991,
+        "lower_bound_L": 1.0,
         "upper_bound_U": 1.0
       },
       "exploration_propensity_e_x": 0.05,
@@ -776,16 +776,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.256
+        "fe_oxide_intensity": 0.424
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.912,
+        "dilation_tendency_Td_max": 0.754,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 61.8,
+        "regolith_cover_depth_m": 44.7,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -794,21 +794,21 @@
   {
     "target_id": "INDONESIA_TGT_0019",
     "rank": 19,
-    "rank_score": 0.825,
+    "rank_score": 0.803,
     "geometry": {
       "centroid_lat_lon": [
-        -3.2759,
-        135.2167
+        0.6752,
+        127.9637
       ],
-      "area_sq_km": 19689.468,
+      "area_sq_km": 42368.057,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.953,
-      "elkan_noto_c_hat": 0.8,
+      "fused_raw_score": 0.667,
+      "elkan_noto_c_hat": 0.623,
       "calibrated_deposit_prob": 1.0,
       "conformal_90_ci": {
-        "lower_bound_L": 0.991,
+        "lower_bound_L": 1.0,
         "upper_bound_U": 1.0
       },
       "exploration_propensity_e_x": 0.05,
@@ -820,7 +820,7 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.201
+        "fe_oxide_intensity": 0.474
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
@@ -829,7 +829,7 @@
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 61.8,
+        "regolith_cover_depth_m": 67.0,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -838,21 +838,21 @@
   {
     "target_id": "INDONESIA_TGT_0020",
     "rank": 20,
-    "rank_score": 0.822,
+    "rank_score": 0.795,
     "geometry": {
       "centroid_lat_lon": [
-        -3.3008,
-        127.5938
+        -6.9758,
+        120.6464
       ],
-      "area_sq_km": 96.814,
+      "area_sq_km": 1234.374,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.953,
-      "elkan_noto_c_hat": 0.8,
+      "fused_raw_score": 0.663,
+      "elkan_noto_c_hat": 0.623,
       "calibrated_deposit_prob": 1.0,
       "conformal_90_ci": {
-        "lower_bound_L": 0.991,
+        "lower_bound_L": 1.0,
         "upper_bound_U": 1.0
       },
       "exploration_propensity_e_x": 0.05,
@@ -864,16 +864,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.336
+        "fe_oxide_intensity": 0.608
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.775,
+        "dilation_tendency_Td_max": 0.999,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 61.8,
+        "regolith_cover_depth_m": 77.8,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -882,21 +882,21 @@
   {
     "target_id": "INDONESIA_TGT_0021",
     "rank": 21,
-    "rank_score": 0.821,
+    "rank_score": 0.792,
     "geometry": {
       "centroid_lat_lon": [
-        -5.4774,
-        133.0832
+        -5.6521,
+        132.8055
       ],
-      "area_sq_km": 592.983,
+      "area_sq_km": 4489.731,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.953,
-      "elkan_noto_c_hat": 0.8,
+      "fused_raw_score": 0.65,
+      "elkan_noto_c_hat": 0.623,
       "calibrated_deposit_prob": 1.0,
       "conformal_90_ci": {
-        "lower_bound_L": 0.991,
+        "lower_bound_L": 1.0,
         "upper_bound_U": 1.0
       },
       "exploration_propensity_e_x": 0.05,
@@ -908,16 +908,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.203
+        "fe_oxide_intensity": 0.606
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.988,
+        "dilation_tendency_Td_max": 0.998,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 61.8,
+        "regolith_cover_depth_m": 78.3,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -926,21 +926,21 @@
   {
     "target_id": "INDONESIA_TGT_0022",
     "rank": 22,
-    "rank_score": 0.82,
+    "rank_score": 0.786,
     "geometry": {
       "centroid_lat_lon": [
-        -1.4268,
-        121.2171
+        -10.4746,
+        105.6388
       ],
-      "area_sq_km": 121912.542,
+      "area_sq_km": 423.56,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.953,
-      "elkan_noto_c_hat": 0.8,
+      "fused_raw_score": 0.655,
+      "elkan_noto_c_hat": 0.623,
       "calibrated_deposit_prob": 1.0,
       "conformal_90_ci": {
-        "lower_bound_L": 0.991,
+        "lower_bound_L": 1.0,
         "upper_bound_U": 1.0
       },
       "exploration_propensity_e_x": 0.05,
@@ -952,16 +952,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.195
+        "fe_oxide_intensity": 0.512
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 1.0,
+        "dilation_tendency_Td_max": 0.813,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 61.7,
+        "regolith_cover_depth_m": 59.1,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -970,21 +970,21 @@
   {
     "target_id": "INDONESIA_TGT_0023",
     "rank": 23,
-    "rank_score": 0.819,
+    "rank_score": 0.781,
     "geometry": {
       "centroid_lat_lon": [
-        -3.8869,
-        139.1023
+        -7.526,
+        129.6927
       ],
-      "area_sq_km": 2734.985,
+      "area_sq_km": 36.305,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.953,
-      "elkan_noto_c_hat": 0.8,
+      "fused_raw_score": 0.657,
+      "elkan_noto_c_hat": 0.623,
       "calibrated_deposit_prob": 1.0,
       "conformal_90_ci": {
-        "lower_bound_L": 0.991,
+        "lower_bound_L": 1.0,
         "upper_bound_U": 1.0
       },
       "exploration_propensity_e_x": 0.05,
@@ -996,16 +996,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.266
+        "fe_oxide_intensity": 0.448
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.882,
+        "dilation_tendency_Td_max": 0.726,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 61.8,
+        "regolith_cover_depth_m": 49.4,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -1014,21 +1014,21 @@
   {
     "target_id": "INDONESIA_TGT_0024",
     "rank": 24,
-    "rank_score": 0.818,
+    "rank_score": 0.777,
     "geometry": {
       "centroid_lat_lon": [
-        -2.5273,
-        140.5774
+        2.1025,
+        118.6489
       ],
-      "area_sq_km": 520.373,
+      "area_sq_km": 1597.425,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.953,
-      "elkan_noto_c_hat": 0.8,
+      "fused_raw_score": 0.651,
+      "elkan_noto_c_hat": 0.623,
       "calibrated_deposit_prob": 1.0,
       "conformal_90_ci": {
-        "lower_bound_L": 0.991,
+        "lower_bound_L": 1.0,
         "upper_bound_U": 1.0
       },
       "exploration_propensity_e_x": 0.05,
@@ -1040,16 +1040,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.266
+        "fe_oxide_intensity": 0.583
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.879,
+        "dilation_tendency_Td_max": 1.0,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 61.8,
+        "regolith_cover_depth_m": 80.3,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -1058,21 +1058,21 @@
   {
     "target_id": "INDONESIA_TGT_0025",
     "rank": 25,
-    "rank_score": 0.814,
+    "rank_score": 0.777,
     "geometry": {
       "centroid_lat_lon": [
-        -3.4666,
-        138.9675
+        -2.9427,
+        120.8177
       ],
-      "area_sq_km": 447.763,
+      "area_sq_km": 108.915,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.95,
-      "elkan_noto_c_hat": 0.8,
+      "fused_raw_score": 0.636,
+      "elkan_noto_c_hat": 0.623,
       "calibrated_deposit_prob": 1.0,
       "conformal_90_ci": {
-        "lower_bound_L": 0.991,
+        "lower_bound_L": 1.0,
         "upper_bound_U": 1.0
       },
       "exploration_propensity_e_x": 0.05,
@@ -1084,16 +1084,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.392
+        "fe_oxide_intensity": 0.823
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.666,
+        "dilation_tendency_Td_max": 0.86,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 61.8,
+        "regolith_cover_depth_m": 85.7,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }

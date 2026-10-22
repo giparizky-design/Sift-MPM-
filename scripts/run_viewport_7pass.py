@@ -68,6 +68,11 @@ def get_or_train_donor_model() -> tuple[object, float, float]:
     u_idx = np.where(lbl != 1)[0]
     f_cols = [c for c in df_kal.columns if c not in ("row", "col", "label")]
 
+    # Crucial: Uniform random spatial sampling across the entire island
+    # (Avoid row-ordered slicing which concentrates background samples solely in the far north)
+    rng = np.random.default_rng(42)
+    u_sample_idx = rng.choice(u_idx, size=min(len(u_idx), 30000), replace=False)
+
     cfg = {
         "pu_learning": {
             "step1_contamination": 0.05,
@@ -86,7 +91,7 @@ def get_or_train_donor_model() -> tuple[object, float, float]:
     model = fit_pu_model(
         df_kal.iloc[p_idx][f_cols].to_numpy(),
         np.empty((0, len(f_cols))),
-        df_kal.iloc[u_idx[:15000]][f_cols].to_numpy(),
+        df_kal.iloc[u_sample_idx][f_cols].to_numpy(),
         cfg,
     )
     donor_cache_path.parent.mkdir(parents=True, exist_ok=True)
@@ -254,7 +259,11 @@ def run_viewport_7pass(
     cover_2d = np.clip(cube[cov_idx], 0.0, 120.0)
 
     # Adaptive threshold based on the distribution of lower bounds
-    eff_l_thr = float(np.clip(np.nanpercentile(lower_2d[np.isfinite(lower_2d)], 90), l_threshold, 0.90))
+    valid_lower = lower_2d[np.isfinite(lower_2d)]
+    p88 = float(np.nanpercentile(valid_lower, 88)) if len(valid_lower) > 0 else l_threshold
+    p95 = float(np.nanpercentile(valid_lower, 95)) if len(valid_lower) > 0 else l_threshold
+    eff_l_thr = float(np.clip(p88, l_threshold, 0.92))
+
     ranked_gdf = polygonize_and_rank_targets(
         calibrated_prob=cal_2d,
         lower_bound_L=lower_2d,
@@ -264,11 +273,35 @@ def run_viewport_7pass(
         cover_depth_m=cover_2d,
         profile=profile,
         l_threshold=eff_l_thr,
-        closing_size=2,
+        closing_size=1,
         min_area_ha=float(min_area_ha),
         region_prefix=region_name.upper(),
         extra_layers={"fused_raw_score": fused_2d},
     )
+
+    # Filter out any polygon that covers > 20% of the entire viewport area (which is a regional background blob, not a drill target)
+    total_area_sq_km = span_lon_km * span_lat_km
+    if len(ranked_gdf) > 0 and "area_sq_km" in ranked_gdf.columns:
+        ranked_gdf = ranked_gdf[ranked_gdf["area_sq_km"] <= (total_area_sq_km * 0.20)].reset_index(drop=True)
+
+    # If that removed everything, threshold strictly at the 95th percentile
+    if len(ranked_gdf) == 0 and len(valid_lower) > 0:
+        ranked_gdf = polygonize_and_rank_targets(
+            calibrated_prob=cal_2d,
+            lower_bound_L=lower_2d,
+            upper_bound_U=upper_2d,
+            dilation_tendency_Td=td_2d,
+            alteration_index=alt_2d,
+            cover_depth_m=cover_2d,
+            profile=profile,
+            l_threshold=float(p95),
+            closing_size=1,
+            min_area_ha=float(min_area_ha),
+            region_prefix=region_name.upper(),
+            extra_layers={"fused_raw_score": fused_2d},
+        )
+        if len(ranked_gdf) > 0 and "area_sq_km" in ranked_gdf.columns:
+            ranked_gdf = ranked_gdf[ranked_gdf["area_sq_km"] <= (total_area_sq_km * 0.25)].reset_index(drop=True)
 
     if len(ranked_gdf) > 15:
         ranked_gdf = ranked_gdf.head(15).reset_index(drop=True)

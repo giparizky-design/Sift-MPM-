@@ -1917,6 +1917,9 @@
               clearInterval(pollTimer);
               btn.disabled = false;
               btn.innerHTML = origHtml;
+              // Ensure prospectivity heatmap is toggled on so the colorful anomaly surface renders immediately
+              const chkH = document.getElementById("chk-heatmap");
+              if (chkH) chkH.checked = true;
               // Automatically switch to CUSTOM_VIEWPORT and render prospectivity overlays & targets
               await selectRegion("CUSTOM_VIEWPORT");
             }
