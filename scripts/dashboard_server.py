@@ -101,6 +101,7 @@ def _raster_to_rgba_base64(
     band: int = 1,
     cmap: str = "inferno",
     alpha_scale: float = 0.72,
+    normalize: bool = False,
 ) -> tuple[str, list[list[float]]]:
     """Convert a projected GeoTIFF band to a base64 RGBA PNG + WGS84 [[south, west], [north, east]] bounds."""
     with rasterio.open(tif_path) as src:
@@ -109,8 +110,18 @@ def _raster_to_rgba_base64(
             src.crs, "EPSG:4326", *src.bounds, densify_pts=21
         )
 
-    valid = np.isfinite(arr) & (arr > 0.02)
-    norm = np.clip(np.nan_to_num(arr, nan=0.0), 0.0, 1.0)
+    valid = np.isfinite(arr) & (arr > -9000.0)
+    if not valid.any():
+        empty_b64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+        return empty_b64, [[float(south), float(west)], [float(north), float(east)]]
+
+    if normalize:
+        vmin = float(np.percentile(arr[valid], 1.5))
+        vmax = float(np.percentile(arr[valid], 98.5))
+        norm = np.clip((arr - vmin) / (max(vmax - vmin, 1e-6)), 0.0, 1.0)
+    else:
+        valid = valid & (arr > 0.02)
+        norm = np.clip(np.nan_to_num(arr, nan=0.0), 0.0, 1.0)
 
     H, W = norm.shape
     rgba = np.zeros((H, W, 4), dtype=np.uint8)
@@ -121,12 +132,42 @@ def _raster_to_rgba_base64(
         g = np.clip((norm - 0.25) * 1.35, 0.0, 1.0)
         b = np.clip(0.65 - np.abs(norm - 0.35) * 1.8 + np.maximum(0.0, norm - 0.85) * 2.0, 0.0, 1.0)
         a = np.where(valid, np.clip(norm * alpha_scale * 255.0 + 25.0, 0.0, 220.0), 0.0)
-    else:
+    elif cmap == "emerald":
         # Cyan-emerald uncertainty/lower-bound ramp
         r = np.clip((norm - 0.4) * 1.6, 0.0, 1.0)
         g = np.clip(norm * 1.25, 0.0, 1.0)
         b = np.clip(0.9 - norm * 0.5, 0.0, 1.0)
         a = np.where(valid, np.clip(norm * alpha_scale * 255.0, 0.0, 210.0), 0.0)
+    elif cmap == "terrain":
+        # Satellite Elevation: Lowlands (green) -> Plateau (yellow/ochre) -> Mountains (brown/white)
+        r = np.where(norm < 0.5, norm * 1.6, 0.8 + (norm - 0.5) * 0.4)
+        g = np.where(norm < 0.5, 0.45 + norm * 0.95, 0.92 - (norm - 0.5) * 1.2)
+        b = np.where(norm < 0.5, 0.2 + (0.5 - norm) * 0.4, 0.15 + (norm - 0.5) * 1.5)
+        a = np.where(valid, np.clip(alpha_scale * 240.0, 0.0, 255.0), 0.0)
+    elif cmap == "magma":
+        # 3D Fault Dilation Td / Slip Ts / Shear Strain (Violet -> Pink -> Neon Orange -> Yellow)
+        r = np.clip(norm * 1.4, 0.0, 1.0)
+        g = np.clip((norm - 0.35) * 1.5, 0.0, 1.0)
+        b = np.clip(0.4 - norm * 0.7 + np.maximum(0.0, norm - 0.7) * 2.5, 0.0, 1.0)
+        a = np.where(valid, np.clip(norm * alpha_scale * 240.0 + 35.0, 0.0, 240.0), 0.0)
+    elif cmap == "coolwarm":
+        # Bouguer Gravity / Moho Step (Blue negative -> White neutral -> Red positive)
+        r = np.clip(norm * 2.0 - 0.5, 0.0, 1.0)
+        g = np.clip(1.0 - 2.0 * np.abs(norm - 0.5), 0.0, 1.0)
+        b = np.clip((1.0 - norm) * 2.0 - 0.5, 0.0, 1.0)
+        a = np.where(valid, np.clip(alpha_scale * 220.0, 0.0, 240.0), 0.0)
+    elif cmap == "plasma":
+        # Volcanic Arc Halo (Electric Violet -> Deep Pink -> Yellow)
+        r = np.clip(norm * 1.35, 0.0, 1.0)
+        g = np.clip((norm - 0.25) * 1.25, 0.0, 1.0)
+        b = np.clip(0.8 - norm * 0.7, 0.0, 1.0)
+        a = np.where(valid, np.clip(norm * alpha_scale * 250.0 + 30.0, 0.0, 240.0), 0.0)
+    else:
+        # Copper / Regolith Cover Depth / Outcrop
+        r = np.clip(norm * 1.25, 0.0, 1.0)
+        g = np.clip(norm * 0.78, 0.0, 1.0)
+        b = np.clip(norm * 0.49, 0.0, 1.0)
+        a = np.where(valid, np.clip(alpha_scale * 220.0, 0.0, 240.0), 0.0)
 
     rgba[..., 0] = (r * 255).astype(np.uint8)
     rgba[..., 1] = (g * 255).astype(np.uint8)
@@ -138,6 +179,56 @@ def _raster_to_rgba_base64(
     img.save(buf, format="PNG", optimize=True)
     b64 = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode("ascii")
     return b64, [[float(south), float(west)], [float(north), float(east)]]
+
+
+def _render_satellite_layer(region: str, layer_name: str) -> tuple[str, list[list[float]]]:
+    """Render a physical satellite/tectonic input raster layer as base64 RGBA PNG."""
+    region_up = region.upper()
+    c_low = region_up.lower()
+    if region_up in ("INDONESIA", "INDONESIA_GEORIMA"):
+        cand_dirs = [ROOT_DIR / "data" / "indonesia" / "processed"]
+    elif region_up == "YILGARN":
+        cand_dirs = [ROOT_DIR / "data" / "processed", ROOT_DIR / "data" / "raw_real"]
+    else:
+        cand_dirs = [ROOT_DIR / "data" / c_low / "processed", ROOT_DIR / "data" / "indonesia" / "processed"]
+
+    tif_path = None
+    for d in cand_dirs:
+        p = d / f"{layer_name}.tif"
+        if p.exists():
+            tif_path = p
+            break
+
+    if not tif_path:
+        empty_b64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+        return empty_b64, [[-11.0, 95.0], [6.0, 141.0]]
+
+    # Choose specialized colormap
+    if "dem_elevation" in layer_name:
+        cmap = "terrain"
+    elif any(k in layer_name for k in ("dilation", "slip", "fault", "lineament")):
+        cmap = "magma"
+    elif any(k in layer_name for k in ("gravity", "moho", "crustal")):
+        cmap = "coolwarm"
+    elif "volcan" in layer_name:
+        cmap = "plasma"
+    else:
+        cmap = "copper"
+
+    return _raster_to_rgba_base64(tif_path, cmap=cmap, alpha_scale=0.78, normalize=True)
+
+
+def _build_region_satellite_layers(region_up: str) -> dict:
+    """Pre-render core satellite and physical input layers for instant toggling."""
+    layers = {}
+    for l_key in ("dem_elevation", "dilation_tendency_Td", "bouguer_gravity_mgal", "active_fault_density"):
+        try:
+            b64, bounds = _render_satellite_layer(region_up, l_key)
+            if b64 and len(b64) > 300:
+                layers[l_key] = {"png_b64": b64, "bounds": bounds}
+        except Exception:
+            pass
+    return layers
 
 
 def _load_region_bundle(region: str) -> dict:
@@ -272,6 +363,7 @@ def _load_region_bundle(region: str) -> dict:
                 "features": fault_features,
             },
             "site_cards": site_cards,
+            "satellite_layers": _build_region_satellite_layers(region_up),
             "heatmap_png": heatmap_b64,
             "conformal_l_png": conformal_b64,
         }
@@ -655,6 +747,7 @@ def _load_region_bundle(region: str) -> dict:
             "predicted_targets_geojson": {"type": "FeatureCollection", "features": predicted_features},
             "faults_geojson": {"type": "FeatureCollection", "features": []},
             "site_cards": site_cards,
+            "satellite_layers": _build_region_satellite_layers(region_up),
             "heatmap_png": heatmap_b64,
             "conformal_l_png": conformal_b64,
         }
@@ -826,6 +919,7 @@ def _load_region_bundle(region: str) -> dict:
             },
             "faults_geojson": {"type": "FeatureCollection", "features": []},
             "site_cards": site_cards,
+            "satellite_layers": _build_region_satellite_layers(region_up),
             "heatmap_png": heatmap_b64,
             "conformal_l_png": conformal_b64,
         }
@@ -1040,6 +1134,20 @@ class DashboardHandler(BaseHTTPRequestHandler):
             region = qs.get("name", ["YILGARN"])[0]
             bundle = _load_region_bundle(region)
             self._send_json(bundle)
+            return
+
+        if parsed.path == "/api/satellite_layer":
+            qs = parse_qs(parsed.query)
+            region = qs.get("region", ["KALIMANTAN"])[0]
+            layer = qs.get("layer", ["dem_elevation"])[0]
+            b64, bounds = _render_satellite_layer(region, layer)
+            self._send_json({
+                "status": "ok",
+                "region": region,
+                "layer": layer,
+                "png_b64": b64,
+                "bounds": bounds,
+            })
             return
 
         if parsed.path in ("/api/config", "/api/carto"):
