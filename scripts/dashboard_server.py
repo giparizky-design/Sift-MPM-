@@ -364,6 +364,7 @@ def _load_region_bundle(region: str) -> dict:
             },
             "site_cards": site_cards,
             "satellite_layers": _build_region_satellite_layers(region_up),
+            "hd_sub_overlays": hd_sub_overlays,
             "heatmap_png": heatmap_b64,
             "conformal_l_png": conformal_b64,
         }
@@ -649,7 +650,7 @@ def _load_region_bundle(region: str) -> dict:
                     "bbox": (124.40, 0.80, 125.25, 1.65),
                 },
                 "KALIMANTAN": {
-                    "title": "Kalimantan Regional Scan (1km @ 108.5°E–119.5°E, All 5 Provinces)",
+                    "title": "Kalimantan Island Scan (500m Baseline + 50m Ultra-HD Camps, All 5 Provinces)",
                     "center": [-0.5, 114.5],
                     "zoom": 7,
                     "bbox": (108.5, -4.5, 119.5, 4.5),
@@ -679,7 +680,7 @@ def _load_region_bundle(region: str) -> dict:
                     "bbox": (112.5350, -0.5900, 112.7600, -0.3650),
                 },
             }[region_up]
-        code_low = region_up.lower()
+        code_low = "kalimantan_500m" if region_up == "KALIMANTAN" else region_up.lower()
         out_dir = ROOT_DIR / "outputs" / f"seven_pass_{code_low}"
         summary_path = out_dir / "seven_pass_summary.json"
         cards_path = out_dir / "targets" / "site_cards.json"
@@ -763,6 +764,65 @@ def _load_region_bundle(region: str) -> dict:
                     }
                 )
 
+        # For Kalimantan, also bundle all 50m Ultra-HD Camp-Scale Overlays across the island
+        hd_sub_overlays = []
+        if region_up in ("KALIMANTAN", "KALIMANTAN_500M"):
+            kal_hd_list = [
+                ("BORNEO", "Kelian Epithermal Au-Ag District (50m HD East Kalimantan)"),
+                ("HOTSPOT_SCHWANER_50M", "Schwaner Range Blind Discovery (50m HD West Kalimantan)"),
+                ("HOTSPOT_KAYAN_50M", "Kayan River Fracture Corridor (50m HD North Kalimantan)"),
+                ("HOTSPOT_KAHAYAN_50M", "Upper Kahayan Suture (50m HD Central Kalimantan)"),
+            ]
+            for hd_code, hd_label in kal_hd_list:
+                hd_dir = ROOT_DIR / "outputs" / f"seven_pass_{hd_code.lower()}"
+                hd_prosp = hd_dir / "maps" / "calibrated_prospectivity.tif"
+                hd_conf = hd_dir / "maps" / "conformal_bounds_90ci.tif"
+                hd_gpkg = hd_dir / "targets" / f"ranked_targets_{hd_code.lower()}.gpkg"
+                hd_cards_p = hd_dir / "targets" / "site_cards.json"
+                if hd_prosp.exists():
+                    hm_png, hm_bnds = _raster_to_rgba_base64(hd_prosp, band=1, cmap="inferno", alpha_scale=0.90)
+                    cf_png, _ = _raster_to_rgba_base64(hd_conf, band=1, cmap="emerald", alpha_scale=0.90) if hd_conf.exists() else ("", [])
+                    hd_sub_overlays.append({
+                        "code": hd_code,
+                        "label": hd_label,
+                        "bounds": hm_bnds,
+                        "heatmap_png": hm_png,
+                        "conformal_l_png": cf_png,
+                    })
+                if hd_gpkg.exists():
+                    gdf_hd = gpd.read_file(hd_gpkg).to_crs("EPSG:4326")
+                    hd_cards = json.loads(hd_cards_p.read_text()) if hd_cards_p.exists() else []
+                    hd_card_map = {c["target_id"]: c for c in hd_cards}
+                    for idx_h, row_h in gdf_hd.head(5).iterrows():
+                        tid_h = str(row_h.get("target_id", f"{hd_code}_TGT_{idx_h+1:04d}"))
+                        geom_h = row_h.geometry
+                        c_h = geom_h.centroid
+                        d_deg_h = np.hypot(mine_coords[:, 0] - c_h.x, mine_coords[:, 1] - c_h.y) if len(mine_coords) > 0 else np.array([0.05])
+                        hits_h = int((d_deg_h <= 0.035).sum())
+                        predicted_features.append({
+                            "type": "Feature",
+                            "geometry": mapping(geom_h),
+                            "properties": {
+                                "target_id": tid_h,
+                                "rank": int(row_h.get("rank", idx_h + 1)),
+                                "rank_score": round(float(row_h.get("rank_score", 0.0)), 3),
+                                "area_sq_km": round(float(row_h.get("area_sq_km", 0.0)), 3),
+                                "calibrated_deposit_prob": round(float(row_h.get("calibrated_deposit_prob", 0.0)), 3),
+                                "lower_bound_L": round(float(row_h.get("lower_bound_L", 0.0)), 3),
+                                "upper_bound_U": round(float(row_h.get("upper_bound_U", 1.0)), 3),
+                                "dilation_tendency_Td_max": round(float(row_h.get("dilation_tendency_Td_max", 0.0)), 3),
+                                "regolith_cover_depth_m": round(float(row_h.get("regolith_cover_depth_m", 0.0)), 1),
+                                "exploration_propensity_e_x": 0.2,
+                                "propensity_weight_w": 5.0,
+                                "actual_mines_hit": hits_h,
+                                "nearest_actual_mine_m": round(float(d_deg_h.min()) * 111_000.0, 1) if len(d_deg_h) > 0 else 25000.0,
+                                "classification": "50m Ultra-HD Camp Target",
+                                "site_card": hd_card_map.get(tid_h),
+                            }
+                        })
+                        if hd_card_map.get(tid_h):
+                            site_cards.append(hd_card_map[tid_h])
+
         heatmap_b64, bounds = _raster_to_rgba_base64(prosp_tif, band=1, cmap="inferno")
         conformal_b64, _ = _raster_to_rgba_base64(conf_tif, band=1, cmap="emerald")
         return {
@@ -782,6 +842,7 @@ def _load_region_bundle(region: str) -> dict:
             "faults_geojson": {"type": "FeatureCollection", "features": []},
             "site_cards": site_cards,
             "satellite_layers": _build_region_satellite_layers(region_up),
+            "hd_sub_overlays": hd_sub_overlays,
             "heatmap_png": heatmap_b64,
             "conformal_l_png": conformal_b64,
         }
@@ -954,6 +1015,7 @@ def _load_region_bundle(region: str) -> dict:
             "faults_geojson": {"type": "FeatureCollection", "features": []},
             "site_cards": site_cards,
             "satellite_layers": _build_region_satellite_layers(region_up),
+            "hd_sub_overlays": hd_sub_overlays,
             "heatmap_png": heatmap_b64,
             "conformal_l_png": conformal_b64,
         }

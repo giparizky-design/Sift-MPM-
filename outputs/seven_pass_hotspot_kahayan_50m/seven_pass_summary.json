@@ -1,0 +1,69 @@
+{
+  "region": "HOTSPOT_KAHAYAN_50M",
+  "title": "Central Kalimantan Upper Kahayan (50m Ultra-HD Camp Scan)",
+  "n_cells": 89400,
+  "n_positives": 0,
+  "pr_auc_xgb": 0.465,
+  "pr_auc_unet": 0.548,
+  "pr_auc_fused": 0.526,
+  "elkan_noto_c_hat": 0.5062,
+  "conformal_q_hat_90": 2.518,
+  "n_ranked_targets": 15,
+  "top_target_card": {
+    "target_id": "HOTSPOT_KAHAYAN_50M_TGT_0002",
+    "rank": 2,
+    "rank_score": 0.812,
+    "geometry": {
+      "centroid_lat_lon": [
+        -0.4157,
+        112.6511
+      ],
+      "area_sq_km": 1.738,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.982,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.966,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.205
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.008,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 34.7,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  "bbox": [
+    112.58,
+    -0.545,
+    112.715,
+    -0.41
+  ],
+  "center": [
+    -0.4775,
+    112.6475
+  ],
+  "zoom": 11,
+  "resolution_m": 50.1,
+  "execution_time_sec": 3.09
+}

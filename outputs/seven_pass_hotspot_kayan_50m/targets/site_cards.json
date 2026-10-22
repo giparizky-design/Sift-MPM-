@@ -1,0 +1,662 @@
+[
+  {
+    "target_id": "HOTSPOT_KAYAN_50M_TGT_0002",
+    "rank": 2,
+    "rank_score": 0.919,
+    "geometry": {
+      "centroid_lat_lon": [
+        2.7262,
+        115.2614
+      ],
+      "area_sq_km": 39.884,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.991,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.969,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.363
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.008,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 8.4,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "HOTSPOT_KAYAN_50M_TGT_0003",
+    "rank": 3,
+    "rank_score": 0.863,
+    "geometry": {
+      "centroid_lat_lon": [
+        2.8264,
+        115.1619
+      ],
+      "area_sq_km": 1.018,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.988,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.968,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.32
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.008,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 8.9,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "HOTSPOT_KAYAN_50M_TGT_0004",
+    "rank": 4,
+    "rank_score": 0.85,
+    "geometry": {
+      "centroid_lat_lon": [
+        2.7744,
+        115.2882
+      ],
+      "area_sq_km": 0.488,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.984,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.965,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.32
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.008,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 9.3,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "HOTSPOT_KAYAN_50M_TGT_0005",
+    "rank": 5,
+    "rank_score": 0.844,
+    "geometry": {
+      "centroid_lat_lon": [
+        2.697,
+        115.205
+      ],
+      "area_sq_km": 0.25,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.968,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.966,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.31
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.008,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 9.2,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "HOTSPOT_KAYAN_50M_TGT_0006",
+    "rank": 6,
+    "rank_score": 0.834,
+    "geometry": {
+      "centroid_lat_lon": [
+        2.7807,
+        115.2623
+      ],
+      "area_sq_km": 0.23,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.973,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.968,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.309
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.008,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 9.5,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "HOTSPOT_KAYAN_50M_TGT_0007",
+    "rank": 7,
+    "rank_score": 0.824,
+    "geometry": {
+      "centroid_lat_lon": [
+        2.796,
+        115.1976
+      ],
+      "area_sq_km": 0.483,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.976,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.964,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.295
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.008,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 9.3,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "HOTSPOT_KAYAN_50M_TGT_0008",
+    "rank": 8,
+    "rank_score": 0.82,
+    "geometry": {
+      "centroid_lat_lon": [
+        2.7469,
+        115.2148
+      ],
+      "area_sq_km": 5.27,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.982,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.963,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.299
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.008,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 9.6,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "HOTSPOT_KAYAN_50M_TGT_0009",
+    "rank": 9,
+    "rank_score": 0.809,
+    "geometry": {
+      "centroid_lat_lon": [
+        2.8202,
+        115.1564
+      ],
+      "area_sq_km": 0.104,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.974,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.964,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.287
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.008,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 9.6,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "HOTSPOT_KAYAN_50M_TGT_0010",
+    "rank": 10,
+    "rank_score": 0.809,
+    "geometry": {
+      "centroid_lat_lon": [
+        2.7763,
+        115.1869
+      ],
+      "area_sq_km": 0.432,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.974,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.961,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.28
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.008,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 9.4,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "HOTSPOT_KAYAN_50M_TGT_0011",
+    "rank": 11,
+    "rank_score": 0.807,
+    "geometry": {
+      "centroid_lat_lon": [
+        2.8286,
+        115.2404
+      ],
+      "area_sq_km": 0.121,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.972,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.963,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.303
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.008,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 10.1,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "HOTSPOT_KAYAN_50M_TGT_0012",
+    "rank": 12,
+    "rank_score": 0.806,
+    "geometry": {
+      "centroid_lat_lon": [
+        2.75,
+        115.2489
+      ],
+      "area_sq_km": 0.627,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.969,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.965,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.296
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.008,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 9.9,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "HOTSPOT_KAYAN_50M_TGT_0013",
+    "rank": 13,
+    "rank_score": 0.801,
+    "geometry": {
+      "centroid_lat_lon": [
+        2.7232,
+        115.2243
+      ],
+      "area_sq_km": 0.24,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.968,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.954,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.28
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.008,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 9.6,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "HOTSPOT_KAYAN_50M_TGT_0014",
+    "rank": 14,
+    "rank_score": 0.798,
+    "geometry": {
+      "centroid_lat_lon": [
+        2.7049,
+        115.2109
+      ],
+      "area_sq_km": 0.237,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.961,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.956,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.274
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.008,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 9.5,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "HOTSPOT_KAYAN_50M_TGT_0015",
+    "rank": 15,
+    "rank_score": 0.784,
+    "geometry": {
+      "centroid_lat_lon": [
+        2.7207,
+        115.1814
+      ],
+      "area_sq_km": 0.03,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.964,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.947,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.275
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.007,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 9.0,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "HOTSPOT_KAYAN_50M_TGT_0016",
+    "rank": 16,
+    "rank_score": 0.768,
+    "geometry": {
+      "centroid_lat_lon": [
+        2.7127,
+        115.2142
+      ],
+      "area_sq_km": 0.111,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.941,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.95,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.252
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.008,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 9.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  }
+]

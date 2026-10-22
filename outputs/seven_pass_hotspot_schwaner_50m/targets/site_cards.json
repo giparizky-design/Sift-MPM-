@@ -1,0 +1,662 @@
+[
+  {
+    "target_id": "HOTSPOT_SCHWANER_50M_TGT_0002",
+    "rank": 2,
+    "rank_score": 0.828,
+    "geometry": {
+      "centroid_lat_lon": [
+        -0.4875,
+        110.8259
+      ],
+      "area_sq_km": 6.455,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.988,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.97,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.413
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.008,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 30.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "HOTSPOT_SCHWANER_50M_TGT_0003",
+    "rank": 3,
+    "rank_score": 0.752,
+    "geometry": {
+      "centroid_lat_lon": [
+        -0.541,
+        110.8884
+      ],
+      "area_sq_km": 0.707,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.97,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.968,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.355
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.008,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 32.3,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "HOTSPOT_SCHWANER_50M_TGT_0004",
+    "rank": 4,
+    "rank_score": 0.735,
+    "geometry": {
+      "centroid_lat_lon": [
+        -0.4585,
+        110.8321
+      ],
+      "area_sq_km": 1.475,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.974,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.969,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.352
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.008,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 33.7,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "HOTSPOT_SCHWANER_50M_TGT_0005",
+    "rank": 5,
+    "rank_score": 0.716,
+    "geometry": {
+      "centroid_lat_lon": [
+        -0.5226,
+        110.8454
+      ],
+      "area_sq_km": 0.907,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.966,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.966,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.334
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.008,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 33.7,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "HOTSPOT_SCHWANER_50M_TGT_0006",
+    "rank": 6,
+    "rank_score": 0.705,
+    "geometry": {
+      "centroid_lat_lon": [
+        -0.5201,
+        110.8178
+      ],
+      "area_sq_km": 0.432,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.973,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.97,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.357
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.008,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 36.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "HOTSPOT_SCHWANER_50M_TGT_0007",
+    "rank": 7,
+    "rank_score": 0.671,
+    "geometry": {
+      "centroid_lat_lon": [
+        -0.5122,
+        110.8738
+      ],
+      "area_sq_km": 0.904,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.961,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.965,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.308
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.008,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 35.4,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "HOTSPOT_SCHWANER_50M_TGT_0008",
+    "rank": 8,
+    "rank_score": 0.579,
+    "geometry": {
+      "centroid_lat_lon": [
+        -0.4985,
+        110.8185
+      ],
+      "area_sq_km": 0.035,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.966,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.943,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.55
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.006,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 33.0,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "HOTSPOT_SCHWANER_50M_TGT_0009",
+    "rank": 9,
+    "rank_score": 0.569,
+    "geometry": {
+      "centroid_lat_lon": [
+        -0.522,
+        110.8707
+      ],
+      "area_sq_km": 0.167,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.942,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.956,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.258
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.008,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 40.0,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "HOTSPOT_SCHWANER_50M_TGT_0010",
+    "rank": 10,
+    "rank_score": 0.553,
+    "geometry": {
+      "centroid_lat_lon": [
+        -0.5378,
+        110.8397
+      ],
+      "area_sq_km": 0.379,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.966,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.963,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.247
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.008,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 40.5,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "HOTSPOT_SCHWANER_50M_TGT_0011",
+    "rank": 11,
+    "rank_score": 0.543,
+    "geometry": {
+      "centroid_lat_lon": [
+        -0.5053,
+        110.8487
+      ],
+      "area_sq_km": 0.174,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.915,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.961,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.243
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.008,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 41.0,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "HOTSPOT_SCHWANER_50M_TGT_0012",
+    "rank": 12,
+    "rank_score": 0.54,
+    "geometry": {
+      "centroid_lat_lon": [
+        -0.4886,
+        110.8647
+      ],
+      "area_sq_km": 0.03,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.966,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.931,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.52
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.006,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 28.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "HOTSPOT_SCHWANER_50M_TGT_0013",
+    "rank": 13,
+    "rank_score": 0.523,
+    "geometry": {
+      "centroid_lat_lon": [
+        -0.4215,
+        110.9324
+      ],
+      "area_sq_km": 0.081,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.932,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.953,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.22
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.007,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 13.3,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "HOTSPOT_SCHWANER_50M_TGT_0014",
+    "rank": 14,
+    "rank_score": 0.486,
+    "geometry": {
+      "centroid_lat_lon": [
+        -0.4402,
+        110.9418
+      ],
+      "area_sq_km": 0.033,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.912,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.948,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.158
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.007,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 15.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "HOTSPOT_SCHWANER_50M_TGT_0015",
+    "rank": 15,
+    "rank_score": 0.486,
+    "geometry": {
+      "centroid_lat_lon": [
+        -0.5338,
+        110.8379
+      ],
+      "area_sq_km": 0.038,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.888,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.949,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.27
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.007,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 35.7,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "HOTSPOT_SCHWANER_50M_TGT_0016",
+    "rank": 16,
+    "rank_score": 0.264,
+    "geometry": {
+      "centroid_lat_lon": [
+        -0.4511,
+        110.9401
+      ],
+      "area_sq_km": 0.035,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.912,
+      "elkan_noto_c_hat": 0.506,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.946,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.2,
+      "propensity_weight_w": 5.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "Copernicus_GLO30_HD",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.149
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.006,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 15.5,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  }
+]
