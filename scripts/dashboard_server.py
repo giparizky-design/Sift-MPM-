@@ -612,63 +612,73 @@ def _load_region_bundle(region: str) -> dict:
             "conformal_l_png": conformal_b64,
         }
 
-    elif region_up in ("PAPUA", "SUMBAWA", "SUMATRA", "SULAWESI", "KALIMANTAN", "KALIMANTAN_500M") or region_up.startswith("HOTSPOT_"):
-        hd_meta = {
-            "PAPUA": {
-                "title": "Papua Central Range HD — Grasberg–Wabu Porphyry Cu-Au Camp (200m HD)",
-                "center": [-4.05, 137.15],
-                "zoom": 11,
-                "bbox": (136.85, -4.35, 137.45, -3.75),
-            },
-            "SUMBAWA": {
-                "title": "Sumbawa Arc HD — Batu Hijau–Elang Porphyry Cu-Au Camp (230m HD)",
-                "center": [-8.85, 117.15],
-                "zoom": 10,
-                "bbox": (116.70, -9.10, 117.60, -8.50),
-            },
-            "SUMATRA": {
-                "title": "North Sumatra HD — Martabe–Toru Great Sumatran Fault Au-Ag Camp (240m HD)",
-                "center": [1.52, 99.20],
-                "zoom": 11,
-                "bbox": (98.90, 1.20, 99.60, 1.90),
-            },
-            "SULAWESI": {
-                "title": "North Sulawesi HD — Toka Tindung–Minahasa Epithermal Au-Cu Camp (290m HD)",
-                "center": [1.20, 124.85],
-                "zoom": 10,
-                "bbox": (124.40, 0.80, 125.25, 1.65),
-            },
-            "KALIMANTAN": {
-                "title": "Kalimantan Regional Scan (1km @ 108.5°E–119.5°E, All 5 Provinces)",
-                "center": [-0.5, 114.5],
-                "zoom": 7,
-                "bbox": (108.5, -4.5, 119.5, 4.5),
-            },
-            "KALIMANTAN_500M": {
-                "title": "Kalimantan Island-Wide Scan (500m Ultra-HD @ 108.5°E–119.5°E, All 5 Provinces)",
-                "center": [-0.5, 114.5],
-                "zoom": 7,
-                "bbox": (108.5, -4.5, 119.5, 4.5),
-            },
-            "HOTSPOT_SCHWANER": {
-                "title": "West Kalimantan (Kalbar) Schwaner Range Blind Discovery (100m Ultra-HD Blind Discovery)",
-                "center": [-0.4775, 110.8825],
-                "zoom": 12,
-                "bbox": (110.7700, -0.5900, 110.9950, -0.3650),
-            },
-            "HOTSPOT_KAYAN_NORTH": {
-                "title": "North Kalimantan (Kaltara) Kayan River Fracture Corridor (100m Ultra-HD Blind Discovery)",
-                "center": [2.7642, 115.2258],
-                "zoom": 12,
-                "bbox": (115.1133, 2.6517, 115.3383, 2.8767),
-            },
-            "HOTSPOT_KAHAYAN": {
-                "title": "Central Kalimantan (Kalteng) Upper Kahayan Blind Suture (100m Ultra-HD Blind Discovery)",
-                "center": [-0.4775, 112.6475],
-                "zoom": 12,
-                "bbox": (112.5350, -0.5900, 112.7600, -0.3650),
-            },
-        }[region_up]
+    elif region_up in ("PAPUA", "SUMBAWA", "SUMATRA", "SULAWESI", "KALIMANTAN", "KALIMANTAN_500M", "CUSTOM_VIEWPORT") or region_up.startswith("HOTSPOT_"):
+        if region_up == "CUSTOM_VIEWPORT":
+            summ_file = ROOT_DIR / "outputs" / "seven_pass_custom_viewport" / "seven_pass_summary.json"
+            summ_data = json.loads(summ_file.read_text()) if summ_file.exists() else {}
+            hd_meta = {
+                "title": summ_data.get("title", "Map View (Custom 7-Pass Run)"),
+                "center": summ_data.get("center", [2.75, 115.25]),
+                "zoom": summ_data.get("zoom", 11),
+                "bbox": tuple(summ_data.get("bbox", (115.15, 2.65, 115.35, 2.85))),
+            }
+        else:
+            hd_meta = {
+                "PAPUA": {
+                    "title": "Papua Central Range HD — Grasberg–Wabu Porphyry Cu-Au Camp (200m HD)",
+                    "center": [-4.05, 137.15],
+                    "zoom": 11,
+                    "bbox": (136.85, -4.35, 137.45, -3.75),
+                },
+                "SUMBAWA": {
+                    "title": "Sumbawa Arc HD — Batu Hijau–Elang Porphyry Cu-Au Camp (230m HD)",
+                    "center": [-8.85, 117.15],
+                    "zoom": 10,
+                    "bbox": (116.70, -9.10, 117.60, -8.50),
+                },
+                "SUMATRA": {
+                    "title": "North Sumatra HD — Martabe–Toru Great Sumatran Fault Au-Ag Camp (240m HD)",
+                    "center": [1.52, 99.20],
+                    "zoom": 11,
+                    "bbox": (98.90, 1.20, 99.60, 1.90),
+                },
+                "SULAWESI": {
+                    "title": "North Sulawesi HD — Toka Tindung–Minahasa Epithermal Au-Cu Camp (290m HD)",
+                    "center": [1.20, 124.85],
+                    "zoom": 10,
+                    "bbox": (124.40, 0.80, 125.25, 1.65),
+                },
+                "KALIMANTAN": {
+                    "title": "Kalimantan Regional Scan (1km @ 108.5°E–119.5°E, All 5 Provinces)",
+                    "center": [-0.5, 114.5],
+                    "zoom": 7,
+                    "bbox": (108.5, -4.5, 119.5, 4.5),
+                },
+                "KALIMANTAN_500M": {
+                    "title": "Kalimantan Island-Wide Scan (500m Ultra-HD @ 108.5°E–119.5°E, All 5 Provinces)",
+                    "center": [-0.5, 114.5],
+                    "zoom": 7,
+                    "bbox": (108.5, -4.5, 119.5, 4.5),
+                },
+                "HOTSPOT_SCHWANER": {
+                    "title": "West Kalimantan (Kalbar) Schwaner Range Blind Discovery (100m Ultra-HD Blind Discovery)",
+                    "center": [-0.4775, 110.8825],
+                    "zoom": 12,
+                    "bbox": (110.7700, -0.5900, 110.9950, -0.3650),
+                },
+                "HOTSPOT_KAYAN_NORTH": {
+                    "title": "North Kalimantan (Kaltara) Kayan River Fracture Corridor (100m Ultra-HD Blind Discovery)",
+                    "center": [2.7642, 115.2258],
+                    "zoom": 12,
+                    "bbox": (115.1133, 2.6517, 115.3383, 2.8767),
+                },
+                "HOTSPOT_KAHAYAN": {
+                    "title": "Central Kalimantan (Kalteng) Upper Kahayan Blind Suture (100m Ultra-HD Blind Discovery)",
+                    "center": [-0.4775, 112.6475],
+                    "zoom": 12,
+                    "bbox": (112.5350, -0.5900, 112.7600, -0.3650),
+                },
+            }[region_up]
         code_low = region_up.lower()
         out_dir = ROOT_DIR / "outputs" / f"seven_pass_{code_low}"
         summary_path = out_dir / "seven_pass_summary.json"
@@ -1080,24 +1090,44 @@ def _recompute_targets_live(
     return _load_region_bundle(region_up)
 
 
-def _trigger_background_training() -> dict:
-    """Spawn scripts/run_seven_pass_training.py in a background thread and stream logs."""
+def _trigger_background_training(viewport_params: dict | None = None) -> dict:
+    """Spawn 7-pass training/inference in a background thread and stream logs."""
     with _TRAIN_LOCK:
         if _TRAIN_STATE["running"]:
             return {"status": "already_running", "state": _TRAIN_STATE}
         _TRAIN_STATE["running"] = True
         _TRAIN_STATE["started_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
         _TRAIN_STATE["finished_at"] = None
+        _TRAIN_STATE["latest_region"] = "CUSTOM_VIEWPORT" if viewport_params else "ALL"
+        target_desc = (
+            f"Map View [{viewport_params.get('min_lon', 0):.4f}, {viewport_params.get('min_lat', 0):.4f}] -> [{viewport_params.get('max_lon', 0):.4f}, {viewport_params.get('max_lat', 0):.4f}]"
+            if viewport_params
+            else "Regional Benchmark Datasets"
+        )
         _TRAIN_STATE["logs"].append(
-            f"[{_TRAIN_STATE['started_at']}] Starting 7-Pass Training Run (scripts/run_seven_pass_training.py)..."
+            f"[{_TRAIN_STATE['started_at']}] Starting 7-Pass Training Run for {target_desc}..."
         )
 
     def _worker():
         env = os.environ.copy()
         env["OMP_NUM_THREADS"] = "1"
         env["MKL_NUM_THREADS"] = "1"
+        if viewport_params and "min_lon" in viewport_params:
+            cmd = [
+                sys.executable,
+                str(ROOT_DIR / "scripts" / "run_viewport_7pass.py"),
+                "--min-lon", f"{float(viewport_params['min_lon']):.5f}",
+                "--min-lat", f"{float(viewport_params['min_lat']):.5f}",
+                "--max-lon", f"{float(viewport_params['max_lon']):.5f}",
+                "--max-lat", f"{float(viewport_params['max_lat']):.5f}",
+                "--zoom", str(int(viewport_params.get("zoom", 11))),
+                "--name", "CUSTOM_VIEWPORT",
+            ]
+        else:
+            cmd = [sys.executable, str(ROOT_DIR / "scripts" / "run_seven_pass_training.py")]
+
         proc = subprocess.Popen(
-            [sys.executable, str(ROOT_DIR / "scripts" / "run_seven_pass_training.py")],
+            cmd,
             cwd=str(ROOT_DIR),
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -1119,7 +1149,7 @@ def _trigger_background_training() -> dict:
             _TRAIN_STATE["finished_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
             _TRAIN_STATE["last_exit_code"] = rc
             _TRAIN_STATE["logs"].append(
-                f"[{_TRAIN_STATE['finished_at']}] Training finished with exit code {rc}."
+                f"[{_TRAIN_STATE['finished_at']}] 7-Pass Run finished with exit code {rc}."
             )
 
     threading.Thread(target=_worker, daemon=True).start()
@@ -1224,7 +1254,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             return
 
         if parsed.path == "/api/train":
-            res = _trigger_background_training()
+            res = _trigger_background_training(viewport_params=body if body.get("min_lon") is not None else None)
             self._send_json(res)
             return
 

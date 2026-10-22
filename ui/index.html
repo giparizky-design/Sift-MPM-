@@ -820,12 +820,15 @@
         <button id="btn-indonesia" class="btn-tab-inactive" onclick="selectRegion('INDONESIA_GEORIMA')">
           Indonesia National Atlas
         </button>
+        <button id="btn-custom-viewport" class="btn-tab-inactive" style="border-color:var(--accent-orange); color:var(--accent-orange); font-weight:700;" onclick="selectRegion('CUSTOM_VIEWPORT')">
+          ★ Map View (7-Pass)
+        </button>
       </div>
       <button id="btn-map-mode" class="btn-ghost" onclick="toggleMapEngine()">
         Engine: Leaflet / Canvas
       </button>
       <button id="btn-train" class="btn-primary" onclick="triggerTrainingRun()">
-        <span>&#9654;</span> Execute 7-Pass Run
+        <span>&#9654;</span> Execute 7-Pass on Map View
       </button>
     </div>
   </header>
@@ -1265,6 +1268,7 @@
         "HOTSPOT_KAHAYAN": "btn-hotspot_kahayan",
         "HOTSPOT_KAYAN_NORTH": "btn-hotspot_kayan_north",
         "HOTSPOT_SCHWANER": "btn-hotspot_schwaner",
+        "CUSTOM_VIEWPORT": "btn-custom-viewport",
       };
       Object.entries(btnMap).forEach(([rk, bid]) => {
         const el = document.getElementById(bid);
@@ -1854,11 +1858,79 @@
 
     async function triggerTrainingRun() {
       if (!window.location.protocol.startsWith("http")) {
-        alert("To trigger a new Python training run from the browser, open http://127.0.0.1:8765");
+        alert("To trigger an interactive Python 7-pass run from the browser, open http://127.0.0.1:8765");
         return;
       }
-      await fetch("/api/train", { method: "POST" });
-      await pollStatus();
+      const btn = document.getElementById("btn-train");
+      const origHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<span>⏳</span> Scanning Map View (Pass 1-7)...`;
+
+      // Extract current map view bounding box
+      let minLon, minLat, maxLon, maxLat, zoom;
+      if (!useCanvasFallback && map) {
+        const b = map.getBounds();
+        minLon = b.getWest();
+        minLat = b.getSouth();
+        maxLon = b.getEast();
+        maxLat = b.getNorth();
+        zoom = map.getZoom();
+      } else {
+        minLon = view.minLon;
+        minLat = view.minLat;
+        maxLon = view.maxLon;
+        maxLat = view.maxLat;
+        zoom = 11;
+      }
+
+      const payload = {
+        min_lon: minLon,
+        min_lat: minLat,
+        max_lon: maxLon,
+        max_lat: maxLat,
+        zoom: zoom,
+        region: currentRegion
+      };
+
+      try {
+        const resp = await fetch("/api/train", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        if (!resp.ok) {
+          throw new Error(`HTTP ${resp.status}`);
+        }
+
+        // Live polling of training logs & execution status
+        const pollTimer = setInterval(async () => {
+          try {
+            const res = await fetch("/api/status");
+            if (!res.ok) return;
+            const st = await res.json();
+            const logBox = document.getElementById("console-log");
+            if (logBox) {
+              logBox.textContent = (st.logs || []).slice(-35).join("\n");
+              logBox.scrollTop = logBox.scrollHeight;
+            }
+            if (!st.running) {
+              clearInterval(pollTimer);
+              btn.disabled = false;
+              btn.innerHTML = origHtml;
+              // Automatically switch to CUSTOM_VIEWPORT and render prospectivity overlays & targets
+              await selectRegion("CUSTOM_VIEWPORT");
+            }
+          } catch (e) {
+            clearInterval(pollTimer);
+            btn.disabled = false;
+            btn.innerHTML = origHtml;
+          }
+        }, 500);
+      } catch (err) {
+        alert("Failed to trigger 7-pass run on map view: " + err);
+        btn.disabled = false;
+        btn.innerHTML = origHtml;
+      }
     }
 
     async function pollStatus() {
@@ -1867,7 +1939,11 @@
         const res = await fetch("/api/status");
         if (!res.ok) return;
         const st = await res.json();
-        document.getElementById("console-log").textContent = (st.logs || []).slice(-25).join("\n");
+        const logBox = document.getElementById("console-log");
+        if (logBox) {
+          logBox.textContent = (st.logs || []).slice(-25).join("\n");
+          logBox.scrollTop = logBox.scrollHeight;
+        }
       } catch (e) {}
     }
 
