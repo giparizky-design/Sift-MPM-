@@ -887,7 +887,7 @@
           <td style="font-family:monospace;">${row.fold !== undefined ? "Fold " + (Number(row.fold) + 1) : "Spatial Eval"}</td>
           <td style="font-family:monospace; color:#fbbf24; font-weight:600;">${Number(row.pr_auc).toFixed(3)}</td>
           <td style="font-family:monospace;">${Number(row.roc_auc).toFixed(3)}</td>
-          <td style="font-family:monospace; color:#34d399;">${Number(row.recall_at_fpr_0.1).toFixed(3)}</td>
+          <td style="font-family:monospace; color:#34d399;">${Number(row["recall_at_fpr_0.1"]).toFixed(3)}</td>
           <td style="font-family:monospace; color:#38bdf8;">${Number(row.ndcg_at_k_100).toFixed(3)}</td>
         `;
         cvBody.appendChild(tr);
