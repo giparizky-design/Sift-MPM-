@@ -491,6 +491,10 @@ def rasterise_labels(
     # ------------------------------------------------------------------ #
     # Initialise everything to U = -1
     # ------------------------------------------------------------------ #
+    is_geo = crs.is_geographic
+    crs_units_per_m = (1.0 / 111_320.0) if is_geo else 1.0
+    m_per_crs_unit = 111_320.0 if is_geo else 1.0
+
     label_array = np.full((height, width), -1, dtype=np.int8)
 
     # ------------------------------------------------------------------ #
@@ -498,8 +502,8 @@ def rasterise_labels(
     # ------------------------------------------------------------------ #
     if len(reliable_negatives) > 0:
         rn_buffered = reliable_negatives.copy()
-        rn_radius_m = max(25.0, abs(transform.a) * 0.75)
-        rn_buffered.geometry = reliable_negatives.geometry.buffer(rn_radius_m)
+        rn_radius_crs = max(25.0 * crs_units_per_m, abs(transform.a) * 0.75)
+        rn_buffered.geometry = reliable_negatives.geometry.buffer(rn_radius_crs)
         rn_shapes = [
             (geom, 0)
             for geom in rn_buffered.geometry
@@ -522,7 +526,7 @@ def rasterise_labels(
     # ------------------------------------------------------------------ #
     if len(positives) > 0:
         p_buffered = positives.copy()
-        p_buffered.geometry = positives.geometry.buffer(buffer_p_m)
+        p_buffered.geometry = positives.geometry.buffer(buffer_p_m * crs_units_per_m)
         p_shapes = [
             (geom, 1)
             for geom in p_buffered.geometry
@@ -542,8 +546,8 @@ def rasterise_labels(
     # Exclusion buffer: demote RN → U within exclusion_buffer_m of P
     # ------------------------------------------------------------------ #
     if len(positives) > 0:
-        # Pixel resolution in metres (average of x/y pixel size)
-        pixel_size_m = abs(transform.a)  # assumes square pixels
+        # Pixel resolution in metres (scaled if CRS is geographic)
+        pixel_size_m = abs(transform.a) * m_per_crs_unit  # assumes square pixels
 
         # Build a binary mask of P cells (after buffering) and compute EDT
         p_mask = (label_array == 1).astype(np.uint8)

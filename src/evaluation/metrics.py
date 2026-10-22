@@ -485,6 +485,18 @@ def spatial_conformal_calibrate(
     else:
         scores = residuals
 
+    # Aggregate non-conformity scores at the spatial block level if block IDs are supplied
+    if cal_block_ids is not None:
+        b_ids = np.asarray(cal_block_ids).ravel()
+        if len(b_ids) != len(scores):
+            raise ValueError("cal_block_ids must have the same length as cal_probs.")
+        unique_blocks = np.unique(b_ids)
+        if len(unique_blocks) >= 3:
+            scores = np.array(
+                [np.nanmean(scores[b_ids == b]) for b in unique_blocks],
+                dtype=np.float64,
+            )
+
     n = len(scores)
     level = min(1.0, np.ceil((n + 1) * (1.0 - alpha)) / n)
     q_hat = float(np.nanquantile(scores, level))

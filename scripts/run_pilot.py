@@ -172,7 +172,6 @@ def stage_features(config: dict) -> None:
     b13 = _read_2d(interim_dir / "ast_b13_50m.tif")
 
     f_aloh = aloh_content(b5, b6, b7)
-    f_aloh[veg_mask] = np.nan
     f_carb_chlor = carbonate_chlorite(b6, b7, b8_ast, b9)
     f_fe_oxide = ferric_oxide_content(b1, b2)
     f_silica = silica_index(b11, b13)
@@ -180,6 +179,10 @@ def stage_features(config: dict) -> None:
     b11_s2 = _read_2d(interim_dir / "s2_b11_50m.tif")
     b12_s2 = _read_2d(interim_dir / "s2_b12_50m.tif")
     f_clay_s2 = clay_index(b11_s2, b12_s2)
+
+    # Mask all optical/SWIR alteration indices over dense vegetation (XGBoost handles NaN natively)
+    for opt_arr in (f_aloh, f_carb_chlor, f_fe_oxide, f_silica, f_clay_s2):
+        opt_arr[veg_mask] = np.nan
 
     # 2. Geophysical derivatives
     rtp = _read_2d(interim_dir / "mag_rtp_50m.tif")
@@ -196,7 +199,11 @@ def stage_features(config: dict) -> None:
     f_th_u = rad_th / np.maximum(rad_u, 1e-4)
 
     # 3. Structural & Topographic features
-    real_dem_path = Path("data/raw_real/dem/dem.tif")
+    real_dem_path = (
+        Path("data/raw_real/dem/dem.tif")
+        if Path("data/raw_real/dem/dem.tif").exists()
+        else Path("data/raw_real/dem.tif")
+    )
     if real_dem_path.exists():
         logger.info("Using authentic Copernicus DEM from %s", real_dem_path)
         dem = _read_2d(real_dem_path)
@@ -208,7 +215,11 @@ def stage_features(config: dict) -> None:
     f_tpi = topographic_position_index(dem, radius_px=10)
 
     # Faults from real GSWA linear structures if available
-    faults_path = Path("data/raw_real/geology/faults.gpkg")
+    faults_path = (
+        Path("data/raw_real/geology/faults.gpkg")
+        if Path("data/raw_real/geology/faults.gpkg").exists()
+        else Path("data/raw_real/faults.gpkg")
+    )
     f_dist_faults = None
     if faults_path.exists():
         logger.info("Computing Euclidean distance to authentic GSWA faults (%s)...", faults_path)
@@ -257,7 +268,12 @@ def stage_features(config: dict) -> None:
         feature_arrays.append(arr)
 
     stacked_array = np.stack(feature_arrays, axis=0).astype(np.float32)
-    quality_mask = np.isnan(stacked_array).any(axis=0)
+    # Only mask pixels where non-optical (geophysical/structural) channels are NaN
+    non_opt_indices = [
+        i for i, n in enumerate(feature_names)
+        if not n.startswith(("aster_", "s2_"))
+    ]
+    quality_mask = np.isnan(stacked_array[non_opt_indices]).any(axis=0) if non_opt_indices else np.isnan(stacked_array).all(axis=0)
 
     stack = FeatureStack(
         array=stacked_array,
@@ -279,7 +295,11 @@ def stage_labels(config: dict) -> None:
     pilot_profile = build_pilot_grid(config["grid"])
 
     # Load Positives (MINEDEX) - prioritize authentic real data if available
-    real_minedex = Path("data/raw_real/labels/minedex/deposits.gpkg")
+    real_minedex = (
+        Path("data/raw_real/labels/minedex/deposits.gpkg")
+        if Path("data/raw_real/labels/minedex/deposits.gpkg").exists()
+        else Path("data/raw_real/minedex_deposits.gpkg")
+    )
     if real_minedex.exists():
         logger.info("Loading authentic MINEDEX deposits from %s", real_minedex)
         positives_gdf = load_minedex(str(real_minedex), min_au_koz=100.0)
@@ -288,7 +308,11 @@ def stage_labels(config: dict) -> None:
         positives_gdf = load_minedex(minedex_path, min_au_koz=100.0)
 
     # Load Drillholes & Assays (WAMEX)
-    real_collars = Path("data/raw_real/labels/wamex/collars.gpkg")
+    real_collars = (
+        Path("data/raw_real/labels/wamex/collars.gpkg")
+        if Path("data/raw_real/labels/wamex/collars.gpkg").exists()
+        else Path("data/raw_real/wamex_drillholes.gpkg")
+    )
     collars_path = str(real_collars if real_collars.exists() else raw_dir / "labels" / "wamex" / "collars.csv")
     assays_path = raw_dir / "labels" / "wamex" / "assays.csv"
     drillholes_gdf = load_wamex_drillholes(collars_path)

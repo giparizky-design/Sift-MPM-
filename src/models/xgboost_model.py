@@ -79,15 +79,22 @@ class MPMXGBoost:
                 key ``n_bag`` (default 10) controls ensemble size.
         """
         self.config: dict = config
-        baseline_cfg: dict = config.get("models", {}).get("baseline", {})
+        models_cfg = config.get("models", {})
+        baseline_cfg: dict = (
+            models_cfg.get("baseline")
+            or models_cfg.get("xgboost")
+            or {}
+        )
 
         # Number of bootstrap ensemble members (epistemic uncertainty proxy)
-        self.n_bag: int = int(baseline_cfg.get("n_bag", 10))
+        self.n_bag: int = int(
+            baseline_cfg.get("n_bag", baseline_cfg.get("n_bagging_iterations", 10))
+        )
 
         # Store hyperparameter block
         hparams: dict = dict(baseline_cfg.get("hyperparams", {}))
         for k, v in baseline_cfg.items():
-            if k not in ("hyperparams", "n_bag", "type", "uncertainty", "explainability"):
+            if k not in ("hyperparams", "n_bag", "n_bagging_iterations", "type", "uncertainty", "explainability"):
                 hparams.setdefault(k, v)
         if hparams.get("missing") == "NaN" or hparams.get("missing") == "nan":
             hparams["missing"] = np.nan
@@ -111,7 +118,9 @@ class MPMXGBoost:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _build_single_model(self, scale_pos_weight: float) -> xgb.XGBClassifier:
+    def _build_single_model(
+        self, scale_pos_weight: float, bag_idx: int = 0
+    ) -> xgb.XGBClassifier:
         """Construct one XGBClassifier with the configured hyperparameters.
 
         The ``scale_pos_weight`` argument is computed externally from the
@@ -123,12 +132,16 @@ class MPMXGBoost:
             scale_pos_weight (float): Ratio of negative to positive samples
                 used to up-weight the minority (mineralised) class.  A value
                 of ``n_negatives / n_positives`` is the XGBoost convention.
+            bag_idx (int): Index of the ensemble bag, used to perturb the
+                random state across bootstrap iterations.
 
         Returns:
             xgb.XGBClassifier: Unfitted classifier ready for training.
         """
         params = dict(self._hparams)  # shallow copy
         params["scale_pos_weight"] = scale_pos_weight
+        base_seed = int(params.get("random_state", 42))
+        params["random_state"] = base_seed + int(bag_idx)
 
         # Ensure eval_metric doesn't clash with early stopping API
         params.setdefault("eval_metric", "aucpr")
@@ -221,7 +234,8 @@ class MPMXGBoost:
                 )
                 continue
 
-            spw = n_neg / n_pos
+            # Avoid double-weighting when class-balanced sample_weight is already supplied
+            spw = 1.0 if w_arr is not None else (n_neg / n_pos)
             logger.debug(
                 "Bag %d/%d | n_pos=%d | n_neg=%d | scale_pos_weight=%.2f",
                 bag_idx + 1,
@@ -231,7 +245,7 @@ class MPMXGBoost:
                 spw,
             )
 
-            clf = self._build_single_model(scale_pos_weight=spw)
+            clf = self._build_single_model(scale_pos_weight=spw, bag_idx=bag_idx)
 
             fit_kwargs: dict = {}
             if eval_set is not None:

@@ -336,7 +336,26 @@ class RetrainingPipeline:
                 axis=1,
             ).astype(np.float32)
 
-        # Binary label: P=1 (prospective), RN/U=0.
+        # Binary label: P=1 (prospective), RN/U=0 with PU mining when unlabeled rows exist
+        is_p = (lake["label"] == "P").to_numpy()
+        is_rn = (lake["label"] == "RN").to_numpy()
+        is_u = (lake["label"] == "U").to_numpy()
+        if is_u.any() and is_p.any():
+            from src.labels.pu_negatives import step1_isolation_forest, step2_select_reliable_negatives
+            col_medians = np.nanmedian(feature_matrix, axis=0)
+            col_medians = np.nan_to_num(col_medians, nan=0.0)
+            inds = np.where(np.isnan(feature_matrix))
+            X_clean = feature_matrix.copy()
+            X_clean[inds] = np.take(col_medians, inds[1])
+            u_feat = X_clean[is_u]
+            p_feat = X_clean[is_p]
+            anom = step1_isolation_forest(p_feat, u_feat, contamination=0.05, random_state=42)
+            rn_sub = step2_select_reliable_negatives(u_feat, anom, percentile_threshold=10.0)
+            u_indices = np.where(is_u)[0]
+            pseudo_rn_indices = set(u_indices[rn_sub])
+            keep_mask = np.array([i in pseudo_rn_indices or is_p[i] or is_rn[i] for i in range(len(lake))])
+            lake = lake[keep_mask].reset_index(drop=True)
+            feature_matrix = feature_matrix[keep_mask]
         binary_labels = (lake["label"] == "P").astype(int).values
 
         label_counts = {
@@ -610,13 +629,15 @@ class RetrainingPipeline:
         model_type = self.config.get("model", {}).get("type", "xgboost")
         if model_type == "xgboost":
             import xgboost as xgb  # type: ignore
-            params = self.config.get("model", {}).get("params", {})
-            return xgb.XGBClassifier(
-                eval_metric="aucpr",
-                use_label_encoder=False,
-                random_state=42,
-                **params,
+            params = dict(
+                self.config.get("model", {}).get("params")
+                or self.config.get("models", {}).get("baseline", {})
             )
+            for k in ("n_bag", "n_bagging_iterations", "type", "uncertainty", "explainability", "hyperparams", "use_label_encoder"):
+                params.pop(k, None)
+            params.setdefault("eval_metric", "aucpr")
+            params.setdefault("random_state", 42)
+            return xgb.XGBClassifier(**params)
         elif model_type == "rf":
             from sklearn.ensemble import RandomForestClassifier
             params = self.config.get("model", {}).get("params", {})
@@ -652,11 +673,19 @@ class RetrainingPipeline:
         block_col = self.config.get("cv", {}).get("spatial_block_col", "block_id")
 
         if block_col not in lake.columns:
-            logger.warning(
-                "Spatial block column '%s' not found; falling back to random CV.",
-                block_col,
-            )
-            groups = np.arange(len(lake))
+            block_size = float(self.config.get("cv", {}).get("block_size_m", 5000.0))
+            if "easting" in lake.columns and "northing" in lake.columns:
+                bx = np.floor(lake["easting"].to_numpy() / max(block_size, 1e-3)).astype(np.int64)
+                by = np.floor(lake["northing"].to_numpy() / max(block_size, 1e-3)).astype(np.int64)
+                _, groups = np.unique(bx * 100_003 + by, return_inverse=True)
+            else:
+                logger.warning(
+                    "Spatial block column '%s' and coordinates not found; falling back to fold-stratified groups.",
+                    block_col,
+                )
+                groups = np.arange(len(lake)) % n_folds
+            if len(np.unique(groups)) < n_folds:
+                groups = np.arange(len(lake)) % n_folds
         else:
             groups = lake[block_col].values
 

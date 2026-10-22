@@ -1,0 +1,662 @@
+[
+  {
+    "target_id": "KALIMANTAN_TGT_0001",
+    "rank": 1,
+    "rank_score": 0.95,
+    "geometry": {
+      "centroid_lat_lon": [
+        -1.5694,
+        115.8505
+      ],
+      "area_sq_km": 1.597,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.468,
+      "elkan_noto_c_hat": 0.469,
+      "calibrated_deposit_prob": 0.999,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.351,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.788
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.788,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 73.3,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "KALIMANTAN_TGT_0002",
+    "rank": 2,
+    "rank_score": 0.916,
+    "geometry": {
+      "centroid_lat_lon": [
+        -2.1094,
+        119.3109
+      ],
+      "area_sq_km": 1.597,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.468,
+      "elkan_noto_c_hat": 0.469,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.505,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.78
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.78,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 81.7,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "KALIMANTAN_TGT_0003",
+    "rank": 3,
+    "rank_score": 0.916,
+    "geometry": {
+      "centroid_lat_lon": [
+        -2.3794,
+        119.1734
+      ],
+      "area_sq_km": 1.597,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.483,
+      "elkan_noto_c_hat": 0.469,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.467,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.805
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.805,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 84.9,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "KALIMANTAN_TGT_0004",
+    "rank": 4,
+    "rank_score": 0.913,
+    "geometry": {
+      "centroid_lat_lon": [
+        -1.6144,
+        115.7703
+      ],
+      "area_sq_km": 1.597,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.448,
+      "elkan_noto_c_hat": 0.469,
+      "calibrated_deposit_prob": 0.956,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.354,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.779
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.779,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 75.0,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "KALIMANTAN_TGT_0005",
+    "rank": 5,
+    "rank_score": 0.909,
+    "geometry": {
+      "centroid_lat_lon": [
+        -1.1925,
+        119.4026
+      ],
+      "area_sq_km": 3.195,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.482,
+      "elkan_noto_c_hat": 0.469,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.441,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.758
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.763,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 81.3,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "KALIMANTAN_TGT_0006",
+    "rank": 6,
+    "rank_score": 0.904,
+    "geometry": {
+      "centroid_lat_lon": [
+        -1.1869,
+        119.3568
+      ],
+      "area_sq_km": 1.597,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.47,
+      "elkan_noto_c_hat": 0.469,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.577,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.768
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.768,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 83.5,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "KALIMANTAN_TGT_0007",
+    "rank": 7,
+    "rank_score": 0.895,
+    "geometry": {
+      "centroid_lat_lon": [
+        -1.1194,
+        119.3797
+      ],
+      "area_sq_km": 1.597,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.532,
+      "elkan_noto_c_hat": 0.469,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.375,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.764
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.764,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 85.5,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "KALIMANTAN_TGT_0008",
+    "rank": 8,
+    "rank_score": 0.894,
+    "geometry": {
+      "centroid_lat_lon": [
+        -1.4864,
+        119.2952
+      ],
+      "area_sq_km": 12.779,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.517,
+      "elkan_noto_c_hat": 0.469,
+      "calibrated_deposit_prob": 0.998,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.476,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.74
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.757,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 83.7,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "KALIMANTAN_TGT_0009",
+    "rank": 9,
+    "rank_score": 0.888,
+    "geometry": {
+      "centroid_lat_lon": [
+        -1.5131,
+        115.8448
+      ],
+      "area_sq_km": 6.39,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.418,
+      "elkan_noto_c_hat": 0.469,
+      "calibrated_deposit_prob": 0.891,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.48,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.771
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.788,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 71.0,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "KALIMANTAN_TGT_0010",
+    "rank": 10,
+    "rank_score": 0.887,
+    "geometry": {
+      "centroid_lat_lon": [
+        -2.5594,
+        118.9901
+      ],
+      "area_sq_km": 1.597,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.5,
+      "elkan_noto_c_hat": 0.469,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.537,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.743
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.743,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 85.2,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "KALIMANTAN_TGT_0011",
+    "rank": 11,
+    "rank_score": 0.886,
+    "geometry": {
+      "centroid_lat_lon": [
+        -1.5384,
+        115.8047
+      ],
+      "area_sq_km": 6.39,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.467,
+      "elkan_noto_c_hat": 0.469,
+      "calibrated_deposit_prob": 0.944,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.35,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.7
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.71,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 71.4,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "KALIMANTAN_TGT_0012",
+    "rank": 12,
+    "rank_score": 0.885,
+    "geometry": {
+      "centroid_lat_lon": [
+        -2.3906,
+        119.1482
+      ],
+      "area_sq_km": 7.987,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.471,
+      "elkan_noto_c_hat": 0.469,
+      "calibrated_deposit_prob": 0.96,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.419,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.786
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.81,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 85.6,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "KALIMANTAN_TGT_0013",
+    "rank": 13,
+    "rank_score": 0.881,
+    "geometry": {
+      "centroid_lat_lon": [
+        -2.2008,
+        119.1949
+      ],
+      "area_sq_km": 12.779,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.471,
+      "elkan_noto_c_hat": 0.469,
+      "calibrated_deposit_prob": 0.96,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.499,
+        "upper_bound_U": 0.992
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.747
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.797,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 83.9,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "KALIMANTAN_TGT_0014",
+    "rank": 14,
+    "rank_score": 0.88,
+    "geometry": {
+      "centroid_lat_lon": [
+        -0.9506,
+        119.4943
+      ],
+      "area_sq_km": 4.792,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.521,
+      "elkan_noto_c_hat": 0.469,
+      "calibrated_deposit_prob": 1.0,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.48,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.713
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.716,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 83.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "KALIMANTAN_TGT_0015",
+    "rank": 15,
+    "rank_score": 0.879,
+    "geometry": {
+      "centroid_lat_lon": [
+        -2.3119,
+        119.2307
+      ],
+      "area_sq_km": 1.597,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.464,
+      "elkan_noto_c_hat": 0.469,
+      "calibrated_deposit_prob": 0.989,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.368,
+        "upper_bound_U": 1.0
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 20.0
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.716
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.716,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 82.1,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  }
+]

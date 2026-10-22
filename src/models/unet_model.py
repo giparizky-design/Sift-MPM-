@@ -430,9 +430,16 @@ class MPMUNet:
     """
 
     def __init__(self, config: dict) -> None:
-        unet_cfg: dict = config.get("models", {}).get("unet", {})
+        models_cfg = config.get("models", {})
+        unet_cfg: dict = (
+            models_cfg.get("unet")
+            or models_cfg.get("challenger")
+            or {}
+        )
 
-        self.window_px: int = int(unet_cfg.get("window_px", 64))
+        self.window_px: int = int(
+            unet_cfg.get("window_px", unet_cfg.get("input_window_px", 64))
+        )
         self.in_channels: int = int(unet_cfg.get("in_channels", 10))
         self.dropout_p: float = float(unet_cfg.get("dropout_p", 0.3))
         self.batch_size: int = int(unet_cfg.get("batch_size", 32))
@@ -601,12 +608,18 @@ class MPMUNet:
 
                 optimiser.zero_grad()
                 preds = self.model_(X_batch)  # (B, 1, H, W)
+                # Extract center pixel (B, 1, 1, 1) when targets are scalar window labels
+                if y_batch.shape[-2:] == (1, 1) and preds.shape[-2:] != (1, 1):
+                    hc, wc = preds.shape[-2] // 2, preds.shape[-1] // 2
+                    preds_target = preds[:, :, hc : hc + 1, wc : wc + 1]
+                else:
+                    preds_target = preds
 
                 if active_nnpu:
-                    loss = nnpu_criterion(preds, y_batch, sample_weights=w_batch)
+                    loss = nnpu_criterion(preds_target, y_batch, sample_weights=w_batch)
                 else:
-                    y_expanded = (y_batch > 0.5).float().expand_as(preds)
-                    loss = weighted_bce(preds, y_expanded, weights=w_batch)
+                    y_expanded = (y_batch > 0.5).float().expand_as(preds_target)
+                    loss = weighted_bce(preds_target, y_expanded, weights=w_batch)
 
                 loss.backward()
                 optimiser.step()
@@ -625,14 +638,19 @@ class MPMUNet:
                         y_val_b = y_val_b.to(self.device)
                         w_val_b = w_val_b.to(self.device)
                         preds_val = self.model_(X_val_b)
+                        if y_val_b.shape[-2:] == (1, 1) and preds_val.shape[-2:] != (1, 1):
+                            hc, wc = preds_val.shape[-2] // 2, preds_val.shape[-1] // 2
+                            preds_val_target = preds_val[:, :, hc : hc + 1, wc : wc + 1]
+                        else:
+                            preds_val_target = preds_val
                         if active_nnpu:
                             val_loss = nnpu_criterion(
-                                preds_val, y_val_b, sample_weights=w_val_b
+                                preds_val_target, y_val_b, sample_weights=w_val_b
                             )
                         else:
-                            y_val_expanded = (y_val_b > 0.5).float().expand_as(preds_val)
+                            y_val_expanded = (y_val_b > 0.5).float().expand_as(preds_val_target)
                             val_loss = weighted_bce(
-                                preds_val, y_val_expanded, weights=w_val_b
+                                preds_val_target, y_val_expanded, weights=w_val_b
                             )
                         val_losses.append(val_loss.item())
                 avg_val = np.mean(val_losses)
@@ -692,8 +710,11 @@ class MPMUNet:
             dataset, batch_size=self.batch_size, shuffle=False, num_workers=0
         )
 
-        # Keep model in train() mode so Dropout2d remains active
-        self.model_.train()
+        # Set model (including BatchNorm2d) to eval(), then enable only Dropout layers
+        self.model_.eval()
+        for module in self.model_.modules():
+            if isinstance(module, (nn.Dropout, nn.Dropout2d)):
+                module.train()
 
         all_pass_scores: list[np.ndarray] = []
 
@@ -703,8 +724,8 @@ class MPMUNet:
                 X_batch = X_batch.to(self.device)
                 with torch.no_grad():
                     preds = self.model_(X_batch)  # (B, 1, H, W)
-                # Spatial-average within each window → scalar per window
-                score = preds.mean(dim=[1, 2, 3]).cpu().numpy()  # (B,)
+                hc, wc = preds.shape[-2] // 2, preds.shape[-1] // 2
+                score = preds[:, 0, hc, wc].cpu().numpy()  # (B,)
                 pass_scores.append(score)
             all_pass_scores.append(np.concatenate(pass_scores, axis=0))  # (N,)
 

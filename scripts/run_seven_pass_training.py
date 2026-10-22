@@ -115,46 +115,26 @@ def run_region_seven_pass(
     rows = df["row"].to_numpy(dtype=np.int32)
     cols = df["col"].to_numpy(dtype=np.int32)
 
-    # Normalise cube channels for U-Net stability
-    cube_norm = stack.array.astype(np.float32).copy()
-    for ch in range(C):
-        band = cube_norm[ch]
-        m = np.nanmean(band)
-        s = np.nanstd(band) + 1e-6
-        cube_norm[ch] = np.nan_to_num((band - m) / s, nan=0.0)
-
     # -------------------------------------------------------------------------
-    # Pass 2: Selection-Bias Weighting (Observation Propensity e(x) & w_i)
+    # Spatial Block Partitioning FIRST (before normalization or propensity fitting)
     # -------------------------------------------------------------------------
-    explored_mask = (labels == LABEL_P) | (labels == LABEL_RN)
-    # Use topographic/structural accessibility proxies from feature matrix
-    e_x = fit_exploration_propensity(
-        accessibility_features=X_all,
-        explored_mask=explored_mask,
-        min_propensity=0.05,
-    )
-    w_all = compute_inverse_propensity_weights(e_x, min_propensity=0.05)
-
-    # -------------------------------------------------------------------------
-    # Spatial Block Partitioning (Train Blocks vs Spatially Disjoint Holdout Blocks)
-    # -------------------------------------------------------------------------
+    from rasterio.crs import CRS as RioCRS
     transform = profile["transform"]
-    px_size_m = abs(float(transform.a)) if abs(float(transform.a)) > 0 else 50.0
-    block_size_px = min(max(8, int(round(block_size_m / px_size_m))), max(8, min(H, W) // 5))
-    if region_name.upper() in ("PAPUA", "SUMBAWA", "SUMATRA", "SULAWESI"):
-        block_size_px = 12
+    is_geo = RioCRS.from_user_input(profile["crs"]).is_geographic
+    raw_dx = abs(float(transform.a)) if abs(float(transform.a)) > 0 else 50.0
+    px_size_m = raw_dx * 111_320.0 if is_geo else raw_dx
+    eff_block_m = block_size_m * 111_320.0 if (is_geo and block_size_m < 50.0) else block_size_m
+    block_size_px = min(max(12, int(round(eff_block_m / max(px_size_m, 1.0)))), max(12, min(H, W) // 5))
     block_ids = assign_spatial_blocks(rows, cols, H, W, block_size_px=block_size_px)
     folds = spatial_block_kfold(block_ids, n_folds=5, random_state=42)
 
-    # Select a fold that has balanced positives in both train and validation; if positives
-    # are concentrated in a single deposit cluster (e.g. Kelian), split blocks across cluster
     total_pos = max(1, int((labels == LABEL_P).sum()))
     target_val_pos = 0.20 * total_pos
     valid_folds = [
         (tr_idx, va_idx)
         for tr_idx, va_idx in folds
-        if (labels[tr_idx] == LABEL_P).sum() >= max(3, int(0.5 * total_pos))
-        and (labels[va_idx] == LABEL_P).sum() >= max(3, int(0.12 * total_pos))
+        if (labels[tr_idx] == LABEL_P).sum() >= max(2, int(0.5 * total_pos))
+        and (labels[va_idx] == LABEL_P).sum() >= 1
     ]
     if valid_folds:
         chosen_fold = min(
@@ -162,15 +142,54 @@ def run_region_seven_pass(
             key=lambda pair: abs(int((labels[pair[1]] == LABEL_P).sum()) - target_val_pos),
         )
     else:
-        # Use finer spatial blocks (e.g. 6 px) so positive cluster spans multiple spatial blocks
-        block_ids = assign_spatial_blocks(rows, cols, H, W, block_size_px=6)
-        folds = spatial_block_kfold(block_ids, n_folds=5, random_state=42)
         chosen_fold = folds[0]
-        for tr_idx, va_idx in folds:
-            if (labels[tr_idx] == LABEL_P).sum() >= 3 and (labels[va_idx] == LABEL_P).sum() >= 3:
-                chosen_fold = (tr_idx, va_idx)
-                break
     train_idx, val_idx = chosen_fold
+
+    # Normalise cube channels using ONLY training split statistics (no validation leakage)
+    cube_norm = stack.array.astype(np.float32).copy()
+    tr_rows, tr_cols = rows[train_idx], cols[train_idx]
+    for ch in range(C):
+        band = cube_norm[ch]
+        tr_vals = band[tr_rows, tr_cols]
+        m = float(np.nanmean(tr_vals)) if np.isfinite(tr_vals).any() else 0.0
+        s = float(np.nanstd(tr_vals)) + 1e-6
+        cube_norm[ch] = np.nan_to_num((band - m) / s, nan=0.0)
+
+    # -------------------------------------------------------------------------
+    # Pass 2: Selection-Bias Weighting (fit on accessibility proxies & train_idx only)
+    # -------------------------------------------------------------------------
+    ACCESS_KEYS = (
+        "outcrop", "regolith", "cover", "coastal", "slope", "elev", "dem", "ndvi", "tri"
+    )
+    access_col_indices = [
+        i for i, col in enumerate(feature_cols)
+        if any(k in col.lower() for k in ACCESS_KEYS)
+    ] or [0]
+    X_access = X_all[:, access_col_indices]
+    explored_mask = (labels == LABEL_P) | (labels == LABEL_RN)
+
+    # Fit logistic regression on training blocks only, then predict across full grid
+    from sklearn.impute import SimpleImputer
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.pipeline import make_pipeline
+    from sklearn.preprocessing import StandardScaler
+
+    y_exp_tr = explored_mask[train_idx].astype(int)
+    if 0 < y_exp_tr.sum() < len(y_exp_tr):
+        prop_pipe = make_pipeline(
+            SimpleImputer(strategy="median"),
+            StandardScaler(),
+            LogisticRegression(C=0.1, max_iter=500, random_state=42),
+        )
+        prop_pipe.fit(X_access[train_idx], y_exp_tr)
+        e_x = np.clip(prop_pipe.predict_proba(X_access)[:, 1], 0.05, 1.0)
+    else:
+        e_x = fit_exploration_propensity(
+            accessibility_features=X_access,
+            explored_mask=explored_mask,
+            min_propensity=0.05,
+        )
+    w_all = compute_inverse_propensity_weights(e_x, min_propensity=0.05)
 
     # Ensure strictly disjoint spatial block IDs (Acceptance Criterion 4)
     train_blocks = np.unique(block_ids[train_idx])
@@ -263,23 +282,38 @@ def run_region_seven_pass(
         use_nnpu=True,
     )
 
-    from scipy.ndimage import uniform_filter
+    from scipy.ndimage import zoom as nd_zoom
 
     s_xgb_full = xgb_val_model.predict_proba(X_all)
-    epistemic_full = np.sqrt(xgb_val_model.predict_uncertainty(X_all) + 1e-4)
-    s_xgb_2d = reconstruct_map(s_xgb_full, rows, cols, H, W, nodata=0.0)
-    valid_mask_2d = reconstruct_map(np.ones_like(s_xgb_full), rows, cols, H, W, nodata=0.0)
-    s_spatial_ctx_2d = uniform_filter(s_xgb_2d, size=5) / np.maximum(
-        uniform_filter(valid_mask_2d, size=5), 1e-3
-    )
+    xgb_var_full = xgb_val_model.predict_uncertainty(X_all)
 
-    eval_sub_idx = eval_idx[: min(160, len(eval_idx))]
-    X_win_sub = _extract_windows_around_cells(cube_norm, rows[eval_sub_idx], cols[eval_sub_idx], window_px=16)
-    s_unet_net, _ = unet_model.predict_proba_mc(X_win_sub, n_passes=2)
-    net_scale = float(np.clip(np.mean(s_unet_net), 0.15, 0.85))
-    s_unet_full = np.clip(0.65 * s_spatial_ctx_2d[rows, cols] + 0.35 * s_xgb_full * (net_scale / 0.5), 0.0, 1.0)
-    s_unet_eval = s_unet_full[eval_idx]
+    # Evaluate U-Net directly on all validation evaluation cells
+    X_win_eval = _extract_windows_around_cells(
+        cube_norm, rows[eval_idx], cols[eval_idx], window_px=16
+    )
+    s_unet_eval, unet_var_eval = unet_model.predict_proba_mc(X_win_eval, n_passes=5)
     pr_auc_unet = pr_auc(y_eval, s_unet_eval)
+
+    # Strided U-Net inference across the 2D grid for tractable full-grid CNN surface
+    stride = max(1, min(H, W) // 48)
+    r_grid = np.arange(0, H, stride, dtype=np.int32)
+    c_grid = np.arange(0, W, stride, dtype=np.int32)
+    rr_s, cc_s = np.meshgrid(r_grid, c_grid, indexing="ij")
+    X_win_grid = _extract_windows_around_cells(
+        cube_norm, rr_s.ravel(), cc_s.ravel(), window_px=16
+    )
+    unet_grid_mean, _ = unet_model.predict_proba_mc(X_win_grid, n_passes=3)
+    unet_coarse_2d = unet_grid_mean.reshape(len(r_grid), len(c_grid))
+    unet_2d = nd_zoom(
+        unet_coarse_2d, (H / len(r_grid), W / len(c_grid)), order=1
+    )[:H, :W]
+    s_unet_full = np.clip(unet_2d[rows, cols], 0.0, 1.0).astype(np.float64)
+    s_unet_full[eval_idx] = s_unet_eval
+
+    # True multi-model epistemic standard deviation (combining tree variance + XGB/UNet disagreement)
+    epistemic_full = np.sqrt(
+        0.5 * xgb_var_full + 0.5 * ((s_xgb_full - s_unet_full) ** 2) + 1e-4
+    )
 
     # -------------------------------------------------------------------------
     # Pass 3.3: Validation PR-AUC Ensembling
@@ -311,7 +345,7 @@ def run_region_seven_pass(
     epistemic_eval = epistemic_full[eval_idx]
     q_hat = spatial_conformal_calibrate(
         cal_probs=cal_eval,
-        cal_targets=s_xgb_eval,  # calibrate conformal spread against out-of-fold ensemble agreement
+        cal_targets=y_eval.astype(np.float64),
         alpha=0.10,
         cal_block_ids=block_ids[eval_idx],
         train_block_ids=train_blocks,
@@ -350,10 +384,34 @@ def run_region_seven_pass(
     ex_2d = reconstruct_map(e_x, rows, cols, H, W, nodata=np.nan)
     wx_2d = reconstruct_map(w_all, rows, cols, H, W, nodata=np.nan)
 
-    # Derive physical summary grids from feature cube
-    td_2d = np.clip((cube_norm[0] - cube_norm[0].min()) / (np.ptp(cube_norm[0]) + 1e-6), 0.0, 1.0)
-    alt_2d = np.clip((cube_norm[-1] - cube_norm[-1].min()) / (np.ptp(cube_norm[-1]) + 1e-6), 0.0, 1.0)
-    cover_2d = np.clip((1.0 - ex_2d) * 65.0, 2.0, 120.0)
+    # Derive physical summary grids by matching feature names in stack.feature_names
+    name_to_idx = {n.lower(): i for i, n in enumerate(stack.feature_names)}
+
+    def _norm_band(arr_2d: np.ndarray, invert: bool = False) -> np.ndarray:
+        b = np.nan_to_num(arr_2d.astype(np.float64), nan=float(np.nanmedian(arr_2d)))
+        normed = np.clip((b - b.min()) / (np.ptp(b) + 1e-6), 0.0, 1.0)
+        return (1.0 - normed) if invert else normed
+
+    # 1. Dilation tendency Td (or inverted fault distance proxy if Td band not in stack)
+    if "dilation_tendency" in name_to_idx:
+        td_2d = _norm_band(stack.array[name_to_idx["dilation_tendency"]])
+    elif "dist_faults_m" in name_to_idx:
+        td_2d = _norm_band(stack.array[name_to_idx["dist_faults_m"]], invert=True)
+    else:
+        td_2d = _norm_band(cube_norm[0])
+
+    # 2. Hydrothermal alteration index
+    alt_Idx = next(
+        (name_to_idx[k] for k in ("swir_clay_iron_alteration", "aster_aloh", "s2_clay", "hydrothermal_alteration_idx") if k in name_to_idx),
+        None,
+    )
+    alt_2d = _norm_band(stack.array[alt_Idx]) if alt_Idx is not None else _norm_band(cube_norm[0])
+
+    # 3. Regolith cover depth (m)
+    if "regolith_cover_m" in name_to_idx:
+        cover_2d = np.clip(np.nan_to_num(stack.array[name_to_idx["regolith_cover_m"]], nan=25.0), 1.0, 200.0)
+    else:
+        cover_2d = np.clip((1.0 - ex_2d) * 65.0, 2.0, 120.0)
 
     eff_l_thr = float(l_threshold)
     eff_closing = 3
@@ -376,7 +434,7 @@ def run_region_seven_pass(
         eff_l_thr = max(eff_l_thr, float(np.nanpercentile(lower_2d, 97)))
         eff_closing = 1
         eff_min_area = max(eff_min_area, 2500.0)
-    elif region_name.upper() in ("PAPUA", "SUMBAWA", "SUMATRA", "SULAWESI"):
+    elif region_name.upper() in ("PAPUA", "SUMBAWA", "SUMATRA", "SULAWESI", "KALIMANTAN"):
         eff_l_thr = float(np.clip(np.nanpercentile(lower_2d, 96), 0.35, 0.88))
         eff_closing = 2
 
@@ -435,17 +493,34 @@ def run_region_seven_pass(
         window_footprint_km=3.2,
     )
 
-    # Save 5-fold spatial block CV metrics for UI table
+    # Save true out-of-fold 5-fold spatial block CV metrics
     cv_rows = []
-    for f_idx, (_, va_f_idx) in enumerate(folds):
+    for f_idx, (tr_f_idx, va_f_idx) in enumerate(folds):
+        tr_f_labels = labels[tr_f_idx]
         va_f_labels = labels[va_f_idx]
-        p_f = va_f_idx[va_f_labels == LABEL_P]
-        u_f = va_f_idx[va_f_labels != LABEL_P]
-        if len(p_f) >= 2 and len(u_f) >= 10:
-            sub_u = u_f[: min(600, len(u_f))]
-            ev_f = np.concatenate([p_f, sub_u])
-            y_f = np.concatenate([np.ones(len(p_f), dtype=int), np.zeros(len(sub_u), dtype=int)])
-            m_f = score_metrics(y_f, cal_prob_full[ev_f])
+        p_tr_f = tr_f_idx[tr_f_labels == LABEL_P]
+        rn_tr_f = tr_f_idx[tr_f_labels == LABEL_RN]
+        u_tr_f = tr_f_idx[tr_f_labels == LABEL_U]
+        p_va_f = va_f_idx[va_f_labels == LABEL_P]
+        u_va_f = va_f_idx[va_f_labels != LABEL_P]
+        if len(p_tr_f) >= 2 and len(p_va_f) >= 1 and len(u_va_f) >= 10:
+            sub_u = u_va_f[: min(600, len(u_va_f))]
+            ev_f = np.concatenate([p_va_f, sub_u])
+            y_f = np.concatenate([np.ones(len(p_va_f), dtype=int), np.zeros(len(sub_u), dtype=int)])
+            if np.array_equal(va_f_idx, val_idx):
+                fold_probs = xgb_val_model.predict_proba(X_all[ev_f])
+            else:
+                fold_model = fit_pu_model(
+                    X_all[p_tr_f],
+                    X_all[rn_tr_f],
+                    X_all[u_tr_f],
+                    config,
+                    w_p=w_all[p_tr_f],
+                    w_rn=w_all[rn_tr_f] if len(rn_tr_f) else None,
+                    w_u=w_all[u_tr_f],
+                )
+                fold_probs = fold_model.predict_proba(X_all[ev_f])
+            m_f = score_metrics(y_f, fold_probs)
             m_f["fold"] = f_idx
             cv_rows.append(m_f)
     if not cv_rows:
@@ -453,7 +528,12 @@ def run_region_seven_pass(
         m_f["fold"] = 0
         cv_rows.append(m_f)
     pd.DataFrame(cv_rows).to_csv(out_dir / "spatial_cv_metrics.csv", index=False)
-    holdout_metrics = score_metrics(y_eval, cal_eval)
+    # Report mean out-of-fold spatial CV metrics in blind_holdout.json rather than reusing a single tuned fold
+    holdout_metrics = {
+        k: float(np.mean([r[k] for r in cv_rows]))
+        for k in ("pr_auc", "roc_auc", "recall_at_fpr_0.1", "ndcg_at_k_100", "prevalence")
+        if k in cv_rows[0]
+    }
     (out_dir / "blind_holdout.json").write_text(json.dumps(holdout_metrics, indent=2) + "\n")
 
     summary = {

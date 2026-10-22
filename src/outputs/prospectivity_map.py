@@ -343,9 +343,10 @@ def generate_target_polygons(
     transform = profile["transform"]
     crs_obj = CRS.from_user_input(profile["crs"])
 
-    # Pixel area in m² (assumes projected CRS with metre units)
-    pixel_area_m2 = abs(transform.a * transform.e)  # |dx| * |dy|
-    pixels_per_ha = 10_000.0 / pixel_area_m2
+    # Pixel area in m² (scaled if CRS is geographic)
+    m2_scale = (111_320.0 ** 2) if crs_obj.is_geographic else 1.0
+    pixel_area_m2 = abs(transform.a * transform.e) * m2_scale
+    pixels_per_ha = 10_000.0 / max(pixel_area_m2, 1e-6)
 
     # Step 1 & 2: Build binary mask
     binary_mask = (
@@ -405,7 +406,7 @@ def generate_target_polygons(
             continue
 
         poly = shape(geom_dict)
-        area_ha = poly.area / 10_000.0  # convert m² → ha (assumes metre CRS)
+        area_ha = (poly.area * m2_scale) / 10_000.0  # convert m² → ha
 
         if area_ha < min_area_ha:
             continue  # double-check (shapes can split blobs at boundaries)
@@ -800,7 +801,7 @@ def emit_site_cards_json(
 
     cards: list[dict] = []
     for idx, row in ranked_targets_gdf.iterrows():
-        centroid_ll = gdf_wgs84.geometry.iloc[idx].centroid
+        centroid_ll = gdf_wgs84.geometry.loc[idx].centroid
         lat = round(float(centroid_ll.y), 4)
         lon = round(float(centroid_ll.x), 4)
 

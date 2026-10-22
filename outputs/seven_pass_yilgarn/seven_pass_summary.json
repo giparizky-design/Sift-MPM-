@@ -2,38 +2,38 @@
   "region": "YILGARN",
   "n_cells": 40000,
   "n_positives": 2520,
-  "pr_auc_xgb": 0.999,
-  "pr_auc_unet": 0.9998,
-  "pr_auc_fused": 0.9996,
-  "w_xgb": 0.5,
-  "w_unet": 0.5,
-  "elkan_noto_c_hat": 0.6146,
-  "conformal_q_hat_90": 4.6825,
+  "pr_auc_xgb": 0.8751,
+  "pr_auc_unet": 0.7954,
+  "pr_auc_fused": 0.8724,
+  "w_xgb": 0.524,
+  "w_unet": 0.476,
+  "elkan_noto_c_hat": 0.3083,
+  "conformal_q_hat_90": 6.0817,
   "propensity_min": 0.05,
-  "propensity_median": 0.0696,
-  "n_ranked_targets": 8,
+  "propensity_median": 0.0754,
+  "n_ranked_targets": 7,
   "top_target_card": {
     "target_id": "YILGARN_TGT_0001",
     "rank": 1,
     "rank_score": 0.95,
     "geometry": {
       "centroid_lat_lon": [
-        -30.7718,
-        121.5047
+        -30.7645,
+        121.4941
       ],
-      "area_sq_km": 21.37,
+      "area_sq_km": 27.17,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.863,
-      "elkan_noto_c_hat": 0.615,
-      "calibrated_deposit_prob": 0.989,
+      "fused_raw_score": 0.526,
+      "elkan_noto_c_hat": 0.308,
+      "calibrated_deposit_prob": 0.973,
       "conformal_90_ci": {
-        "lower_bound_L": 0.785,
-        "upper_bound_U": 0.998
+        "lower_bound_L": 0.973,
+        "upper_bound_U": 0.995
       },
-      "exploration_propensity_e_x": 0.165,
-      "propensity_weight_w": 8.62
+      "exploration_propensity_e_x": 0.129,
+      "propensity_weight_w": 10.34
     },
     "physics_and_geology_summary": {
       "alteration": {
@@ -41,7 +41,7 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.121
+        "fe_oxide_intensity": 0.174
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
@@ -50,7 +50,7 @@
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 54.3,
+        "regolith_cover_depth_m": 56.6,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }

@@ -66,8 +66,9 @@ def main() -> None:
     logger.info("Step 1: Isolation Forest anomaly scoring on unlabeled background...")
     u_mask = df["label"] == -1
     p_mask = df["label"] == 1
-    u_features = df.loc[u_mask, feature_cols].to_numpy()
-    p_features = df.loc[p_mask, feature_cols].to_numpy()
+    col_medians = df[feature_cols].median()
+    u_features = df.loc[u_mask, feature_cols].fillna(col_medians).to_numpy()
+    p_features = df.loc[p_mask, feature_cols].fillna(col_medians).to_numpy()
     anomaly_scores = step1_isolation_forest(p_features, u_features, contamination=0.05, random_state=42)
 
     logger.info("Step 2: Mining reliable negatives from bottom 10%% anomaly scores...")
@@ -82,6 +83,15 @@ def main() -> None:
 
     config = {
         "models": {
+            "baseline": {
+                "n_bag": 10,
+                "n_estimators": 300,
+                "max_depth": 5,
+                "learning_rate": 0.05,
+                "subsample": 0.8,
+                "colsample_bytree": 0.8,
+                "random_state": 42,
+            },
             "xgboost": {
                 "n_bagging_iterations": 10,
                 "n_estimators": 300,
@@ -108,14 +118,29 @@ def main() -> None:
     prosp_probs = model.predict_proba(X_full)
     uncertainty = model.predict_uncertainty(X_full)
 
-    # Evaluate ranking: Kelian P (312) vs background sample (10,000)
-    eval_mask = (df["label"] == 1) | (df.index.isin(df[df["label"] == -1].sample(10000, random_state=42).index))
-    y_eval = np.where(df.loc[eval_mask, "label"] == 1, 1, 0)
-    probs_eval = prosp_probs[eval_mask]
+    # Evaluate ranking: Kelian P vs background sample using out-of-fold spatial CV
+    eval_mask = (df["label"] == 1) | (df.index.isin(df[df["label"] == -1].sample(min(10000, int((df["label"] == -1).sum())), random_state=42).index))
+    eval_indices = df.index[eval_mask].to_numpy()
+    
+    block_ids = assign_spatial_blocks(df.loc[eval_indices, "row"].to_numpy(), df.loc[eval_indices, "col"].to_numpy(), H, W, block_size_px=20)
+    folds = spatial_block_kfold(block_ids, n_folds=5, random_state=42)
+    oof_probs = np.full(len(eval_indices), np.nan, dtype=np.float64)
+    y_eval = np.where(df.loc[eval_indices, "label"] == 1, 1, 0)
+    
+    for tr_f, va_f in folds:
+        va_idx_eval = set(eval_indices[va_f])
+        tr_mask = [idx not in va_idx_eval for idx in pu_df.index]
+        if sum(tr_mask) > 10 and len(va_f) > 0:
+            fold_model = MPMXGBoost(config)
+            fold_model.fit(pu_df.loc[tr_mask, feature_cols].to_numpy(), pu_df.loc[tr_mask, "training_label"].to_numpy())
+            oof_probs[va_f] = fold_model.predict_proba(df.loc[eval_indices[va_f], feature_cols].to_numpy())
+
+    valid_oof = np.isfinite(oof_probs)
+    probs_eval = np.where(valid_oof, oof_probs, prosp_probs[eval_mask])
 
     eval_metrics = score_metrics(y_eval, probs_eval)
     logger.info(
-        "Kelian Prospectivity Ranking: PR-AUC=%.3f (Prevalence=%.3f) | ROC-AUC=%.3f | Recall@FPR10=%.3f",
+        "Kelian Prospectivity Ranking (Spatial OOF): PR-AUC=%.3f (Prevalence=%.3f) | ROC-AUC=%.3f | Recall@FPR10=%.3f",
         eval_metrics["pr_auc"],
         eval_metrics["prevalence"],
         eval_metrics["roc_auc"],

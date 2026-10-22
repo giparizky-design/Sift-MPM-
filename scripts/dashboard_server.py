@@ -62,6 +62,29 @@ logging.basicConfig(
 )
 logger = logging.getLogger("mpm_ui")
 
+
+def _load_env_file() -> None:
+    """Load key-value pairs from project .env file into os.environ if not already set."""
+    env_path = ROOT_DIR / ".env"
+    if not env_path.is_file():
+        return
+    try:
+        with open(env_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if "=" in line:
+                    k, v = line.split("=", 1)
+                    k, v = k.strip(), v.strip().strip("'\"")
+                    if k and k not in os.environ:
+                        os.environ[k] = v
+    except Exception as exc:
+        logger.warning("Could not parse .env: %s", exc)
+
+
+_load_env_file()
+
 # Global state for background training job
 _TRAIN_LOCK = threading.Lock()
 _TRAIN_STATE: dict = {
@@ -497,7 +520,7 @@ def _load_region_bundle(region: str) -> dict:
             "conformal_l_png": conformal_b64,
         }
 
-    elif region_up in ("PAPUA", "SUMBAWA", "SUMATRA", "SULAWESI"):
+    elif region_up in ("PAPUA", "SUMBAWA", "SUMATRA", "SULAWESI", "KALIMANTAN"):
         hd_meta = {
             "PAPUA": {
                 "title": "Papua Central Range HD — Grasberg–Wabu Porphyry Cu-Au Camp (200m HD)",
@@ -522,6 +545,12 @@ def _load_region_bundle(region: str) -> dict:
                 "center": [1.20, 124.85],
                 "zoom": 10,
                 "bbox": (124.40, 0.80, 125.25, 1.65),
+            },
+            "KALIMANTAN": {
+                "title": "Kalimantan Regional Scan (1km @ 108.5°E–119.5°E, All 5 Provinces)",
+                "center": [-0.5, 114.5],
+                "zoom": 7,
+                "bbox": (108.5, -4.5, 119.5, 4.5),
             },
         }[region_up]
         code_low = region_up.lower()
@@ -770,6 +799,14 @@ def _load_region_bundle(region: str) -> dict:
         heatmap_b64, bounds = _raster_to_rgba_base64(prosp_tif, band=1, cmap="inferno")
         conformal_b64, _ = _raster_to_rgba_base64(conf_tif, band=1, cmap="emerald")
 
+        from shapely.geometry import Point, shape as shp_shape
+        target_geoms = [shp_shape(f["geometry"]) for f in predicted_features]
+        unique_mines_captured = sum(
+            1
+            for m in actual_mines
+            if any(g.distance(Point(m["lon"], m["lat"])) <= 0.03 for g in target_geoms)
+        )
+
         return {
             "region": "BORNEO",
             "title": "Borneo — Kelian Epithermal Au-Ag Corridor & Kalimantan (Indonesia)",
@@ -779,15 +816,10 @@ def _load_region_bundle(region: str) -> dict:
             "bounds": bounds,
             "summary": summary,
             "cv_folds": cv_rows,
-            "blind_holdout": {
-                "pr_auc": 0.9476,
-                "roc_auc": 0.9962,
-                "recall_at_fpr_0.1": 1.0,
-                "ndcg_at_k_100": 1.0,
-            },
+            "blind_holdout": holdout,
             "actual_mines": actual_mines,
             "total_actual_mines": len(actual_mines),
-            "total_mines_captured": sum(f["properties"]["actual_mines_hit"] for f in predicted_features),
+            "total_mines_captured": unique_mines_captured,
             "predicted_targets_geojson": {
                 "type": "FeatureCollection",
                 "features": predicted_features,
@@ -815,7 +847,7 @@ def _recompute_targets_live(
         data_dir = ROOT_DIR / "data" / "indonesia" / "processed"
         out_dir = ROOT_DIR / "outputs" / "seven_pass_indonesia"
         prefix = "INDONESIA"
-    elif region_up in ("PAPUA", "SUMBAWA", "SUMATRA", "SULAWESI"):
+    elif region_up in ("PAPUA", "SUMBAWA", "SUMATRA", "SULAWESI", "KALIMANTAN"):
         data_dir = ROOT_DIR / "data" / region_up.lower() / "processed"
         out_dir = ROOT_DIR / "outputs" / f"seven_pass_{region_up.lower()}"
         prefix = region_up
@@ -839,10 +871,19 @@ def _recompute_targets_live(
 
     stack: FeatureStack = joblib.load(data_dir / "feature_stack.joblib")
     cube = stack.array.astype(np.float64)
-    ch0 = np.nan_to_num(cube[0], nan=0.0)
-    ch_last = np.nan_to_num(cube[-1], nan=0.0)
-    td_2d = np.clip((ch0 - ch0.min()) / (np.ptp(ch0) + 1e-6), 0.0, 1.0)
-    alt_2d = np.clip((ch_last - ch_last.min()) / (np.ptp(ch_last) + 1e-6), 0.0, 1.0)
+    name_to_idx = {n.lower(): i for i, n in enumerate(stack.feature_names)}
+    td_idx = name_to_idx.get("dilation_tendency", name_to_idx.get("dist_faults_m", 0))
+    td_invert = "dilation_tendency" not in name_to_idx and "dist_faults_m" in name_to_idx
+    ch_td = np.nan_to_num(cube[td_idx], nan=0.0)
+    td_2d = np.clip((ch_td - ch_td.min()) / (np.ptp(ch_td) + 1e-6), 0.0, 1.0)
+    if td_invert:
+        td_2d = 1.0 - td_2d
+    alt_idx = next(
+        (name_to_idx[k] for k in ("swir_clay_iron_alteration", "aster_aloh", "s2_clay") if k in name_to_idx),
+        0,
+    )
+    ch_alt = np.nan_to_num(cube[alt_idx], nan=0.0)
+    alt_2d = np.clip((ch_alt - ch_alt.min()) / (np.ptp(ch_alt) + 1e-6), 0.0, 1.0)
 
     fused_tif = out_dir / "maps" / "fused_raw_score.tif"
     prop_tif = out_dir / "maps" / "propensity_e_x.tif"
@@ -859,7 +900,10 @@ def _recompute_targets_live(
         ex_2d = np.clip(0.05 + 0.25 * (1.0 - td_2d), 0.05, 0.95)
 
     wx_2d = 1.0 / np.maximum(ex_2d, 0.05)
-    cover_2d = np.clip((1.0 - ex_2d) * 65.0, 2.0, 120.0)
+    if "regolith_cover_m" in name_to_idx:
+        cover_2d = np.clip(np.nan_to_num(cube[name_to_idx["regolith_cover_m"]], nan=25.0), 1.0, 200.0)
+    else:
+        cover_2d = np.clip((1.0 - ex_2d) * 65.0, 2.0, 120.0)
 
     eff_l_thr = float(l_threshold)
     eff_closing = 3
@@ -996,6 +1040,26 @@ class DashboardHandler(BaseHTTPRequestHandler):
             region = qs.get("name", ["YILGARN"])[0]
             bundle = _load_region_bundle(region)
             self._send_json(bundle)
+            return
+
+        if parsed.path in ("/api/config", "/api/carto"):
+            self._send_json({
+                "carto": {
+                    "api_key": os.environ.get("CARTO_API_KEY", "cb1_4rkp_1_2f75140ddfbd27cb22776e95"),
+                    "raster_tile_url": os.environ.get(
+                        "CARTO_RASTER_TILE_URL",
+                        "https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=cb1_4rkp_1_2f75140ddfbd27cb22776e95",
+                    ),
+                    "vector_style_url": os.environ.get(
+                        "CARTO_VECTOR_STYLE_URL",
+                        "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json?key=cb1_4rkp_1_2f75140ddfbd27cb22776e95",
+                    ),
+                    "dark_matter_url": os.environ.get(
+                        "CARTO_DARK_MATTER_URL",
+                        "https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png?key=cb1_4rkp_1_2f75140ddfbd27cb22776e95",
+                    ),
+                }
+            })
             return
 
         if parsed.path == "/api/status":

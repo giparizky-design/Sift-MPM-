@@ -5,22 +5,22 @@
     "rank_score": 0.95,
     "geometry": {
       "centroid_lat_lon": [
-        -30.7718,
-        121.5047
+        -30.7645,
+        121.4941
       ],
-      "area_sq_km": 21.37,
+      "area_sq_km": 27.17,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.863,
-      "elkan_noto_c_hat": 0.615,
-      "calibrated_deposit_prob": 0.989,
+      "fused_raw_score": 0.526,
+      "elkan_noto_c_hat": 0.308,
+      "calibrated_deposit_prob": 0.973,
       "conformal_90_ci": {
-        "lower_bound_L": 0.785,
-        "upper_bound_U": 0.998
+        "lower_bound_L": 0.973,
+        "upper_bound_U": 0.995
       },
-      "exploration_propensity_e_x": 0.165,
-      "propensity_weight_w": 8.62
+      "exploration_propensity_e_x": 0.129,
+      "propensity_weight_w": 10.34
     },
     "physics_and_geology_summary": {
       "alteration": {
@@ -28,7 +28,7 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.121
+        "fe_oxide_intensity": 0.174
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
@@ -37,7 +37,7 @@
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 54.3,
+        "regolith_cover_depth_m": 56.6,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -46,25 +46,25 @@
   {
     "target_id": "YILGARN_TGT_0002",
     "rank": 2,
-    "rank_score": 0.751,
+    "rank_score": 0.677,
     "geometry": {
       "centroid_lat_lon": [
-        -30.7497,
-        121.5327
+        -30.7295,
+        121.4616
       ],
-      "area_sq_km": 0.27,
+      "area_sq_km": 0.233,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.775,
-      "elkan_noto_c_hat": 0.615,
-      "calibrated_deposit_prob": 0.986,
+      "fused_raw_score": 0.38,
+      "elkan_noto_c_hat": 0.308,
+      "calibrated_deposit_prob": 0.911,
       "conformal_90_ci": {
-        "lower_bound_L": 0.706,
-        "upper_bound_U": 1.0
+        "lower_bound_L": 0.911,
+        "upper_bound_U": 0.962
       },
-      "exploration_propensity_e_x": 0.05,
-      "propensity_weight_w": 20.0
+      "exploration_propensity_e_x": 0.099,
+      "propensity_weight_w": 10.5
     },
     "physics_and_geology_summary": {
       "alteration": {
@@ -72,16 +72,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.757
+        "fe_oxide_intensity": 0.168
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.306,
+        "dilation_tendency_Td_max": 1.0,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 61.8,
+        "regolith_cover_depth_m": 58.5,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -90,25 +90,25 @@
   {
     "target_id": "YILGARN_TGT_0003",
     "rank": 3,
-    "rank_score": 0.617,
+    "rank_score": 0.646,
     "geometry": {
       "centroid_lat_lon": [
-        -30.7326,
-        121.4776
+        -30.8116,
+        121.4709
       ],
-      "area_sq_km": 3.533,
+      "area_sq_km": 0.177,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.838,
-      "elkan_noto_c_hat": 0.615,
-      "calibrated_deposit_prob": 0.974,
+      "fused_raw_score": 0.357,
+      "elkan_noto_c_hat": 0.308,
+      "calibrated_deposit_prob": 0.848,
       "conformal_90_ci": {
-        "lower_bound_L": 0.739,
-        "upper_bound_U": 0.993
+        "lower_bound_L": 0.848,
+        "upper_bound_U": 0.945
       },
-      "exploration_propensity_e_x": 0.093,
-      "propensity_weight_w": 12.31
+      "exploration_propensity_e_x": 0.089,
+      "propensity_weight_w": 12.77
     },
     "physics_and_geology_summary": {
       "alteration": {
@@ -116,16 +116,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.068
+        "fe_oxide_intensity": 0.18
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.351,
+        "dilation_tendency_Td_max": 1.0,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 59.0,
+        "regolith_cover_depth_m": 59.2,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -134,25 +134,25 @@
   {
     "target_id": "YILGARN_TGT_0004",
     "rank": 4,
-    "rank_score": 0.588,
+    "rank_score": 0.43,
     "geometry": {
       "centroid_lat_lon": [
-        -30.748,
-        121.4842
+        -30.7759,
+        121.5324
       ],
-      "area_sq_km": 0.133,
+      "area_sq_km": 0.677,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.682,
-      "elkan_noto_c_hat": 0.615,
-      "calibrated_deposit_prob": 0.939,
+      "fused_raw_score": 0.304,
+      "elkan_noto_c_hat": 0.308,
+      "calibrated_deposit_prob": 0.913,
       "conformal_90_ci": {
-        "lower_bound_L": 0.63,
-        "upper_bound_U": 0.992
+        "lower_bound_L": 0.913,
+        "upper_bound_U": 0.988
       },
-      "exploration_propensity_e_x": 0.157,
-      "propensity_weight_w": 6.89
+      "exploration_propensity_e_x": 0.133,
+      "propensity_weight_w": 8.41
     },
     "physics_and_geology_summary": {
       "alteration": {
@@ -160,16 +160,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.04
+        "fe_oxide_intensity": 0.165
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.301,
+        "dilation_tendency_Td_max": 0.771,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 54.8,
+        "regolith_cover_depth_m": 56.4,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -178,25 +178,25 @@
   {
     "target_id": "YILGARN_TGT_0005",
     "rank": 5,
-    "rank_score": 0.566,
+    "rank_score": 0.421,
     "geometry": {
       "centroid_lat_lon": [
-        -30.7461,
-        121.4907
+        -30.7914,
+        121.4734
       ],
-      "area_sq_km": 0.125,
+      "area_sq_km": 0.163,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.66,
-      "elkan_noto_c_hat": 0.615,
-      "calibrated_deposit_prob": 0.942,
+      "fused_raw_score": 0.323,
+      "elkan_noto_c_hat": 0.308,
+      "calibrated_deposit_prob": 0.835,
       "conformal_90_ci": {
-        "lower_bound_L": 0.632,
-        "upper_bound_U": 0.999
+        "lower_bound_L": 0.835,
+        "upper_bound_U": 0.944
       },
-      "exploration_propensity_e_x": 0.135,
-      "propensity_weight_w": 7.9
+      "exploration_propensity_e_x": 0.067,
+      "propensity_weight_w": 15.78
     },
     "physics_and_geology_summary": {
       "alteration": {
@@ -204,16 +204,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.063
+        "fe_oxide_intensity": 0.168
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.273,
+        "dilation_tendency_Td_max": 1.0,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 56.2,
+        "regolith_cover_depth_m": 60.6,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -222,25 +222,25 @@
   {
     "target_id": "YILGARN_TGT_0006",
     "rank": 6,
-    "rank_score": 0.492,
+    "rank_score": 0.326,
     "geometry": {
       "centroid_lat_lon": [
-        -30.7674,
-        121.4343
+        -30.7613,
+        121.4464
       ],
-      "area_sq_km": 0.135,
+      "area_sq_km": 0.105,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.646,
-      "elkan_noto_c_hat": 0.615,
-      "calibrated_deposit_prob": 0.935,
+      "fused_raw_score": 0.289,
+      "elkan_noto_c_hat": 0.308,
+      "calibrated_deposit_prob": 0.743,
       "conformal_90_ci": {
-        "lower_bound_L": 0.529,
-        "upper_bound_U": 0.987
+        "lower_bound_L": 0.743,
+        "upper_bound_U": 0.867
       },
-      "exploration_propensity_e_x": 0.088,
-      "propensity_weight_w": 11.78
+      "exploration_propensity_e_x": 0.076,
+      "propensity_weight_w": 14.51
     },
     "physics_and_geology_summary": {
       "alteration": {
@@ -248,16 +248,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.027
+        "fe_oxide_intensity": 0.174
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.295,
+        "dilation_tendency_Td_max": 1.0,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 59.3,
+        "regolith_cover_depth_m": 60.1,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -266,69 +266,25 @@
   {
     "target_id": "YILGARN_TGT_0007",
     "rank": 7,
-    "rank_score": 0.475,
-    "geometry": {
-      "centroid_lat_lon": [
-        -30.8113,
-        121.4699
-      ],
-      "area_sq_km": 0.56,
-      "window_footprint_km": 3.2
-    },
-    "probabilities": {
-      "fused_raw_score": 0.717,
-      "elkan_noto_c_hat": 0.615,
-      "calibrated_deposit_prob": 0.924,
-      "conformal_90_ci": {
-        "lower_bound_L": 0.609,
-        "upper_bound_U": 0.984
-      },
-      "exploration_propensity_e_x": 0.082,
-      "propensity_weight_w": 13.57
-    },
-    "physics_and_geology_summary": {
-      "alteration": {
-        "sensor_source": "EMIT_SWIR",
-        "al_oh_crystallinity_2200nm": "high",
-        "kaolinite_alunite_doublet": true,
-        "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.077
-      },
-      "geomechanics_and_structure": {
-        "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.305,
-        "sar_cloude_pottier_alpha_deg": 45.0,
-        "moho_gravity_gradient_step_mGal_km": 1.5
-      },
-      "cover_and_conductivity": {
-        "regolith_cover_depth_m": 59.7,
-        "aem_conductance_0_300m_S": 15.0,
-        "reductant_trap_inferred": true
-      }
-    }
-  },
-  {
-    "target_id": "YILGARN_TGT_0008",
-    "rank": 8,
     "rank_score": 0.25,
     "geometry": {
       "centroid_lat_lon": [
-        -30.7603,
-        121.4445
+        -30.7671,
+        121.4495
       ],
-      "area_sq_km": 0.163,
+      "area_sq_km": 0.135,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.578,
-      "elkan_noto_c_hat": 0.615,
-      "calibrated_deposit_prob": 0.837,
+      "fused_raw_score": 0.312,
+      "elkan_noto_c_hat": 0.308,
+      "calibrated_deposit_prob": 0.799,
       "conformal_90_ci": {
-        "lower_bound_L": 0.47,
-        "upper_bound_U": 0.957
+        "lower_bound_L": 0.799,
+        "upper_bound_U": 0.901
       },
-      "exploration_propensity_e_x": 0.08,
-      "propensity_weight_w": 13.78
+      "exploration_propensity_e_x": 0.071,
+      "propensity_weight_w": 14.93
     },
     "physics_and_geology_summary": {
       "alteration": {
@@ -336,16 +292,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.034
+        "fe_oxide_intensity": 0.158
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.282,
+        "dilation_tendency_Td_max": 1.0,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 59.8,
+        "regolith_cover_depth_m": 60.4,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }

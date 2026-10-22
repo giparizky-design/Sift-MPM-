@@ -815,8 +815,8 @@ def d8_upstream_labels(receivers: np.ndarray, sample_cells: np.ndarray, shape: t
             c = receivers[c]
             if len(path) > n:                        # safety against cycles
                 break
-        if c == -1:
-            res = -1
+        if c == -1 or label[c] == -2:
+            res = -1 if site_of[c] == -1 else site_of[c]
         elif site_of[c] != -1:
             res = site_of[c]
         else:
@@ -879,7 +879,8 @@ def deconvolve_stream_sediment(
             visited.add(j)
             M[j, k] = area[k]
             j = down[j]
-    M = M / M.sum(axis=1, keepdims=True)
+    row_sums = M.sum(axis=1, keepdims=True)
+    M = np.divide(M, row_sums, out=np.zeros_like(M), where=row_sums > 0)
     c_k, _ = nnls(M, np.asarray(concentrations, dtype=np.float64))
     src = np.full((H, W), np.nan, dtype=np.float32)
     valid = sub >= 0

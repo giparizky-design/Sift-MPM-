@@ -173,15 +173,16 @@ def _rasterize_faults_fast(
             continue
         coords = geom.get("coordinates") or []
         lines = [coords] if geom.get("type") == "LineString" else coords
-        az = 115.0
-        for line in lines:
-            if len(line) >= 2:
-                lon1, lat1 = float(line[0][0]), float(line[0][1])
-                lon2, lat2 = float(line[-1][0]), float(line[-1][1])
-                az = float(np.degrees(np.arctan2(lon2 - lon1, lat2 - lat1)) % 180.0)
-                break
         shapes_mask.append((geom, 1))
-        shapes_az.append((geom, max(1.0, az)))
+        for line in lines:
+            for pt0, pt1 in zip(line[:-1], line[1:]):
+                lon1, lat1 = float(pt0[0]), float(pt0[1])
+                lon2, lat2 = float(pt1[0]), float(pt1[1])
+                if (lon1, lat1) == (lon2, lat2):
+                    continue
+                seg_az = float(np.degrees(np.arctan2(lon2 - lon1, lat2 - lat1)) % 180.0)
+                seg_geom = {"type": "LineString", "coordinates": [[lon1, lat1], [lon2, lat2]]}
+                shapes_az.append((seg_geom, max(1.0, seg_az)))
 
     if shapes_mask:
         line_mask = rasterio.features.rasterize(
@@ -273,7 +274,7 @@ def build_clean_region_cube(
     decay_scale_m = 55000.0 if res_m > 1000.0 else 3500.0
     prox_fault = np.exp(-effective_fault_dist_m / decay_scale_m).astype(np.float32)
     sigma_n, tau = resolve_stress_on_vertical_fault(
-        strike_deg=strike_az + (f_aspect * 0.15),
+        strike_deg=strike_az,
         sigma1=95.0,
         sigma3=25.0,
         sigma1_azimuth_deg=20.0,
@@ -359,7 +360,7 @@ def build_clean_region_cube(
     }
 
     deep_ocean_mask = dem < (-150.0 if region_code == "INDONESIA" else -20.0)
-    if region_code == "INDONESIA":
+    if region_code in ("INDONESIA", "KALIMANTAN"):
         # Mask non-Indonesian neighbor land inside bounding box
         non_id_mask = (
             ((lat_grid > 4.6) & (lon_grid > 119.0))

@@ -237,7 +237,10 @@ def build_water_mask(
         )
 
     flat = slope < 0.5           # degrees
-    high_flow = flow_acc > 1000  # cells
+    # structural.flow_accumulation() outputs log10(acc + 1), where 1000 cells = log10(1001) ≈ 3.00043
+    finite_max = float(np.nanmax(flow_acc)) if np.isfinite(flow_acc).any() else 0.0
+    flow_threshold = np.log10(1000.0 + 1.0) if finite_max <= 25.0 else 1000.0
+    high_flow = flow_acc > flow_threshold
     mask = flat & high_flow
 
     logger.debug(
