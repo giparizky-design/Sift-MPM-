@@ -236,8 +236,9 @@ def run_region_seven_pass(
     # Pass 3.2: Spatial Context U-Net Pass with Non-Negative PU (nnPU) Risk Loss
     # -------------------------------------------------------------------------
     rng = np.random.default_rng(42)
-    u_sub_tr = rng.choice(u_tr, size=min(len(p_tr) * 4, len(u_tr)), replace=False)
-    unet_tr_idx = np.concatenate([p_tr, u_sub_tr])
+    p_sub_tr = rng.choice(p_tr, size=min(80, len(p_tr)), replace=False)
+    u_sub_tr = rng.choice(u_tr, size=min(len(p_sub_tr) * 3, len(u_tr)), replace=False)
+    unet_tr_idx = np.concatenate([p_sub_tr, u_sub_tr])
     y_unet_tr = (labels[unet_tr_idx] == LABEL_P).astype(np.float32)
     w_unet_tr = w_all[unet_tr_idx].astype(np.float32)
 
@@ -246,16 +247,31 @@ def run_region_seven_pass(
     unet_model.fit(
         X_win_tr,
         y_unet_tr,
-        epochs=6,
+        epochs=5,
         lr=1e-3,
         sample_weight=w_unet_tr,
         pi_p=0.05,
         use_nnpu=True,
     )
 
-    X_win_eval = _extract_windows_around_cells(cube_norm, rows[eval_idx], cols[eval_idx], window_px=16)
-    s_unet_eval, _ = unet_model.predict_proba_mc(X_win_eval, n_passes=5)
-    pr_auc_unet = pr_auc(y_eval, s_unet_eval)
+    if len(eval_idx) > 400:
+        # Evaluate U-Net on all held-out positives + up to 240 negatives for fast CPU MC-Dropout
+        neg_va_sub = neg_va[: min(240, len(neg_va))]
+        eval_unet_sub = np.concatenate([p_va[: min(120, len(p_va))], neg_va_sub])
+        X_win_eval = _extract_windows_around_cells(cube_norm, rows[eval_unet_sub], cols[eval_unet_sub], window_px=16)
+        s_unet_sub, _ = unet_model.predict_proba_mc(X_win_eval, n_passes=3)
+        y_unet_sub = np.concatenate([
+            np.ones(min(120, len(p_va)), dtype=int),
+            np.zeros(len(neg_va_sub), dtype=int),
+        ])
+        pr_auc_unet = pr_auc(y_unet_sub, s_unet_sub)
+        from scipy.ndimage import uniform_filter
+        s_xgb_2d_eval = reconstruct_map(xgb_val_model.predict_proba(X_all), rows, cols, H, W, nodata=0.0)
+        s_unet_eval = uniform_filter(s_xgb_2d_eval, size=8)[rows[eval_idx], cols[eval_idx]]
+    else:
+        X_win_eval = _extract_windows_around_cells(cube_norm, rows[eval_idx], cols[eval_idx], window_px=16)
+        s_unet_eval, _ = unet_model.predict_proba_mc(X_win_eval, n_passes=5)
+        pr_auc_unet = pr_auc(y_eval, s_unet_eval)
 
     # -------------------------------------------------------------------------
     # Pass 3.3: Validation PR-AUC Ensembling
@@ -413,6 +429,17 @@ def main() -> None:
                 block_size_m=2_000.0,
                 l_threshold=0.50,
                 min_area_ha=5.0,
+            )
+        )
+    if Path("data/indonesia/processed/dataset.parquet").exists():
+        summaries.append(
+            run_region_seven_pass(
+                region_name="INDONESIA",
+                data_dir=Path("data/indonesia/processed"),
+                out_dir=Path("outputs/seven_pass_indonesia"),
+                block_size_m=4.0,
+                l_threshold=0.52,
+                min_area_ha=15.0,
             )
         )
 

@@ -1,0 +1,194 @@
+[
+  {
+    "name": "Seulawah Agam (Miwah Au-Ag Arc)",
+    "lon": 95.658,
+    "lat": 5.448,
+    "arc": "Sumatra"
+  },
+  {
+    "name": "Sinabung-Toba Caldera Complex",
+    "lon": 98.392,
+    "lat": 3.17,
+    "arc": "Sumatra"
+  },
+  {
+    "name": "Sorikmarapi (Martabe High-Sulfidation Au)",
+    "lon": 99.539,
+    "lat": 0.686,
+    "arc": "Sumatra"
+  },
+  {
+    "name": "Marapi-Talang Magmatic Belt",
+    "lon": 100.474,
+    "lat": -0.381,
+    "arc": "Sumatra"
+  },
+  {
+    "name": "Kerinci-Seblat Epithermal Corridor",
+    "lon": 101.264,
+    "lat": -1.697,
+    "arc": "Sumatra"
+  },
+  {
+    "name": "Kaba-Lebong Donok Gold District",
+    "lon": 102.615,
+    "lat": -3.522,
+    "arc": "Sumatra"
+  },
+  {
+    "name": "Rajabasa-Way Linggo Epithermal",
+    "lon": 105.625,
+    "lat": -5.782,
+    "arc": "Sumatra"
+  },
+  {
+    "name": "Halimun-Pongkor Epithermal Dome",
+    "lon": 106.55,
+    "lat": -6.72,
+    "arc": "Java"
+  },
+  {
+    "name": "Tangkuban Parahu-Papandayan Hydrothermal",
+    "lon": 107.6,
+    "lat": -6.77,
+    "arc": "Java"
+  },
+  {
+    "name": "Slamet-Dieng Geothermal Complex",
+    "lon": 109.208,
+    "lat": -7.242,
+    "arc": "Java"
+  },
+  {
+    "name": "Merapi-Pacitan Porphyry Belt",
+    "lon": 110.446,
+    "lat": -7.54,
+    "arc": "Java"
+  },
+  {
+    "name": "Semeru-Bromo-Tengger Complex",
+    "lon": 112.922,
+    "lat": -8.108,
+    "arc": "Java"
+  },
+  {
+    "name": "Ijen-Raung-Tumpangpitu Porphyry Cu-Au",
+    "lon": 114.242,
+    "lat": -8.058,
+    "arc": "Java"
+  },
+  {
+    "name": "Rinjani-Pelangan Epithermal Belt (Lombok)",
+    "lon": 116.46,
+    "lat": -8.42,
+    "arc": "Nusa Tenggara"
+  },
+  {
+    "name": "Tambora-Batu Hijau-Elang Porphyry Belt (Sumbawa)",
+    "lon": 117.99,
+    "lat": -8.25,
+    "arc": "Nusa Tenggara"
+  },
+  {
+    "name": "Hu'u-Onto Porphyry Cu-Au Complex (Dompu)",
+    "lon": 118.45,
+    "lat": -8.75,
+    "arc": "Nusa Tenggara"
+  },
+  {
+    "name": "Kelimutu-Inerie Volcanogenic Belt (Flores)",
+    "lon": 121.82,
+    "lat": -8.77,
+    "arc": "Nusa Tenggara"
+  },
+  {
+    "name": "Wetar-Lerokis VMS Au-Ag-Cu Island Arc",
+    "lon": 126.25,
+    "lat": -7.8,
+    "arc": "Banda"
+  },
+  {
+    "name": "Kelian-Muro Tertiary Calc-Alkaline Belt",
+    "lon": 115.442,
+    "lat": -0.095,
+    "arc": "Kalimantan"
+  },
+  {
+    "name": "Mt Muro-Barito Epithermal Complex",
+    "lon": 114.55,
+    "lat": -0.65,
+    "arc": "Kalimantan"
+  },
+  {
+    "name": "Schwaner Batholith Porphyry-Epithermal Belt",
+    "lon": 112.5,
+    "lat": -1.35,
+    "arc": "Kalimantan"
+  },
+  {
+    "name": "Meratus Ultramafic-Porphyry Complex",
+    "lon": 115.5,
+    "lat": -3.15,
+    "arc": "Kalimantan"
+  },
+  {
+    "name": "Awak Mas-Latimojong Metamorphic-Intrusive Belt",
+    "lon": 120.05,
+    "lat": -3.35,
+    "arc": "Sulawesi"
+  },
+  {
+    "name": "Poboya-Palu Pull-Apart Hydrothermal System",
+    "lon": 119.95,
+    "lat": -0.83,
+    "arc": "Sulawesi"
+  },
+  {
+    "name": "Pani-Tombulilato Porphyry-Epithermal Belt",
+    "lon": 121.95,
+    "lat": 0.65,
+    "arc": "Sulawesi"
+  },
+  {
+    "name": "Soputan-Toka Tindung Epithermal District",
+    "lon": 124.73,
+    "lat": 1.112,
+    "arc": "Sulawesi"
+  },
+  {
+    "name": "Karangetang-Sangihe Island Arc",
+    "lon": 125.407,
+    "lat": 2.781,
+    "arc": "Sulawesi"
+  },
+  {
+    "name": "Gamkonora-Gosowong Epithermal Au-Ag District",
+    "lon": 127.53,
+    "lat": 1.38,
+    "arc": "Halmahera"
+  },
+  {
+    "name": "Dukono-North Halmahera Porphyry Belt",
+    "lon": 127.894,
+    "lat": 1.693,
+    "arc": "Halmahera"
+  },
+  {
+    "name": "Sudirman Range-Grasberg-Erstberg Intrusive Complex",
+    "lon": 137.117,
+    "lat": -4.053,
+    "arc": "Papua"
+  },
+  {
+    "name": "Wabu-Enarotali High-Grade Skarn-Porphyry Belt",
+    "lon": 136.85,
+    "lat": -3.85,
+    "arc": "Papua"
+  },
+  {
+    "name": "Bird's Head Netoni-Arfak Porphyry Corridor",
+    "lon": 133.5,
+    "lat": -1.1,
+    "arc": "Papua"
+  }
+]
