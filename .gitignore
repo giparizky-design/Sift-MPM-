@@ -19,6 +19,12 @@ env/
 data/raw/
 data/interim/
 data/external/
+data/kalimantan_500m/
+data/hotspot_*/
+data/**/*.joblib
+data/**/*.parquet
+data/**/*.npy
+data/**/*.tif
 
 # Tracked pilot datasets & outputs for immediate reproducibility and UI demo:
 # data/raw_real/, data/borneo/ (*.csv, *.gpkg), outputs/seven_pass_*/, outputs/reports/

@@ -291,7 +291,9 @@ def run_region_seven_pass(
     X_win_eval = _extract_windows_around_cells(
         cube_norm, rows[eval_idx], cols[eval_idx], window_px=16
     )
-    s_unet_eval, unet_var_eval = unet_model.predict_proba_mc(X_win_eval, n_passes=5)
+    s_unet_eval, unet_var_eval = unet_model.predict_proba_mc(
+        X_win_eval, n_passes=2 if len(eval_idx) > 200 else 5
+    )
     pr_auc_unet = pr_auc(y_eval, s_unet_eval)
 
     # Strided U-Net inference across the 2D grid for tractable full-grid CNN surface
@@ -302,7 +304,9 @@ def run_region_seven_pass(
     X_win_grid = _extract_windows_around_cells(
         cube_norm, rr_s.ravel(), cc_s.ravel(), window_px=16
     )
-    unet_grid_mean, _ = unet_model.predict_proba_mc(X_win_grid, n_passes=3)
+    unet_grid_mean, _ = unet_model.predict_proba_mc(
+        X_win_grid, n_passes=1 if len(rr_s.ravel()) > 500 else 2
+    )
     unet_coarse_2d = unet_grid_mean.reshape(len(r_grid), len(c_grid))
     unet_2d = nd_zoom(
         unet_coarse_2d, (H / len(r_grid), W / len(c_grid)), order=1

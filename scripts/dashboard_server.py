@@ -644,6 +644,24 @@ def _load_region_bundle(region: str) -> dict:
                 "zoom": 7,
                 "bbox": (108.5, -4.5, 119.5, 4.5),
             },
+                    "HOTSPOT_SCHWANER": {
+                "title": "West Kalimantan (Kalbar) Schwaner Range Blind Discovery (100m Ultra-HD Blind Discovery)",
+                "center": [2.764166666666668, 115.22583333333333],
+                "zoom": 12,
+                "bbox": (115.1133, 2.6517, 115.3383, 2.8767),
+            },
+                    "HOTSPOT_KAYAN_NORTH": {
+                "title": "North Kalimantan (Kaltara) Kayan River Fracture Corridor (100m Ultra-HD Blind Discovery)",
+                "center": [2.764166666666668, 115.22583333333333],
+                "zoom": 12,
+                "bbox": (115.1133, 2.6517, 115.3383, 2.8767),
+            },
+                    "HOTSPOT_KAHAYAN": {
+                "title": "Central Kalimantan (Kalteng) Upper Kahayan Blind Suture (100m Ultra-HD Blind Discovery)",
+                "center": [-0.47750000000000004, 112.6475],
+                "zoom": 12,
+                "bbox": (112.5350, -0.5900, 112.7600, -0.3650),
+            },
         }[region_up]
         code_low = region_up.lower()
         out_dir = ROOT_DIR / "outputs" / f"seven_pass_{code_low}"
