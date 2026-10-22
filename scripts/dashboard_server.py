@@ -612,7 +612,7 @@ def _load_region_bundle(region: str) -> dict:
             "conformal_l_png": conformal_b64,
         }
 
-    elif region_up in ("PAPUA", "SUMBAWA", "SUMATRA", "SULAWESI", "KALIMANTAN"):
+    elif region_up in ("PAPUA", "SUMBAWA", "SUMATRA", "SULAWESI", "KALIMANTAN", "KALIMANTAN_500M") or region_up.startswith("HOTSPOT_"):
         hd_meta = {
             "PAPUA": {
                 "title": "Papua Central Range HD — Grasberg–Wabu Porphyry Cu-Au Camp (200m HD)",
@@ -644,21 +644,27 @@ def _load_region_bundle(region: str) -> dict:
                 "zoom": 7,
                 "bbox": (108.5, -4.5, 119.5, 4.5),
             },
-                    "HOTSPOT_SCHWANER": {
+            "KALIMANTAN_500M": {
+                "title": "Kalimantan Island-Wide Scan (500m Ultra-HD @ 108.5°E–119.5°E, All 5 Provinces)",
+                "center": [-0.5, 114.5],
+                "zoom": 7,
+                "bbox": (108.5, -4.5, 119.5, 4.5),
+            },
+            "HOTSPOT_SCHWANER": {
                 "title": "West Kalimantan (Kalbar) Schwaner Range Blind Discovery (100m Ultra-HD Blind Discovery)",
-                "center": [2.764166666666668, 115.22583333333333],
+                "center": [-0.4775, 110.8825],
                 "zoom": 12,
-                "bbox": (115.1133, 2.6517, 115.3383, 2.8767),
+                "bbox": (110.7700, -0.5900, 110.9950, -0.3650),
             },
-                    "HOTSPOT_KAYAN_NORTH": {
+            "HOTSPOT_KAYAN_NORTH": {
                 "title": "North Kalimantan (Kaltara) Kayan River Fracture Corridor (100m Ultra-HD Blind Discovery)",
-                "center": [2.764166666666668, 115.22583333333333],
+                "center": [2.7642, 115.2258],
                 "zoom": 12,
                 "bbox": (115.1133, 2.6517, 115.3383, 2.8767),
             },
-                    "HOTSPOT_KAHAYAN": {
+            "HOTSPOT_KAHAYAN": {
                 "title": "Central Kalimantan (Kalteng) Upper Kahayan Blind Suture (100m Ultra-HD Blind Discovery)",
-                "center": [-0.47750000000000004, 112.6475],
+                "center": [-0.4775, 112.6475],
                 "zoom": 12,
                 "bbox": (112.5350, -0.5900, 112.7600, -0.3650),
             },
