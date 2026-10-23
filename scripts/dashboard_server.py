@@ -1218,6 +1218,141 @@ def _trigger_background_training(viewport_params: dict | None = None) -> dict:
     return {"status": "started", "state": _TRAIN_STATE}
 
 
+def _get_system_performance() -> dict:
+    """Gather real-time CPU, RAM, disk storage, and background scan telemetry."""
+    import shutil
+
+    # 1. CPU load average
+    load1, load5, load15 = os.getloadavg()
+    cpu_cores = os.cpu_count() or 8
+    cpu_pct = min(100.0, max(0.0, (load1 / cpu_cores) * 100.0))
+
+    # 2. RAM stats
+    mem_total_gb = 16.0
+    mem_used_gb = 8.0
+    mem_free_gb = 8.0
+    mem_pct = 50.0
+    try:
+        mem_total = int(subprocess.getoutput("sysctl -n hw.memsize 2>/dev/null") or 0)
+        vm = subprocess.getoutput("vm_stat 2>/dev/null")
+        page_size = 16384
+        pages_free = 0
+        pages_active = 0
+        pages_wired = 0
+        for line in vm.splitlines():
+            if "page size of" in line:
+                parts = line.split()
+                if len(parts) >= 2:
+                    page_size = int(parts[-2])
+            elif "Pages free:" in line:
+                pages_free = int(line.split()[-1].rstrip("."))
+            elif "Pages active:" in line:
+                pages_active = int(line.split()[-1].rstrip("."))
+            elif "Pages wired down:" in line:
+                pages_wired = int(line.split()[-1].rstrip("."))
+        if mem_total > 0:
+            mem_total_gb = round(mem_total / (1024**3), 2)
+            mem_used_gb = round(((pages_active + pages_wired) * page_size) / (1024**3), 2)
+            mem_free_gb = round(max(0.0, mem_total_gb - mem_used_gb), 2)
+            mem_pct = round((mem_used_gb / mem_total_gb) * 100.0, 1)
+    except Exception:
+        pass
+
+    # 3. Disk usage
+    disks = []
+    try:
+        du_root = shutil.disk_usage("/")
+        disks.append({
+            "name": "Macintosh HD (System)",
+            "mount": "/",
+            "total_gb": round(du_root.total / (1024**3), 1),
+            "used_gb": round(du_root.used / (1024**3), 1),
+            "free_gb": round(du_root.free / (1024**3), 1),
+            "pct": round((du_root.used / du_root.total) * 100.0, 1),
+        })
+    except Exception:
+        pass
+
+    ssd_path = Path("/Volumes/Seagate")
+    if ssd_path.exists():
+        try:
+            du_ssd = shutil.disk_usage(ssd_path)
+            disks.append({
+                "name": "Seagate External SSD (50m Scan Target)",
+                "mount": "/Volumes/Seagate",
+                "total_gb": round(du_ssd.total / (1024**3), 1),
+                "used_gb": round(du_ssd.used / (1024**3), 1),
+                "free_gb": round(du_ssd.free / (1024**3), 1),
+                "pct": round((du_ssd.used / du_ssd.total) * 100.0, 1),
+            })
+        except Exception:
+            pass
+
+    # 4. Scanning Process
+    scan_info = {"running": False, "pid": None, "cpu_pct": 0.0, "mem_pct": 0.0, "elapsed": "—"}
+    try:
+        pids = subprocess.getoutput("pgrep -f run_kalimantan_50m_island_scan").split()
+        if pids:
+            pid = pids[0]
+            scan_info["running"] = True
+            scan_info["pid"] = pid
+            ps_out = subprocess.getoutput(f"ps -p {pid} -o %cpu,%mem,etime").splitlines()
+            if len(ps_out) > 1:
+                parts = ps_out[1].split()
+                if len(parts) >= 3:
+                    scan_info["cpu_pct"] = float(parts[0])
+                    scan_info["mem_pct"] = float(parts[1])
+                    scan_info["elapsed"] = parts[2]
+    except Exception:
+        pass
+
+    # 5. Tiles progress
+    tiles_dir = Path("/Volumes/Seagate/Geospatials_Kalimantan_50m/tiles/prospectivity")
+    completed_tiles = 0
+    recent_tiles = []
+    if tiles_dir.exists():
+        raw_tiles = sorted(tiles_dir.glob("*.tif"), key=lambda p: p.stat().st_mtime, reverse=True)
+        tiles = [p for p in raw_tiles if not p.name.startswith(".")]
+        completed_tiles = len(tiles)
+        for t in tiles[:8]:
+            st = t.stat()
+            recent_tiles.append({
+                "name": t.name,
+                "size_mb": round(st.st_size / (1024**2), 2),
+                "mtime": time.strftime("%H:%M:%S", time.localtime(st.st_mtime)),
+            })
+
+    total_tiles = 42
+    scan_pct = round((completed_tiles / total_tiles) * 100.0, 1)
+
+    return {
+        "status": "ok",
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "cpu": {
+            "load1": round(load1, 2),
+            "load5": round(load5, 2),
+            "load15": round(load15, 2),
+            "cpu_cores": cpu_cores,
+            "cpu_pct": round(cpu_pct, 1),
+        },
+        "memory": {
+            "total_gb": mem_total_gb,
+            "used_gb": mem_used_gb,
+            "free_gb": mem_free_gb,
+            "pct": mem_pct,
+        },
+        "disks": disks,
+        "scan_process": scan_info,
+        "scan_progress": {
+            "completed_tiles": completed_tiles,
+            "total_tiles": total_tiles,
+            "pct": scan_pct,
+            "recent_tiles": recent_tiles,
+            "destination": str(tiles_dir),
+        },
+    }
+
+
 class DashboardHandler(BaseHTTPRequestHandler):
     """HTTP handler serving the dashboard UI and JSON API endpoints."""
 
@@ -1289,6 +1424,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
         if parsed.path == "/api/status":
             with _TRAIN_LOCK:
                 self._send_json(dict(_TRAIN_STATE))
+            return
+
+        if parsed.path == "/api/performance":
+            perf = _get_system_performance()
+            self._send_json(perf)
             return
 
         self.send_error(404, "Not Found")

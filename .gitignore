@@ -52,3 +52,9 @@ Thumbs.db
 *.env
 .env
 earthdata_token.txt
+
+# Local Agent Workspace & Backups
+.agents/
+*.bak
+*.audit_bak
+
