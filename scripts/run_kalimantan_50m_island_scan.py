@@ -410,9 +410,9 @@ def run_full_kalimantan_50m_pipeline() -> dict:
         res = process_50m_tile(t, donor_model, c_hat, q_hat)
         results.append(res)
 
-    # 3. Assemble Virtual Raster (VRT) Mosaic
-    prosp_tiles = sorted(list(TILES_PROSP_DIR.glob("*.tif")))
-    conf_tiles = sorted(list(TILES_CONF_DIR.glob("*.tif")))
+    # 3. Assemble Virtual Raster (VRT) Mosaic (filter out macOS AppleDouble ._* metadata files)
+    prosp_tiles = sorted([f for f in TILES_PROSP_DIR.glob("*.tif") if not f.name.startswith("._") and not f.name.startswith(".")])
+    conf_tiles = sorted([f for f in TILES_CONF_DIR.glob("*.tif") if not f.name.startswith("._") and not f.name.startswith(".")])
 
     vrt_prosp = MAPS_DIR / "kalimantan_50m_calibrated_prospectivity.vrt"
     vrt_conf = MAPS_DIR / "kalimantan_50m_conformal_bounds_90ci.vrt"

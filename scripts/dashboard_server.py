@@ -102,10 +102,17 @@ def _raster_to_rgba_base64(
     cmap: str = "inferno",
     alpha_scale: float = 0.72,
     normalize: bool = False,
+    max_dim: int = 1600,
 ) -> tuple[str, list[list[float]]]:
-    """Convert a projected GeoTIFF band to a base64 RGBA PNG + WGS84 [[south, west], [north, east]] bounds."""
+    """Convert a projected GeoTIFF or VRT band to a base64 RGBA PNG + WGS84 [[south, west], [north, east]] bounds."""
     with rasterio.open(tif_path) as src:
-        arr = src.read(band).astype(np.float64)
+        if max_dim is not None and (src.width > max_dim or src.height > max_dim):
+            scale = max_dim / max(src.width, src.height)
+            out_w = max(1, int(round(src.width * scale)))
+            out_h = max(1, int(round(src.height * scale)))
+            arr = src.read(band, out_shape=(out_h, out_w), resampling=rasterio.enums.Resampling.bilinear).astype(np.float64)
+        else:
+            arr = src.read(band).astype(np.float64)
         west, south, east, north = transform_bounds(
             src.crs, "EPSG:4326", *src.bounds, densify_pts=21
         )
@@ -613,7 +620,7 @@ def _load_region_bundle(region: str) -> dict:
             "conformal_l_png": conformal_b64,
         }
 
-    elif region_up in ("PAPUA", "SUMBAWA", "SUMATRA", "SULAWESI", "KALIMANTAN", "KALIMANTAN_500M", "CUSTOM_VIEWPORT") or region_up.startswith("HOTSPOT_"):
+    elif region_up in ("PAPUA", "SUMBAWA", "SUMATRA", "SULAWESI", "KALIMANTAN", "KALIMANTAN_50M", "KALIMANTAN_500M", "CUSTOM_VIEWPORT") or region_up.startswith("HOTSPOT_"):
         if region_up == "CUSTOM_VIEWPORT":
             summ_file = ROOT_DIR / "outputs" / "seven_pass_custom_viewport" / "seven_pass_summary.json"
             summ_data = json.loads(summ_file.read_text()) if summ_file.exists() else {}
@@ -650,13 +657,19 @@ def _load_region_bundle(region: str) -> dict:
                     "bbox": (124.40, 0.80, 125.25, 1.65),
                 },
                 "KALIMANTAN": {
-                    "title": "Kalimantan Island Scan (500m Baseline + 50m Ultra-HD Camps, All 5 Provinces)",
+                    "title": "Kalimantan Island-Wide Scan (Continuous 50m Ultra-HD, All 42 Tiles / 5 Provinces)",
+                    "center": [-0.5, 114.5],
+                    "zoom": 7,
+                    "bbox": (108.5, -4.5, 119.5, 4.5),
+                },
+                "KALIMANTAN_50M": {
+                    "title": "Kalimantan Island-Wide Scan (Continuous 50m Ultra-HD, All 42 Tiles / 5 Provinces)",
                     "center": [-0.5, 114.5],
                     "zoom": 7,
                     "bbox": (108.5, -4.5, 119.5, 4.5),
                 },
                 "KALIMANTAN_500M": {
-                    "title": "Kalimantan Island-Wide Scan (500m Ultra-HD @ 108.5°E–119.5°E, All 5 Provinces)",
+                    "title": "Kalimantan Island-Wide Scan (500m Baseline @ 108.5°E–119.5°E, All 5 Provinces)",
                     "center": [-0.5, 114.5],
                     "zoom": 7,
                     "bbox": (108.5, -4.5, 119.5, 4.5),
@@ -680,13 +693,24 @@ def _load_region_bundle(region: str) -> dict:
                     "bbox": (112.5350, -0.5900, 112.7600, -0.3650),
                 },
             }[region_up]
-        code_low = "kalimantan_500m" if region_up == "KALIMANTAN" else region_up.lower()
+        if region_up in ("KALIMANTAN", "KALIMANTAN_50M"):
+            code_low = "kalimantan_50m" if (ROOT_DIR / "outputs" / "seven_pass_kalimantan_50m").exists() else "kalimantan_500m"
+        else:
+            code_low = region_up.lower()
         out_dir = ROOT_DIR / "outputs" / f"seven_pass_{code_low}"
         summary_path = out_dir / "seven_pass_summary.json"
         cards_path = out_dir / "targets" / "site_cards.json"
         targets_gpkg = out_dir / "targets" / f"ranked_targets_{code_low}.gpkg"
+        if not targets_gpkg.exists():
+            cand_gpkgs = list((out_dir / "targets").glob("*.gpkg"))
+            if cand_gpkgs:
+                targets_gpkg = cand_gpkgs[0]
         prosp_tif = out_dir / "maps" / "calibrated_prospectivity.tif"
+        if not prosp_tif.exists() and (out_dir / "maps" / "calibrated_prospectivity.vrt").exists():
+            prosp_tif = out_dir / "maps" / "calibrated_prospectivity.vrt"
         conf_tif = out_dir / "maps" / "conformal_bounds_90ci.tif"
+        if not conf_tif.exists() and (out_dir / "maps" / "conformal_bounds_90ci.vrt").exists():
+            conf_tif = out_dir / "maps" / "conformal_bounds_90ci.vrt"
         cv_csv = out_dir / "spatial_cv_metrics.csv"
         bh_json = out_dir / "blind_holdout.json"
 
@@ -766,7 +790,7 @@ def _load_region_bundle(region: str) -> dict:
 
         # For Kalimantan, also bundle all 50m Ultra-HD Camp-Scale Overlays across the island
         hd_sub_overlays = []
-        if region_up in ("KALIMANTAN", "KALIMANTAN_500M"):
+        if region_up in ("KALIMANTAN", "KALIMANTAN_50M", "KALIMANTAN_500M"):
             kal_hd_list = [
                 ("BORNEO", "Kelian Epithermal Au-Ag District (50m HD East Kalimantan)"),
                 ("HOTSPOT_SCHWANER_50M", "Schwaner Range Blind Discovery (50m HD West Kalimantan)"),

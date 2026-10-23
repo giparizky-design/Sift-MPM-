@@ -1,0 +1,12 @@
+{
+  "region": "KALIMANTAN_50M",
+  "title": "Kalimantan Island-Wide Scan (Continuous 50-Meter Resolution on Seagate SSD)",
+  "resolution_m": 50.0,
+  "n_tiles_total": 42,
+  "n_tiles_processed": 42,
+  "ssd_storage_dir": "/Volumes/Seagate/Geospatials_Kalimantan_50m",
+  "prospectivity_vrt": "/Volumes/Seagate/Geospatials_Kalimantan_50m/maps/kalimantan_50m_calibrated_prospectivity.vrt",
+  "conformal_vrt": "/Volumes/Seagate/Geospatials_Kalimantan_50m/maps/kalimantan_50m_conformal_bounds_90ci.vrt",
+  "n_ranked_targets": 35,
+  "execution_time_min": 0.02
+}
