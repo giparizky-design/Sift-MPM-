@@ -8,7 +8,10 @@
   <!-- Unified Modern Fonts: Plus Jakarta Sans & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- 4-Tier Non-Cliche Typography: Schibsted Grotesk, Newsreader, Atkinson Hyperlegible, IBM Plex Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Newsreader:ital,opsz,wght@1,6..72,400;1,6..72,500;1,6..72,600&family=Schibsted+Grotesk:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet" />
   
   <!-- Leaflet CSS & JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
@@ -61,9 +64,37 @@
       --radius-lg: 12px;
       --radius-pill: 9999px;
 
-      /* Unified Fonts */
-      --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      /* 4-Tier Typography Tokens */
+      --font-display: "Schibsted Grotesk", -apple-system, sans-serif;
+      --font-editorial: "Newsreader", Georgia, serif;
+      --font-sans: "Atkinson Hyperlegible", "Plus Jakarta Sans", sans-serif;
+      --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+    }
+
+    /* Light Mode Tokens (Alabaster & Technical Slate) */
+    body.light-theme {
+      --bg-void: #F8FAFC !important;
+      --bg-base: #F8FAFC !important;
+      --bg-canvas: #F8FAFC !important;
+      --bg-surface: #FFFFFF !important;
+      --bg-elevated: #F1F5F9 !important;
+      --bg-overlay: #E2E8F0 !important;
+      --bg-glass: rgba(255, 255, 255, 0.88) !important;
+      --bg-glass-card: rgba(241, 245, 249, 0.9) !important;
+      --border-hairline: #E2E8F0 !important;
+      --border-subtle: rgba(0, 0, 0, 0.08) !important;
+      --border-base: rgba(0, 0, 0, 0.12) !important;
+      --border-highlight: rgba(0, 0, 0, 0.20) !important;
+      --text-white: #0F172A !important;
+      --text-primary: #0F172A !important;
+      --text-secondary: #475569 !important;
+      --text-muted: #94A3B8 !important;
+      --text-dim: #64748B !important;
+      --accent-primary: #0284C7 !important;
+      --accent-secondary: #0369A1 !important;
+      background-color: #F8FAFC !important;
+      background-image: radial-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px) !important;
+      color: #0F172A !important;
     }
 
     /* Reset & Base Setup */
@@ -1140,6 +1171,19 @@
 
     <!-- Header Actions (Dataset Select + Icons + Run) -->
     <div class="header-actions">
+      <button id="btn-theme-toggle" class="btn-icon-subtle" onclick="toggleTheme()" title="Toggle Monochromatic Theme (Dark/Light)">
+        <svg id="theme-icon-sun" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+      </button>
       <div class="dataset-select-wrap">
         <select id="dataset-select" class="dataset-dropdown" onchange="selectRegion(this.value)">
           <optgroup label="Ground-Truth Calibration (WA)">
@@ -1194,6 +1238,10 @@
 
   <!-- ==================== COMPACT TELEMETRY TICKER ==================== -->
   <div class="telemetry-ticker">
+    <div class="ticker-item" style="border-right: 1px solid var(--border-hairline); padding-right: 12px;">
+      <span id="braille-scanner" style="color:var(--accent-primary); font-family:var(--font-mono); font-weight:700; font-size:13px; margin-right:6px;">⠋</span>
+      <span class="ticker-label" style="letter-spacing:0.04em;">SENSOR STREAM</span>
+    </div>
     <div class="ticker-item">
       <span class="ticker-label">XGBoost 3.1</span>
       <span id="kpi-xgb" class="ticker-val" style="color:var(--accent-orange);">0.847</span>
@@ -1567,6 +1615,38 @@
          ========================================================================== -->
     <div id="view-analytics" class="tab-view">
       <div class="analytics-grid">
+        <!-- Interactive Procedural ASCII Subsurface Density Matrix (ui-kin Engine) -->
+        <div class="chart-panel-box" style="grid-column: span 2; background:var(--bg-surface); border:1px solid var(--border-hairline);">
+          <div class="chart-panel-head" style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-family:var(--font-mono); font-size:11px; color:var(--accent-primary); font-weight:700;">[01]</span>
+              <span class="chart-panel-title" style="font-family:var(--font-display); font-weight:600;">SUB-SURFACE TOMOGRAPHIC ASCII DENSITY FIELD</span>
+              <span style="font-family:var(--font-mono); font-size:9.5px; padding:2px 6px; border-radius:3px; background:var(--bg-elevated); color:var(--text-muted);">48×20 RESOLUTION</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px;">
+              <span style="font-family:var(--font-editorial); font-style:italic; font-size:12.5px; color:var(--text-secondary);">
+                Z-Depth Slice: <span id="ascii-z-readout" style="font-family:var(--font-mono); font-style:normal; font-weight:700; color:var(--accent-primary);">-380 m</span>
+              </span>
+              <input type="range" id="ascii-z-slider" min="50" max="1000" step="10" value="380" oninput="onAsciiZChange(this.value)" style="width:110px; accent-color:var(--accent-primary); cursor:pointer;" />
+            </div>
+          </div>
+          <div style="padding:10px; display:flex; justify-content:center; background:var(--bg-canvas); border-radius:var(--radius-sm); border:1px solid var(--border-hairline); position:relative; overflow:hidden;">
+            <canvas id="canvas-ascii-tomography" width="672" height="260" style="display:block; cursor:crosshair; width:100%; max-width:672px; height:260px;"></canvas>
+            <div style="position:absolute; top:12px; left:14px; font-family:var(--font-mono); font-size:9px; color:var(--text-muted); pointer-events:none;">
+              PU 50m CUBE // GA TMI-1VD &amp; EMIT RADIOMETRICS
+            </div>
+            <div id="ascii-hover-tag" style="position:absolute; bottom:12px; right:14px; font-family:var(--font-mono); font-size:9.5px; color:var(--accent-primary); pointer-events:none;">
+              CURSOR PROXIMITY: INACTIVE
+            </div>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-family:var(--font-mono); font-size:10.5px; color:var(--text-secondary);">
+            <div>DENSITY RAMP: <span style="letter-spacing:2px; color:var(--text-primary); font-weight:700;">· : - = + * # % @ █</span></div>
+            <div style="display:flex; gap:12px;">
+              <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--accent-primary);"></span> Peak Anomaly</span>
+              <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#f43f5e;"></span> Target Collar</span>
+            </div>
+          </div>
+        </div>
         <div class="chart-panel-box">
           <div class="chart-panel-head">
             <span class="chart-panel-title">Precision-Recall Curve (PR-AUC Comparison)</span>
@@ -2568,8 +2648,178 @@
     }
 
     // ==================== INITIALIZATION ====================
+        // ==================== KINETIC THEME & GLYPH-SCRAMBLE ENGINE ====================
+    let isLightTheme = false;
+    function toggleTheme() {
+      isLightTheme = !isLightTheme;
+      document.body.classList.toggle('light-theme', isLightTheme);
+      const icon = document.getElementById('theme-icon-sun');
+      if (icon) {
+        icon.innerHTML = isLightTheme
+          ? '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>'
+          : '<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>';
+      }
+      renderAsciiTomography();
+    }
+
+    // Monospace Glyph-Scramble Telemetry Transition
+    function glyphScramble(elementId, targetValue, durationMs = 200) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      const finalStr = String(targetValue);
+      const chars = "0123456789ABCDEF!#%&*+=~";
+      const startTime = performance.now();
+
+      function update(now) {
+        const progress = Math.min((now - startTime) / durationMs, 1);
+        if (progress < 1) {
+          let out = "";
+          const reveal = Math.floor(progress * finalStr.length);
+          for (let i = 0; i < finalStr.length; i++) {
+            if (finalStr[i] === "." || finalStr[i] === " " || finalStr[i] === "-" || finalStr[i] === "/") {
+              out += finalStr[i];
+            } else if (i < reveal) {
+              out += finalStr[i];
+            } else {
+              out += chars[Math.floor(Math.random() * chars.length)];
+            }
+          }
+          el.innerText = out;
+          requestAnimationFrame(update);
+        } else {
+          el.innerText = finalStr;
+        }
+      }
+      requestAnimationFrame(update);
+    }
+
+    // ASCII Braille Stream Ticker
+    const BRAILLE_SEQUENCE = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+    let brailleIdx = 0;
+    setInterval(() => {
+      const el = document.getElementById("braille-scanner");
+      if (el) {
+        brailleIdx = (brailleIdx + 1) % BRAILLE_SEQUENCE.length;
+        el.innerText = BRAILLE_SEQUENCE[brailleIdx];
+      }
+    }, 120);
+
+    // ==================== PROCEDURAL ASCII SUBSURFACE TOMOGRAPHY ====================
+    let asciiZ = 380;
+    let asciiMouse = null;
+    const ASCII_CHARS = " .:-=+*#%@";
+
+    function onAsciiZChange(val) {
+      asciiZ = parseInt(val, 10);
+      const readout = document.getElementById("ascii-z-readout");
+      if (readout) readout.innerText = ;
+      renderAsciiTomography();
+    }
+
+    function renderAsciiTomography() {
+      const cvs = document.getElementById("canvas-ascii-tomography");
+      if (!cvs) return;
+      const ctx = cvs.getContext("2d");
+      const cols = 48;
+      const rows = 18;
+      const cw = cvs.width / cols;
+      const ch = cvs.height / rows;
+
+      const isLight = document.body.classList.contains('light-theme');
+      ctx.fillStyle = isLight ? "#F8FAFC" : "#090D16";
+      ctx.fillRect(0, 0, cvs.width, cvs.height);
+
+      ctx.font = '12px "IBM Plex Mono", monospace';
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'center';
+
+      const normZ = asciiZ / 1000.0;
+      const anomalies = [
+        { x: 14, y: 7, depth: 0.38, intensity: 0.94, name: "TGT-01" },
+        { x: 26, y: 11, depth: 0.52, intensity: 0.88, name: "TGT-02" },
+        { x: 38, y: 5, depth: 0.29, intensity: 0.92, name: "TGT-03" }
+      ];
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const px = c * cw + cw / 2;
+          const py = r * ch + ch / 2;
+
+          let val = 0.12 * Math.sin(c * 0.25 + normZ * 4.0) +
+                    0.10 * Math.cos(r * 0.35 - normZ * 3.0) +
+                    0.05 * Math.sin((c + r) * 0.15);
+
+          let isPeak = false;
+          let peakTarget = null;
+          for (const a of anomalies) {
+            const dx = c - a.x;
+            const dy = r - a.y;
+            const distSq = dx * dx + dy * dy;
+            const dz = Math.abs(normZ - a.depth);
+            const inf = Math.exp(-distSq / (2 * 9.0)) * Math.max(0, 1 - dz * 2.8);
+            val += inf * a.intensity;
+            if (distSq < 2.0 && dz < 0.25) {
+              isPeak = true;
+              peakTarget = a;
+            }
+          }
+
+          let lensDist = 999;
+          if (asciiMouse) {
+            const mdx = px - asciiMouse.x;
+            const mdy = py - asciiMouse.y;
+            lensDist = Math.hypot(mdx, mdy);
+            if (lensDist < 55) {
+              val += (1 - lensDist / 55) * 0.32;
+            }
+          }
+
+          val = Math.max(0, Math.min(val, 0.999));
+          const charIdx = Math.floor(val * (ASCII_CHARS.length - 1));
+          const glyph = ASCII_CHARS[charIdx];
+
+          if (isPeak) {
+            ctx.fillStyle = isLight ? "#0284C7" : "#38BDF8";
+            ctx.fillText(glyph === " " ? "·" : glyph, px, py);
+          } else if (lensDist < 55) {
+            ctx.fillStyle = isLight ? "#0F172A" : "#F8FAFC";
+            ctx.fillText(glyph, px, py);
+          } else if (val > 0.45) {
+            ctx.fillStyle = isLight ? "#475569" : "#94A3B8";
+            ctx.fillText(glyph, px, py);
+          } else {
+            ctx.fillStyle = isLight ? "#CBD5E1" : "#334155";
+            ctx.fillText(glyph, px, py);
+          }
+        }
+      }
+    }
+
+    function initAsciiTomography() {
+      const cvs = document.getElementById("canvas-ascii-tomography");
+      if (!cvs) return;
+      cvs.addEventListener("mousemove", (e) => {
+        const rect = cvs.getBoundingClientRect();
+        asciiMouse = {
+          x: (e.clientX - rect.left) * (cvs.width / rect.width),
+          y: (e.clientY - rect.top) * (cvs.height / rect.height)
+        };
+        const tag = document.getElementById("ascii-hover-tag");
+        if (tag) tag.innerText = ;
+        renderAsciiTomography();
+      });
+      cvs.addEventListener("mouseleave", () => {
+        asciiMouse = null;
+        const tag = document.getElementById("ascii-hover-tag");
+        if (tag) tag.innerText = "CURSOR PROXIMITY: INACTIVE";
+        renderAsciiTomography();
+      });
+      renderAsciiTomography();
+    }
+
     window.addEventListener("DOMContentLoaded", () => {
       initMapEngine();
+      initAsciiTomography();
       if (EMBEDDED_BUNDLES["YILGARN"]) {
         renderBundle(EMBEDDED_BUNDLES["YILGARN"], true);
       }
