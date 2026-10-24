@@ -163,3 +163,41 @@ def test_blind_holdout_spatial_separation():
     assert set(train_df["sample_id"]) == {"S3", "S4"}
     # Disjoint check
     assert len(set(train_df["sample_id"]).intersection(set(holdout_df["sample_id"]))) == 0
+
+
+def test_pu_cross_validation_no_spatial_leakage():
+    """Verify that spatial cross validation strictly enforces disjoint spatial blocks with no index mismatch."""
+    rng = np.random.default_rng(42)
+    n_cells = 400
+    rows = rng.integers(0, 20, size=n_cells)
+    cols = rng.integers(0, 20, size=n_cells)
+    
+    # Label: 20 positive cells, rest unlabeled
+    labels = np.full(n_cells, -1, dtype=int)
+    labels[:20] = 1
+
+    df = pd.DataFrame({
+        "row": rows,
+        "col": cols,
+        "label": labels,
+        "f1": rng.standard_normal(n_cells),
+        "f2": rng.standard_normal(n_cells),
+    })
+
+    block_ids = assign_spatial_blocks(df["row"].to_numpy(), df["col"].to_numpy(), H=20, W=20, block_size_px=5)
+    folds = spatial_block_kfold(block_ids, n_folds=4, random_state=42)
+
+    for tr_idx, va_idx in folds:
+        # 1. Positional indices must be mutually exclusive
+        assert len(set(tr_idx).intersection(set(va_idx))) == 0
+
+        # 2. Block IDs must be strictly disjoint
+        tr_blocks = set(block_ids[tr_idx])
+        va_blocks = set(block_ids[va_idx])
+        assert len(tr_blocks.intersection(va_blocks)) == 0
+
+        # 3. Ensure indexing into dataframe preserves correct row identities
+        tr_df = df.iloc[tr_idx]
+        va_df = df.iloc[va_idx]
+        assert len(set(tr_df.index).intersection(set(va_df.index))) == 0
+

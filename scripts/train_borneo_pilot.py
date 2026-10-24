@@ -26,7 +26,7 @@ import rasterio
 from src.features.feature_stack import FeatureStack, reconstruct_map
 from src.labels.pu_negatives import build_pu_training_set, step1_isolation_forest, step2_select_reliable_negatives
 from src.labels.spatial_splits import assign_spatial_blocks, enforce_cluster_integrity, spatial_block_kfold
-from src.models.pu_pipeline import score_metrics
+from src.models.pu_pipeline import fit_pu_model, score_metrics, verify_no_raw_pixel_leakage
 from src.models.xgboost_model import MPMXGBoost
 from src.outputs.prospectivity_map import generate_target_polygons
 from src.utils.io import save_raster
@@ -60,28 +60,18 @@ def main() -> None:
     feature_cols = [c for c in df.columns if c not in ("label", "row", "col")]
     logger.info("Loaded Borneo dataset: %d cells | %d features: %s", len(df), len(feature_cols), feature_cols)
 
+    # Acceptance Criterion 1: Verify strictly no raw sensor pixel leakage
+    verify_no_raw_pixel_leakage(feature_cols)
+
     # -------------------------------------------------------------------------
     # 1. Full PU Model Training
     # -------------------------------------------------------------------------
-    logger.info("Step 1: Isolation Forest anomaly scoring on unlabeled background...")
-    u_mask = df["label"] == -1
-    p_mask = df["label"] == 1
-    col_medians = df[feature_cols].median()
-    u_features = df.loc[u_mask, feature_cols].fillna(col_medians).to_numpy()
-    p_features = df.loc[p_mask, feature_cols].fillna(col_medians).to_numpy()
-    anomaly_scores = step1_isolation_forest(p_features, u_features, contamination=0.05, random_state=42)
-
-    logger.info("Step 2: Mining reliable negatives from bottom 10%% anomaly scores...")
-    rn_sub_idx = step2_select_reliable_negatives(u_features, anomaly_scores, percentile_threshold=10.0)
-    u_indices = df.index[u_mask].to_numpy()
-    rn_indices = u_indices[rn_sub_idx]
-
-    p_indices = df.index[df["label"] == 1].to_numpy()
-    pu_df = pd.concat([df.loc[p_indices], df.loc[rn_indices]], axis=0).reset_index(drop=True)
-    pu_df["training_label"] = np.where(pu_df["label"] == 1, 1, 0)
-    logger.info("PU Training set assembled: %d P vs %d pseudo-RN cells", len(p_indices), len(rn_indices))
-
-    config = {
+    pu_config = {
+        "pu_learning": {
+            "step1_contamination": 0.05,
+            "rn_percentile_threshold": 10.0,
+            "random_state": 42,
+        },
         "models": {
             "baseline": {
                 "n_bag": 10,
@@ -100,54 +90,100 @@ def main() -> None:
                 "subsample": 0.8,
                 "colsample_bytree": 0.8,
                 "random_state": 42,
-            }
-        }
+            },
+        },
     }
 
-    model = MPMXGBoost(config)
-    X_train = pu_df[feature_cols].to_numpy()
-    y_train = pu_df["training_label"].to_numpy()
-    model.fit(X_train, y_train)
+    logger.info("Step 1: Training production PU XGBoost model on full Borneo dataset...")
+    p_all = df[df["label"] == 1][feature_cols].to_numpy()
+    u_all = df[df["label"] == -1][feature_cols].to_numpy()
+    rn_empty = np.empty((0, len(feature_cols)), dtype=np.float32)
+
+    model = fit_pu_model(p_all, rn_empty, u_all, pu_config)
     model.save(str(models_dir / "xgboost_ensemble_borneo.joblib"))
+    logger.info("Saved production Borneo PU model to %s", models_dir / "xgboost_ensemble_borneo.joblib")
 
     # -------------------------------------------------------------------------
-    # 2. Spatial Cross-Validation & Ranking Evaluation
+    # 2. Leakage-Resistant Spatial Cross-Validation & Out-of-Fold Evaluation
     # -------------------------------------------------------------------------
-    logger.info("Evaluating prospectivity ranking on Kelian deposit vs background...")
+    logger.info("Step 2: Leakage-safe 5-fold spatial cross-validation with cluster integrity...")
     X_full = df[feature_cols].to_numpy()
     prosp_probs = model.predict_proba(X_full)
     uncertainty = model.predict_uncertainty(X_full)
 
-    # Evaluate ranking: Kelian P vs background sample using out-of-fold spatial CV
-    eval_mask = (df["label"] == 1) | (df.index.isin(df[df["label"] == -1].sample(min(10000, int((df["label"] == -1).sum())), random_state=42).index))
-    eval_indices = df.index[eval_mask].to_numpy()
-    
-    block_ids = assign_spatial_blocks(df.loc[eval_indices, "row"].to_numpy(), df.loc[eval_indices, "col"].to_numpy(), H, W, block_size_px=20)
+    # Assign spatial blocks across the full grid and enforce deposit cluster integrity
+    block_ids = assign_spatial_blocks(
+        df["row"].to_numpy(), df["col"].to_numpy(), H, W, block_size_px=44
+    )
+    pos_mask = (df["label"] == 1).to_numpy()
+    pos_raster = np.zeros((H, W), dtype=np.uint8)
+    pos_raster[df.loc[pos_mask, "row"].to_numpy(), df.loc[pos_mask, "col"].to_numpy()] = 1
+    block_ids = enforce_cluster_integrity(
+        block_ids, df["row"].to_numpy(), df["col"].to_numpy(), pos_raster
+    )
+
     folds = spatial_block_kfold(block_ids, n_folds=5, random_state=42)
-    oof_probs = np.full(len(eval_indices), np.nan, dtype=np.float64)
-    y_eval = np.where(df.loc[eval_indices, "label"] == 1, 1, 0)
-    
-    for tr_f, va_f in folds:
-        va_idx_eval = set(eval_indices[va_f])
-        tr_mask = [idx not in va_idx_eval for idx in pu_df.index]
-        if sum(tr_mask) > 10 and len(va_f) > 0:
-            fold_model = MPMXGBoost(config)
-            fold_model.fit(pu_df.loc[tr_mask, feature_cols].to_numpy(), pu_df.loc[tr_mask, "training_label"].to_numpy())
-            oof_probs[va_f] = fold_model.predict_proba(df.loc[eval_indices[va_f], feature_cols].to_numpy())
+    oof_probs = np.full(len(df), np.nan, dtype=np.float64)
+    fold_records: list[dict] = []
 
-    valid_oof = np.isfinite(oof_probs)
-    probs_eval = np.where(valid_oof, oof_probs, prosp_probs[eval_mask])
+    for fold_idx, (tr_idx, va_idx) in enumerate(folds):
+        tr_df = df.iloc[tr_idx]
+        va_df = df.iloc[va_idx]
 
-    eval_metrics = score_metrics(y_eval, probs_eval)
+        p_tr = tr_df[tr_df["label"] == 1][feature_cols].to_numpy()
+        u_tr = tr_df[tr_df["label"] == -1][feature_cols].to_numpy()
+        rn_tr = np.empty((0, len(feature_cols)), dtype=np.float32)
+
+        if len(p_tr) == 0:
+            logger.warning("Fold %d has no training positives; skipping.", fold_idx)
+            continue
+
+        # Subsample unlabeled background to 25,000 for efficient fold-level Isolation Forest
+        if len(u_tr) > 25000:
+            rng = np.random.default_rng(42 + fold_idx)
+            u_tr = u_tr[rng.choice(len(u_tr), 25000, replace=False)]
+
+        fold_model = fit_pu_model(p_tr, rn_tr, u_tr, pu_config)
+
+        va_X = va_df[feature_cols].to_numpy()
+        va_preds = fold_model.predict_proba(va_X)
+        oof_probs[va_idx] = va_preds
+
+        va_y = (va_df["label"] == 1).astype(int).to_numpy()
+        fold_m = score_metrics(va_y, va_preds)
+        fold_m["fold"] = fold_idx
+        fold_m["n_train_pos"] = len(p_tr)
+        fold_m["n_val_pos"] = int(va_y.sum())
+        fold_m["n_val_cells"] = len(va_y)
+        fold_records.append(fold_m)
+
+        logger.info(
+            "Fold %d: PR-AUC=%.4f (prev=%.4f, lift=%.1fx) | ROC-AUC=%.4f | Recall@FPR10=%.4f",
+            fold_idx,
+            fold_m["pr_auc"],
+            fold_m["prevalence"],
+            fold_m.get("pr_auc_lift", float("nan")),
+            fold_m["roc_auc"],
+            fold_m["recall_at_fpr_0.1"],
+        )
+
+    y_all = (df["label"] == 1).astype(int).to_numpy()
+    eval_metrics = score_metrics(y_all, oof_probs)
+    eval_metrics["fold"] = "overall_oof"
+    eval_metrics["n_train_pos"] = int(y_all.sum())
+    eval_metrics["n_val_pos"] = int(y_all.sum())
+    eval_metrics["n_val_cells"] = len(y_all)
+    fold_records.append(eval_metrics)
+
     logger.info(
-        "Kelian Prospectivity Ranking (Spatial OOF): PR-AUC=%.3f (Prevalence=%.3f) | ROC-AUC=%.3f | Recall@FPR10=%.3f",
+        "Kelian Prospectivity Ranking (Leakage-Safe Spatial OOF): PR-AUC=%.4f (Prevalence=%.4f) | ROC-AUC=%.4f | Recall@FPR10=%.4f",
         eval_metrics["pr_auc"],
         eval_metrics["prevalence"],
         eval_metrics["roc_auc"],
         eval_metrics["recall_at_fpr_0.1"],
     )
 
-    pd.DataFrame([eval_metrics]).to_csv(reports_dir / "spatial_metrics_borneo.csv", index=False)
+    pd.DataFrame(fold_records).to_csv(reports_dir / "spatial_metrics_borneo.csv", index=False)
 
     # -------------------------------------------------------------------------
     # 3. Generate Maps & Target Polygons

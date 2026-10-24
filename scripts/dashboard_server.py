@@ -238,9 +238,47 @@ def _build_region_satellite_layers(region_up: str) -> dict:
     return layers
 
 
-def _load_region_bundle(region: str) -> dict:
+_BUNDLE_CACHE: dict[str, dict] = {}
+_CACHED_GEORIMA_DF: pd.DataFrame | None = None
+
+
+def _get_georima_df() -> pd.DataFrame | None:
+    global _CACHED_GEORIMA_DF
+    if _CACHED_GEORIMA_DF is None:
+        p = ROOT_DIR / "data" / "indonesia" / "georima_all_indonesia_nodes.csv"
+        if p.exists():
+            _CACHED_GEORIMA_DF = pd.read_csv(p)
+    return _CACHED_GEORIMA_DF
+
+
+def _init_bundle_cache() -> None:
+    html_p = ROOT_DIR / "ui" / "index.html"
+    if not html_p.exists():
+        return
+    try:
+        with open(html_p, "r", encoding="utf-8") as f:
+            for line in f:
+                if "const EMBEDDED_BUNDLES = " in line:
+                    raw = line.strip()[len("const EMBEDDED_BUNDLES = "):].rstrip(";")
+                    data = json.loads(raw)
+                    if isinstance(data, dict):
+                        _BUNDLE_CACHE.update(data)
+                        logger.info("Pre-seeded bundle cache with %d regions from ui/index.html", len(data))
+                    break
+    except Exception as exc:
+        logger.warning("Could not pre-seed bundle cache: %s", exc)
+
+
+_init_bundle_cache()
+
+
+def _load_region_bundle(region: str, force_reload: bool = False) -> dict:
     """Assemble actual mines, predicted targets, heatmaps, site cards, and CV metrics for a region."""
     region_up = region.upper()
+    if not force_reload and region_up in _BUNDLE_CACHE:
+        return _BUNDLE_CACHE[region_up]
+
+    hd_sub_overlays: list[dict] = []
     if region_up == "YILGARN":
         out_dir = ROOT_DIR / "outputs" / "seven_pass_yilgarn"
         summary_path = out_dir / "seven_pass_summary.json"
@@ -348,7 +386,7 @@ def _load_region_bundle(region: str) -> dict:
         heatmap_b64, bounds = _raster_to_rgba_base64(prosp_tif, band=1, cmap="inferno")
         conformal_b64, _ = _raster_to_rgba_base64(conf_tif, band=1, cmap="emerald")
 
-        return {
+        bundle = {
             "region": "YILGARN",
             "title": "Yilgarn Craton — Kalgoorlie-Kambalda Goldfields (Western Australia)",
             "crs": "EPSG:32751 (MGA Zone 51S)",
@@ -375,6 +413,8 @@ def _load_region_bundle(region: str) -> dict:
             "heatmap_png": heatmap_b64,
             "conformal_l_png": conformal_b64,
         }
+        _BUNDLE_CACHE[region_up] = bundle
+        return bundle
 
     elif region_up in ("INDONESIA_GEORIMA", "INDONESIA"):
         # National 7-Pass Mineral Prospectivity & ESDM GeoRIMA Atlas of Indonesia (95E-141E, 11S-6N)
@@ -408,9 +448,8 @@ def _load_region_bundle(region: str) -> dict:
         )
 
         actual_mines = []
-        all_nodes_csv = ROOT_DIR / "data" / "indonesia" / "georima_all_indonesia_nodes.csv"
-        if all_nodes_csv.exists():
-            df_geo = pd.read_csv(all_nodes_csv)
+        df_geo = _get_georima_df()
+        if df_geo is not None:
             # Include all Metallic (ml), Coal (bb), Geothermal (pb), and key economic Non-Metallic (Marble, Quartz, Diamond, Kaolin, Pyrophyllite, Sulfur)
             keep_mask = df_geo["potensi_type"].isin(["ml", "bb", "pb"]) | df_geo["layer_code"].isin(
                 ["bl:231", "bl:207", "bl:228", "bl:223", "bl:227", "bl:241", "bl:212"]
@@ -595,7 +634,7 @@ def _load_region_bundle(region: str) -> dict:
                         }
                     )
 
-        return {
+        bundle = {
             "region": "INDONESIA_GEORIMA",
             "title": "National Indonesia HD (544×1472 @ 3.45km + 5 HD 50m–240m Camp Zooms) & ESDM GeoRIMA Atlas",
             "crs": "EPSG:4326 (95°E–141°E, 11°S–6°N)",
@@ -619,6 +658,8 @@ def _load_region_bundle(region: str) -> dict:
             "heatmap_png": heatmap_b64,
             "conformal_l_png": conformal_b64,
         }
+        _BUNDLE_CACHE[region_up] = bundle
+        return bundle
 
     elif region_up in ("PAPUA", "SUMBAWA", "SUMATRA", "SULAWESI", "KALIMANTAN", "KALIMANTAN_50M", "KALIMANTAN_500M", "CUSTOM_VIEWPORT") or region_up.startswith("HOTSPOT_"):
         if region_up == "CUSTOM_VIEWPORT":
@@ -695,6 +736,10 @@ def _load_region_bundle(region: str) -> dict:
             }[region_up]
         if region_up in ("KALIMANTAN", "KALIMANTAN_50M"):
             code_low = "kalimantan_50m" if (ROOT_DIR / "outputs" / "seven_pass_kalimantan_50m").exists() else "kalimantan_500m"
+        elif (ROOT_DIR / "outputs" / f"seven_pass_{region_up.lower()}_50m").exists():
+            code_low = f"{region_up.lower()}_50m"
+        elif region_up == "HOTSPOT_KAYAN_NORTH" and (ROOT_DIR / "outputs" / "seven_pass_hotspot_kayan_50m").exists():
+            code_low = "hotspot_kayan_50m"
         else:
             code_low = region_up.lower()
         out_dir = ROOT_DIR / "outputs" / f"seven_pass_{code_low}"
@@ -715,15 +760,21 @@ def _load_region_bundle(region: str) -> dict:
         bh_json = out_dir / "blind_holdout.json"
 
         summary = json.loads(summary_path.read_text()) if summary_path.exists() else {}
+        if summary.get("bbox"):
+            b_box = summary["bbox"]
+            hd_meta["bbox"] = (b_box[0], b_box[1], b_box[2], b_box[3])
+        if summary.get("center"):
+            hd_meta["center"] = summary["center"]
+        if summary.get("title"):
+            hd_meta["title"] = summary["title"]
         site_cards = json.loads(cards_path.read_text()) if cards_path.exists() else []
         cv_rows = pd.read_csv(cv_csv).to_dict(orient="records") if cv_csv.exists() else []
         holdout = json.loads(bh_json.read_text()) if bh_json.exists() else {}
 
         lon0, lat0, lon1, lat1 = hd_meta["bbox"]
         actual_mines = []
-        all_nodes_csv = ROOT_DIR / "data" / "indonesia" / "georima_all_indonesia_nodes.csv"
-        if all_nodes_csv.exists():
-            df_geo = pd.read_csv(all_nodes_csv)
+        df_geo = _get_georima_df()
+        if df_geo is not None:
             sub = df_geo[
                 (df_geo["lon"] >= lon0 - 0.1)
                 & (df_geo["lon"] <= lon1 + 0.1)
@@ -847,9 +898,18 @@ def _load_region_bundle(region: str) -> dict:
                         if hd_card_map.get(tid_h):
                             site_cards.append(hd_card_map[tid_h])
 
+        # Enumerate 42 continuous scanned 50m tile rectangles if available
+        scanned_tiles = []
+        if region_up in ("KALIMANTAN", "KALIMANTAN_50M", "KALIMANTAN_500M"):
+            try:
+                from scripts.run_kalimantan_50m_island_scan import get_kalimantan_land_tiles
+                scanned_tiles = get_kalimantan_land_tiles()
+            except Exception:
+                pass
+
         heatmap_b64, bounds = _raster_to_rgba_base64(prosp_tif, band=1, cmap="inferno")
         conformal_b64, _ = _raster_to_rgba_base64(conf_tif, band=1, cmap="emerald")
-        return {
+        bundle = {
             "region": region_up,
             "title": hd_meta["title"],
             "crs": "EPSG:4326 (AWS Terrarium / Copernicus SRTM HD)",
@@ -867,9 +927,12 @@ def _load_region_bundle(region: str) -> dict:
             "site_cards": site_cards,
             "satellite_layers": _build_region_satellite_layers(region_up),
             "hd_sub_overlays": hd_sub_overlays,
+            "scanned_tiles": scanned_tiles,
             "heatmap_png": heatmap_b64,
             "conformal_l_png": conformal_b64,
         }
+        _BUNDLE_CACHE[region_up] = bundle
+        return bundle
 
     else:
         # BORNEO (Kelian Epithermal Corridor + Kalimantan GeoRIMA & MRDS)
@@ -1019,7 +1082,7 @@ def _load_region_bundle(region: str) -> dict:
             if any(g.distance(Point(m["lon"], m["lat"])) <= 0.03 for g in target_geoms)
         )
 
-        return {
+        bundle = {
             "region": "BORNEO",
             "title": "Borneo — Kelian Epithermal Au-Ag Corridor & Kalimantan (Indonesia)",
             "crs": "EPSG:32750 (UTM Zone 50S)",
@@ -1043,6 +1106,8 @@ def _load_region_bundle(region: str) -> dict:
             "heatmap_png": heatmap_b64,
             "conformal_l_png": conformal_b64,
         }
+        _BUNDLE_CACHE[region_up] = bundle
+        return bundle
 
 
 def _recompute_targets_live(
@@ -1151,8 +1216,6 @@ def _recompute_targets_live(
     gpkg_path = targets_dir / f"ranked_targets_{prefix.lower()}.gpkg"
     if len(ranked_gdf) > 0:
         ranked_gdf.to_file(gpkg_path, driver="GPKG")
-    elif gpkg_path.exists():
-        gpkg_path.unlink()
 
     cards_path = targets_dir / "site_cards.json"
     cards = emit_site_cards_json(
@@ -1173,7 +1236,8 @@ def _recompute_targets_live(
             f"weights={weights} -> {len(ranked_gdf)} drill targets emitted."
         )
 
-    return _load_region_bundle(region_up)
+    _BUNDLE_CACHE.pop(region_up, None)
+    return _load_region_bundle(region_up, force_reload=True)
 
 
 def _trigger_background_training(viewport_params: dict | None = None) -> dict:
@@ -1230,6 +1294,7 @@ def _trigger_background_training(viewport_params: dict | None = None) -> dict:
                     if len(_TRAIN_STATE["logs"]) > 250:
                         _TRAIN_STATE["logs"] = _TRAIN_STATE["logs"][-250:]
         rc = proc.wait()
+        _BUNDLE_CACHE.clear()
         with _TRAIN_LOCK:
             _TRAIN_STATE["running"] = False
             _TRAIN_STATE["finished_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -1384,13 +1449,42 @@ class DashboardHandler(BaseHTTPRequestHandler):
         return  # Keep console clean
 
     def _send_json(self, payload: dict, status: int = 200) -> None:
-        raw = json.dumps(payload).encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(raw)))
+        try:
+            raw = json.dumps(payload).encode("utf-8")
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(raw)))
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            try:
+                self.wfile.write(raw)
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+
+    def do_HEAD(self) -> None:
+        parsed = urlparse(self.path)
+        if parsed.path in ("/", "/index.html"):
+            html_path = ROOT_DIR / "ui" / "index.html"
+            raw = html_path.read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(raw)))
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            return
+
+        self.send_response(200)
         self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
-        self.wfile.write(raw)
+
+    def do_OPTIONS(self) -> None:
+        self.send_response(204)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, HEAD")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        self.end_headers()
 
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
@@ -1401,7 +1495,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(raw)))
             self.end_headers()
-            self.wfile.write(raw)
+            try:
+                self.wfile.write(raw)
+            except (BrokenPipeError, ConnectionResetError):
+                pass
             return
 
         if parsed.path == "/api/region":
