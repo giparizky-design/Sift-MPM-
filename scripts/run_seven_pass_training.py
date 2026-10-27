@@ -98,8 +98,9 @@ def run_region_seven_pass(
     block_size_m: float,
     l_threshold: float = 0.50,
     min_area_ha: float = 5.0,
-    reset_from_zero: bool = True,
+    reset_from_zero: bool = False,
     train_10x: bool = False,
+    incremental: bool = True,
 ) -> dict:
     """Execute the complete 7-Pass pipeline strictly specialized on Kalimantan."""
     reg_clean = region_name.upper().strip()
@@ -116,8 +117,6 @@ def run_region_seven_pass(
         )
 
     from src.models.training_run_manager import archive_existing_run, register_completed_run
-    # Step 0: Archive prior training run data so historical comparisons are preserved
-    archive_existing_run(out_dir, region_name)
 
     out_dir.mkdir(parents=True, exist_ok=True)
     maps_dir = out_dir / "maps"
@@ -126,12 +125,36 @@ def run_region_seven_pass(
     for d in (maps_dir, targets_dir, models_dir):
         d.mkdir(parents=True, exist_ok=True)
 
-    if reset_from_zero:
+    ensemble_checkpoint = models_dir / "k4_ensemble.joblib"
+    prior_ensemble: Optional[TwoStageK4Ensemble] = None
+
+    if reset_from_zero or not incremental:
         logger.info("[%s] Resetting model weights and caches to learn from zero...", region_name)
+        archive_existing_run(out_dir, region_name)
         for d in (models_dir, maps_dir, targets_dir):
             for f in d.glob("*"):
                 if f.is_file():
                     f.unlink()
+    else:
+        # Check if prior ensemble exists for continuous incremental warm-start
+        if ensemble_checkpoint.exists():
+            try:
+                prior_ensemble = TwoStageK4Ensemble.load(ensemble_checkpoint)
+                logger.info(
+                    "[%s] Continuous / Incremental Weight Update: Loaded prior ensemble from %s",
+                    region_name, ensemble_checkpoint,
+                )
+            except Exception as e:
+                logger.warning("[%s] Could not load prior ensemble from %s: %s", region_name, ensemble_checkpoint, e)
+                prior_ensemble = None
+        else:
+            logger.info(
+                "[%s] Incremental mode active; no prior ensemble found at %s. Initializing fresh weights.",
+                region_name, ensemble_checkpoint,
+            )
+
+        # Step 0: Archive prior training run data so historical comparisons are preserved
+        archive_existing_run(out_dir, region_name)
 
     df = pd.read_parquet(data_dir / "dataset.parquet")
     stack: FeatureStack = joblib.load(data_dir / "feature_stack.joblib")
@@ -328,7 +351,11 @@ def run_region_seven_pass(
         e_logistics=e_x[train_idx],
         exclusion_masks=exclusion_masks[train_idx],
         spatial_block_ids=block_ids[train_idx],
+        prior_ensemble=prior_ensemble,
     )
+    # Persist updated ensemble checkpoint for continuous weight updates across future runs
+    k4_ensemble.save(ensemble_checkpoint)
+    logger.info("[%s] Saved updated TwoStageK4Ensemble weights to %s", region_name, ensemble_checkpoint)
 
     s_xgb_k4_full = k4_ensemble.predict_proba(X_all)
     std_xgb_k4_full = k4_ensemble.predict_std(X_all)
@@ -361,6 +388,7 @@ def run_region_seven_pass(
         block_ids_50m=fold_ids_2d,
         decimate_factor=5,
         epochs=dae_epochs,
+        checkpoints_dir=models_dir,
     )
 
     s_unet_k4_full = np.column_stack([
@@ -665,7 +693,11 @@ def run_region_seven_pass(
         "propensity_median": round(float(np.median(e_x)), 4),
         "n_ranked_targets": len(ranked_gdf),
         "top_target_card": cards[0] if cards else None,
-        "training_mode": "10x_compute" if train_10x else "standard",
+        "training_mode": (
+            f"{'10x_compute_' if train_10x else ''}"
+            f"{'incremental_warm_start' if prior_ensemble is not None else ('learned_from_zero' if reset_from_zero else 'standard')}"
+        ),
+        "is_warm_started": bool(prior_ensemble is not None),
         "n_estimators": n_estimators,
         "n_bag": n_bag,
         "dae_epochs": dae_epochs,
@@ -688,10 +720,16 @@ def main() -> None:
         help="Region to train (must be strictly in Kalimantan: BORNEO or KALIMANTAN)",
     )
     parser.add_argument(
-        "--reset-from-zero",
+        "--incremental",
         action="store_true",
         default=True,
-        help="Reset models and clear cached checkpoints to learn from zero (default: True)",
+        help="Enable continuous incremental weight updates from previous checkpoints (default: True)",
+    )
+    parser.add_argument(
+        "--reset-from-zero",
+        action="store_true",
+        default=False,
+        help="Reset models and clear cached checkpoints to learn from zero (default: False)",
     )
     parser.add_argument(
         "--train-10x",
@@ -700,6 +738,10 @@ def main() -> None:
         help="Run 10x compute training run (500 estimators x 10 bags XGBoost, 15 epochs DAE-U-Net)",
     )
     args = parser.parse_args()
+
+    # If --reset-from-zero is passed, disable incremental warm-start
+    reset_from_zero = args.reset_from_zero
+    incremental = args.incremental and not reset_from_zero
 
     reg_up = args.region.upper().strip()
     VALID_KALIMANTAN_REGIONS = {
@@ -727,8 +769,9 @@ def main() -> None:
                     block_size_m=25_000.0,
                     l_threshold=0.50,
                     min_area_ha=5.0,
-                    reset_from_zero=args.reset_from_zero,
+                    reset_from_zero=reset_from_zero,
                     train_10x=args.train_10x,
+                    incremental=incremental,
                 )
             )
 
@@ -743,7 +786,8 @@ def main() -> None:
                     block_size_m=2_000.0,
                     l_threshold=0.50,
                     min_area_ha=5.0,
-                    reset_from_zero=args.reset_from_zero,
+                    reset_from_zero=reset_from_zero,
+                    incremental=incremental,
                 )
             )
 
@@ -758,11 +802,12 @@ def main() -> None:
                     block_size_m=5_000.0,
                     l_threshold=0.50,
                     min_area_ha=5.0,
-                    reset_from_zero=args.reset_from_zero,
+                    reset_from_zero=reset_from_zero,
+                    incremental=incremental,
                 )
             )
 
-    print("\n================ KALIMANTAN 7-PASS TRAINING SUMMARY (LEARNED FROM ZERO) ================")
+    print("\n================ KALIMANTAN 7-PASS TRAINING SUMMARY ================")
     print(json.dumps(summaries, indent=2))
 
 

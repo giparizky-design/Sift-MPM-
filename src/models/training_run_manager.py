@@ -122,6 +122,11 @@ def archive_existing_run(
     if maps_dir.exists():
         shutil.copytree(maps_dir, archive_dir / "maps", dirs_exist_ok=True)
 
+    # Copy models directory (preserves model checkpoints for comparison and rollback)
+    models_dir = out_p / "models"
+    if models_dir.exists():
+        shutil.copytree(models_dir, archive_dir / "models", dirs_exist_ok=True)
+
     # Extract detected ore categories from site cards if available
     ore_categories: list[str] = []
     archived_cards_file = archive_dir / "targets" / "site_cards.json"
@@ -151,6 +156,8 @@ def archive_existing_run(
             "elkan_noto_c_hat": summary_data.get("elkan_noto_c_hat"),
             "conformal_q_hat_90": summary_data.get("conformal_q_hat_90"),
         },
+        "training_mode": summary_data.get("training_mode", "standard"),
+        "is_warm_started": summary_data.get("is_warm_started", False),
         "n_ranked_targets": summary_data.get("n_ranked_targets", 0),
         "ore_categories": ore_categories,
     }
@@ -214,6 +221,8 @@ def register_completed_run(
             "elkan_noto_c_hat": summary.get("elkan_noto_c_hat"),
             "conformal_q_hat_90": summary.get("conformal_q_hat_90"),
         },
+        "training_mode": summary.get("training_mode", "standard"),
+        "is_warm_started": summary.get("is_warm_started", False),
         "n_ranked_targets": summary.get("n_ranked_targets", 0),
         "ore_categories": ore_categories,
     }

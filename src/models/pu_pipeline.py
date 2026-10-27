@@ -15,8 +15,10 @@ and would make any model appear skilful.
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+import joblib
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import KFold
@@ -579,11 +581,23 @@ class _BaggedXGBoostHead:
         self.random_state = int(random_state)
         self.models_: list[xgb.XGBClassifier] = []
 
+    def save(self, path: Union[Path, str]) -> None:
+        """Save fitted _BaggedXGBoostHead to disk."""
+        p = Path(path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        joblib.dump(self, p)
+
+    @classmethod
+    def load(cls, path: Union[Path, str]) -> "_BaggedXGBoostHead":
+        """Load fitted _BaggedXGBoostHead from disk."""
+        return joblib.load(Path(path))
+
     def fit(
         self,
         X: np.ndarray,
         y: np.ndarray,
         sample_weight: Optional[np.ndarray] = None,
+        prior_models: Optional[list[xgb.XGBClassifier]] = None,
     ) -> "_BaggedXGBoostHead":
         X_arr = np.asarray(X, dtype=np.float32)
         y_arr = np.asarray(y, dtype=np.int32).ravel()
@@ -643,7 +657,19 @@ class _BaggedXGBoostHead:
                 feature_weights=self.feature_weights,
             )
 
-            clf.fit(X_arr[idx], y_arr[idx], sample_weight=sw_bag)
+            # Continuous / Incremental Weight Updates (Warm-Starting):
+            # Continue training from prior booster if compatible
+            xgb_model = None
+            if prior_models and len(prior_models) > 0:
+                p_clf = prior_models[b % len(prior_models)]
+                try:
+                    p_booster = p_clf.get_booster()
+                    if p_booster is not None and p_booster.num_features() == X_arr.shape[1]:
+                        xgb_model = p_booster
+                except Exception as e:
+                    logger.debug("Could not extract prior booster for bag %d: %s", b, e)
+
+            clf.fit(X_arr[idx], y_arr[idx], sample_weight=sw_bag, xgb_model=xgb_model)
             self.models_.append(clf)
 
         return self
@@ -740,6 +766,17 @@ class TwoStageK4Ensemble:
         self.oof_prob_skarn_: Optional[np.ndarray] = None
         self.oof_prob_epithermal_: Optional[np.ndarray] = None
 
+    def save(self, path: Union[Path, str]) -> None:
+        """Save fitted TwoStageK4Ensemble to disk."""
+        p = Path(path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        joblib.dump(self, p)
+
+    @classmethod
+    def load(cls, path: Union[Path, str]) -> "TwoStageK4Ensemble":
+        """Load fitted TwoStageK4Ensemble from disk."""
+        return joblib.load(Path(path))
+
     def _extract_head_labels_and_weights(
         self,
         y_k4: Union[np.ndarray, dict, list],
@@ -804,6 +841,7 @@ class TwoStageK4Ensemble:
         exclusion_masks: Optional[np.ndarray] = None,
         spatial_block_ids: Optional[np.ndarray] = None,
         n_cv_folds: int = 5,
+        prior_ensemble: Optional["TwoStageK4Ensemble"] = None,
     ) -> "TwoStageK4Ensemble":
         """Fit all 4 deposit heads with P-A feature weighting and two-stage stacking.
 
@@ -815,6 +853,7 @@ class TwoStageK4Ensemble:
             exclusion_masks: Optional buffer exclusion mask M (shape (N, 4)).
             spatial_block_ids: Optional spatial block IDs for out-of-fold CV.
             n_cv_folds: Number of folds for out-of-fold probability stacking.
+            prior_ensemble: Optional prior TwoStageK4Ensemble for continuous warm-starting.
 
         Returns:
             Fitted TwoStageK4Ensemble instance.
@@ -886,8 +925,16 @@ class TwoStageK4Ensemble:
         self.oof_prob_epithermal_ = oof_epithermal
 
         # ------------------------------------------------------------------
-        # Step 3: Fit Final Stage 1 Heads (Heads 1, 2, 3)
+        # Step 3: Fit Final Stage 1 Heads (Heads 1, 2, 3) with Warm-Starting
         # ------------------------------------------------------------------
+        prior_h1 = getattr(prior_ensemble, "head_1_", None).models_ if getattr(prior_ensemble, "head_1_", None) else None
+        prior_h2 = getattr(prior_ensemble, "head_2_", None).models_ if getattr(prior_ensemble, "head_2_", None) else None
+        prior_h3 = getattr(prior_ensemble, "head_3_", None).models_ if getattr(prior_ensemble, "head_3_", None) else None
+        prior_h0 = getattr(prior_ensemble, "head_0_", None).models_ if getattr(prior_ensemble, "head_0_", None) else None
+
+        if prior_ensemble is not None:
+            logger.info("TwoStageK4Ensemble: warm-starting from prior ensemble checkpoints.")
+
         self.head_1_ = _BaggedXGBoostHead(
             n_estimators=self.n_estimators,
             max_depth=6,
@@ -897,7 +944,7 @@ class TwoStageK4Ensemble:
             feature_weights=self.pa_weights_[1],
             random_state=self.random_state + 10,
         )
-        self.head_1_.fit(X_arr, targets[1], sample_weight=weights[1])
+        self.head_1_.fit(X_arr, targets[1], sample_weight=weights[1], prior_models=prior_h1)
 
         self.head_2_ = _BaggedXGBoostHead(
             n_estimators=self.n_estimators,
@@ -908,7 +955,7 @@ class TwoStageK4Ensemble:
             feature_weights=self.pa_weights_[2],
             random_state=self.random_state + 20,
         )
-        self.head_2_.fit(X_arr, targets[2], sample_weight=weights[2])
+        self.head_2_.fit(X_arr, targets[2], sample_weight=weights[2], prior_models=prior_h2)
 
         self.head_3_ = _BaggedXGBoostHead(
             n_estimators=self.n_estimators,
@@ -919,7 +966,7 @@ class TwoStageK4Ensemble:
             feature_weights=self.pa_weights_[3],
             random_state=self.random_state + 30,
         )
-        self.head_3_.fit(X_arr, targets[3], sample_weight=weights[3])
+        self.head_3_.fit(X_arr, targets[3], sample_weight=weights[3], prior_models=prior_h3)
 
         # ------------------------------------------------------------------
         # Step 4: Rescue Head 0 (Porphyry Cu-Au) with Two-Stage Telescoping
@@ -937,12 +984,13 @@ class TwoStageK4Ensemble:
             feature_weights=self.pa_weights_[0],
             random_state=self.random_state + 40,
         )
-        self.head_0_.fit(X_head0, targets[0], sample_weight=weights[0])
+        self.head_0_.fit(X_head0, targets[0], sample_weight=weights[0], prior_models=prior_h0)
 
         logger.info(
             "TwoStageK4Ensemble fitted successfully: 4 independent heads with "
             "P-A weights and two-stage stacking for Head 0."
         )
+        return self
         return self
 
     def predict_proba(self, X: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
@@ -1096,6 +1144,7 @@ def fit_k4_independent_xgboost_heads(
     n_estimators: int = 100,
     n_bag: int = 5,
     random_state: int = 42,
+    prior_ensemble: Optional[TwoStageK4Ensemble] = None,
 ) -> TwoStageK4Ensemble:
     """Convenience functional interface to fit the TwoStageK4Ensemble."""
     ensemble = TwoStageK4Ensemble(
@@ -1111,6 +1160,7 @@ def fit_k4_independent_xgboost_heads(
         e_logistics=e_logistics,
         exclusion_masks=exclusion_masks,
         spatial_block_ids=spatial_block_ids,
+        prior_ensemble=prior_ensemble,
     )
     return ensemble
 

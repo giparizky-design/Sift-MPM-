@@ -39,6 +39,7 @@ for new survey acquisition.
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -1159,6 +1160,26 @@ class MPMDistrictDAEUNet:
             np.concatenate(ctx_list, axis=0),
         )
 
+    def save(self, path: Union[Path, str]) -> None:
+        """Save fitted DistrictDAEUNet weights to disk."""
+        if self.model is None:
+            raise RuntimeError("Model is not fitted. Cannot save.")
+        p = Path(path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        torch.save(self.model.state_dict(), str(p))
+
+    def load(self, path: Union[Path, str]) -> "MPMDistrictDAEUNet":
+        """Load DistrictDAEUNet weights from disk."""
+        self.model = DistrictDAEUNet(
+            in_channels=self.in_channels,
+            n_classes=self.n_classes,
+            dropout_p=self.dropout_p,
+            channel_drop_p=self.channel_drop_p,
+        ).to(self.device)
+        state = torch.load(str(path), map_location=self.device)
+        self.model.load_state_dict(state)
+        return self
+
     def predict(
         self, X_windows: np.ndarray
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -1173,10 +1194,11 @@ class MPMDistrictDAEUNet:
         decimate_factor: int = 5,
         epochs: int = 15,
         lr: float = 1e-4,
+        checkpoints_dir: Optional[Union[Path, str]] = None,
     ) -> dict[str, np.ndarray]:
         """Train across 5 spatially buffered blocks and project OOF context and error onto 50 m grid.
 
-        Enforces Task 2.1 Rule 3.
+        Enforces Task 2.1 Rule 3. Supports continuous warm-starting from checkpoints_dir.
 
         Args:
             X_grid_50m: (C, H_50m, W_50m) native resolution feature cube.
@@ -1185,6 +1207,7 @@ class MPMDistrictDAEUNet:
             decimate_factor: Decimation factor (default 5, 50 m -> 250 m).
             epochs: Training epochs per fold.
             lr: Learning rate.
+            checkpoints_dir: Optional directory to load/save fold model weights for incremental learning.
 
         Returns:
             Dictionary with 50 m projected out-of-fold channels:
@@ -1280,6 +1303,20 @@ class MPMDistrictDAEUNet:
                 channel_drop_p=self.channel_drop_p,
             ).to(self.device)
 
+            # Continuous / Incremental Weight Updates (Warm-Starting):
+            fold_ckpt: Optional[Path] = None
+            if checkpoints_dir is not None:
+                ckpt_dir_path = Path(checkpoints_dir)
+                ckpt_dir_path.mkdir(parents=True, exist_ok=True)
+                fold_ckpt = ckpt_dir_path / f"dae_unet_fold_{b_id}.pt"
+                if fold_ckpt.exists():
+                    try:
+                        state_dict = torch.load(fold_ckpt, map_location=self.device)
+                        fold_model.load_state_dict(state_dict)
+                        logger.info("Warm-started DAE-U-Net fold %s weights from %s", b_id, fold_ckpt)
+                    except Exception as e:
+                        logger.warning("Could not warm-start fold %s checkpoint: %s", b_id, e)
+
             train_ds = _OnTheFlyPatchDataset(
                 padded_arr=X_padded,
                 indices=sub_train_idx,
@@ -1309,6 +1346,14 @@ class MPMDistrictDAEUNet:
                     loss = self.criterion(p, yb, sample_weights=wb) + self.recon_weight * nn.functional.mse_loss(recon, xb)
                     loss.backward()
                     optimiser.step()
+
+            # Save updated fold model weights for future incremental continuity
+            if fold_ckpt is not None:
+                try:
+                    torch.save(fold_model.state_dict(), fold_ckpt)
+                    logger.info("Saved updated DAE-U-Net fold %s weights to %s", b_id, fold_ckpt)
+                except Exception as e:
+                    logger.warning("Could not save fold %s checkpoint: %s", b_id, e)
 
             # Predict on validation block in mini-batches on-the-fly
             fold_model.eval()
