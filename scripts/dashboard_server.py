@@ -1385,6 +1385,7 @@ def _recompute_targets_live(
 ) -> dict:
     """Re-run Pass 6 & Pass 7 polygonization, multi-criteria ranking, and Site Card emission live."""
     region_up = region.upper()
+    c_low = region_up.lower()
     if region_up == "YILGARN":
         data_dir = ROOT_DIR / "data" / "processed"
         out_dir = ROOT_DIR / "outputs" / "seven_pass_yilgarn"
@@ -1393,6 +1394,12 @@ def _recompute_targets_live(
         data_dir = ROOT_DIR / "data" / "indonesia" / "processed"
         out_dir = ROOT_DIR / "outputs" / "seven_pass_indonesia"
         prefix = "INDONESIA"
+    elif (ROOT_DIR / "outputs" / f"seven_pass_{c_low}").exists():
+        data_dir = ROOT_DIR / "data" / c_low / "processed"
+        if not data_dir.exists():
+            data_dir = ROOT_DIR / "data" / "borneo" / "processed"
+        out_dir = ROOT_DIR / "outputs" / f"seven_pass_{c_low}"
+        prefix = region_up
     elif region_up in ("PAPUA", "SUMBAWA", "SUMATRA", "SULAWESI", "KALIMANTAN"):
         data_dir = ROOT_DIR / "data" / region_up.lower() / "processed"
         out_dir = ROOT_DIR / "outputs" / f"seven_pass_{region_up.lower()}"

@@ -1026,9 +1026,9 @@ def main():
           <div style="display:flex; flex-direction:column; gap:6px; padding-top:10px; border-top:1px solid var(--border-hairline);">
             <div style="display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:11px;">
               <span style="color:var(--text-primary); font-weight:600;">Z-DEPTH SLICE</span>
-              <span id="lbl-z-depth" style="color:var(--accent-primary); font-weight:700;">-380 m</span>
+              <span id="lbl-z-depth" style="color:var(--accent-primary); font-weight:700;">-450 m</span>
             </div>
-            <input type="range" id="ctrl-z-depth" min="50" max="1000" step="10" value="380" oninput="onAsciiZChange(this.value)" style="accent-color:var(--accent-primary); cursor:pointer;" />
+            <input type="range" id="ctrl-z-depth" min="100" max="600" step="10" value="450" oninput="onAsciiZChange(this.value)" style="accent-color:var(--accent-primary); cursor:pointer;" />
           </div>
 
           <!-- Parameter: Minimum Target Area -->
@@ -1037,7 +1037,7 @@ def main():
               <span style="color:var(--text-primary); font-weight:600;">MIN TARGET AREA</span>
               <span id="lbl-min-area" style="color:var(--accent-primary); font-weight:700;">5.0 ha</span>
             </div>
-            <input type="range" id="ctrl-min-area" min="1" max="50" step="1" value="5" oninput="onMinAreaChange(this.value)" style="accent-color:var(--accent-primary); cursor:pointer;" />
+            <input type="range" id="ctrl-min-area" min="1" max="250" step="5" value="5" oninput="onMinAreaChange(this.value)" style="accent-color:var(--accent-primary); cursor:pointer;" />
           </div>
 
           <!-- Layer Controls -->
@@ -1353,6 +1353,13 @@ def main():
     let targetsGeoLayer = null;
     let targetMarkersGroup = null;
 
+    let rawHeatmapImage = null;
+    let rawHeatmapPixels = null;
+    let rawHeatmapWidth = 0;
+    let rawHeatmapHeight = 0;
+    let dynamicHeatmapCanvas = null;
+    let dynamicHeatmapCtx = null;
+
     // ==================== GLYPH-SCRAMBLE ENGINE (180ms) ====================
     function glyphScramble(elementId, targetValue, durationMs = 180) {
       const el = document.getElementById(elementId);
@@ -1577,7 +1584,7 @@ def main():
             lat: c[0],
             lon: c[1],
             prospectivityScore: probs.calibrated_deposit_prob ?? sc.rank_score ?? 0.90,
-            depthMeters: Math.round(cover.regolith_cover_depth_m || 50),
+            depthMeters: Math.round((cover.regolith_cover_depth_m || 25.0) * 8.0 + 80.0),
             epistemicUncertainty: Number((ci.upper_bound_U - ci.lower_bound_L).toFixed(3)) || 0.05,
             conformalInterval: [Number((ci.lower_bound_L || 0.5).toFixed(3)), Number((ci.upper_bound_U || 1.0).toFixed(3))],
             primaryDriver: alter.kaolinite_alunite_doublet ? "Hydrothermal SWIR Alteration" : `Dilation Td: ${struct.dilation_tendency_Td_max || 0.8}`,
@@ -1617,7 +1624,7 @@ def main():
             lat: lat,
             lon: lon,
             prospectivityScore: p.calibrated_deposit_prob ?? p.rank_score ?? 0.85,
-            depthMeters: Math.round(p.regolith_cover_depth_m || 50),
+            depthMeters: Math.round((p.regolith_cover_depth_m || 25.0) * 8.0 + 80.0),
             epistemicUncertainty: Number(((p.upper_bound_U || 1.0) - (p.lower_bound_L || 0.5)).toFixed(3)),
             conformalInterval: [Number((p.lower_bound_L || 0.5).toFixed(3)), Number((p.upper_bound_U || 1.0).toFixed(3))],
             primaryDriver: `Dilation Tendency ${p.dilation_tendency_Td_max || 0.75}`,
@@ -1883,6 +1890,10 @@ def main():
         map.removeLayer(heatmapOverlay);
         heatmapOverlay = null;
       }
+      rawHeatmapPixels = null;
+      dynamicHeatmapCanvas = null;
+      dynamicHeatmapCtx = null;
+
       const hBounds = b.heatmap_bounds || b.bounds;
       if (b.heatmap_png && hBounds) {
         const pngSrc = b.heatmap_png.startsWith("data:") ? b.heatmap_png : ("data:image/png;base64," + b.heatmap_png);
@@ -1891,6 +1902,26 @@ def main():
           opacity: Number(document.getElementById("rng-opacity").value || 0.8),
           interactive: false
         }).addTo(map);
+
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = function() {
+          try {
+            rawHeatmapImage = img;
+            rawHeatmapWidth = img.width;
+            rawHeatmapHeight = img.height;
+            dynamicHeatmapCanvas = document.createElement("canvas");
+            dynamicHeatmapCanvas.width = rawHeatmapWidth;
+            dynamicHeatmapCanvas.height = rawHeatmapHeight;
+            dynamicHeatmapCtx = dynamicHeatmapCanvas.getContext("2d", { willReadFrequently: true });
+            dynamicHeatmapCtx.drawImage(img, 0, 0);
+            rawHeatmapPixels = dynamicHeatmapCtx.getImageData(0, 0, rawHeatmapWidth, rawHeatmapHeight);
+            applyHeatmapThreshold();
+          } catch (e) {
+            console.warn("Canvas heatmap dynamic threshold setup notice:", e);
+          }
+        };
+        img.src = pngSrc;
       }
 
       // =========================================================================
@@ -1963,6 +1994,56 @@ def main():
       updateMapTargetMarkers();
     }
 
+    function applyHeatmapThreshold() {
+      if (!dynamicHeatmapCtx || !rawHeatmapPixels || !heatmapOverlay) return;
+      const lThr = parseFloat(document.getElementById("ctrl-l-thr") ? document.getElementById("ctrl-l-thr").value : 0.50);
+
+      const imgData = dynamicHeatmapCtx.createImageData(rawHeatmapWidth, rawHeatmapHeight);
+      const src = rawHeatmapPixels.data;
+      const dst = imgData.data;
+      const len = src.length;
+
+      // In the inferno prospectivity colormap:
+      // low values = dark purple/black, medium = reddish orange, high = bright yellow
+      // Luminosity = (0.299*R + 0.587*G + 0.114*B) / 255.0
+      const thrCutoff = Math.max(0.02, Math.min(0.95, lThr));
+
+      for (let i = 0; i < len; i += 4) {
+        const a = src[i + 3];
+        if (a === 0) continue;
+        const r = src[i];
+        const g = src[i + 1];
+        const b = src[i + 2];
+
+        // Perceptual brightness
+        const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0;
+
+        if (lum < thrCutoff) {
+          const ratio = lum / thrCutoff;
+          if (ratio < 0.60) {
+            dst[i + 3] = 0; // Cut off entirely
+          } else {
+            dst[i] = r;
+            dst[i + 1] = g;
+            dst[i + 2] = b;
+            dst[i + 3] = Math.round(a * Math.pow((ratio - 0.60) / 0.40, 2) * 0.40);
+          }
+        } else {
+          dst[i] = r;
+          dst[i + 1] = g;
+          dst[i + 2] = b;
+          dst[i + 3] = a;
+        }
+      }
+
+      dynamicHeatmapCtx.putImageData(imgData, 0, 0);
+      try {
+        heatmapOverlay.setUrl(dynamicHeatmapCanvas.toDataURL());
+      } catch (err) {
+        console.warn("Could not update dynamic heatmap overlay URL:", err);
+      }
+    }
+
     function getTargetPolygonStyle(feat) {
       const p = (feat && feat.properties) || {};
       const isSelected = activeTarget && (activeTarget.id === (p.target_id || p.id));
@@ -1976,18 +2057,31 @@ def main():
         (ore === activeOreCategory) ||
         (p.conformal_90pct_target_set && p.conformal_90pct_target_set.includes(activeOreCategory));
 
-      if (!passesOre) {
+      const lThr = parseFloat(document.getElementById("ctrl-l-thr") ? document.getElementById("ctrl-l-thr").value : 0.50);
+      const minAreaHa = parseFloat(document.getElementById("ctrl-min-area") ? document.getElementById("ctrl-min-area").value : 5.0);
+      const maxDepth = parseInt(document.getElementById("ctrl-z-depth") ? document.getElementById("ctrl-z-depth").value : 600, 10);
+
+      const pL = (p.lower_bound_L !== undefined) ? Number(p.lower_bound_L) : ((p.site_card && p.site_card.probabilities && p.site_card.probabilities.conformal_90_ci) ? Number(p.site_card.probabilities.conformal_90_ci.lower_bound_L) : 0.65);
+      const pAreaHa = ((p.area_sq_km || 0.05) * 100.0);
+      const rawCover = Number(p.regolith_cover_depth_m || (p.site_card && p.site_card.physics_and_geology_summary && p.site_card.physics_and_geology_summary.cover_and_conductivity && p.site_card.physics_and_geology_summary.cover_and_conductivity.regolith_cover_depth_m) || 25);
+      const pDepth = Math.round(rawCover * 8.0 + 80.0);
+
+      const passesL = pL >= lThr;
+      const passesArea = pAreaHa >= minAreaHa;
+      const passesDepth = pDepth <= maxDepth;
+
+      if (!passesOre || !passesL || !passesArea || !passesDepth) {
         return {
-          opacity: 0.08,
-          fillOpacity: 0.03,
-          weight: 1,
-          color: "#64748b",
-          dashArray: "3 3"
+          opacity: 0,
+          fillOpacity: 0,
+          weight: 0,
+          interactive: false
         };
       }
 
       if (isSelected) {
         return {
+          opacity: 1,
           color: oreTheme.stroke,
           weight: 3.5,
           fillColor: oreTheme.fill,
@@ -1997,6 +2091,7 @@ def main():
       }
       if (isTopRank) {
         return {
+          opacity: 1,
           color: oreTheme.stroke,
           weight: 2.2,
           fillColor: oreTheme.fill,
@@ -2005,6 +2100,7 @@ def main():
         };
       }
       return {
+        opacity: 0.9,
         color: oreTheme.stroke,
         weight: 1.5,
         fillColor: oreTheme.fill,
@@ -2037,20 +2133,22 @@ def main():
 
       const lThr = parseFloat(document.getElementById("ctrl-l-thr") ? document.getElementById("ctrl-l-thr").value : 0.50);
       const minAreaHa = parseFloat(document.getElementById("ctrl-min-area") ? document.getElementById("ctrl-min-area").value : 5.0);
+      const maxDepth = parseInt(document.getElementById("ctrl-z-depth") ? document.getElementById("ctrl-z-depth").value : 600, 10);
 
       const filtered = activeTargetsList.filter(t => {
         const passesL = t.conformalInterval ? (t.conformalInterval[0] >= lThr) : true;
         const targetAreaHa = (t.area_sq_km || 0.05) * 100.0;
         const passesArea = targetAreaHa >= minAreaHa;
+        const passesDepth = (t.depthMeters || 50) <= maxDepth;
 
         const passesOre = activeOreCategory === "ALL" ||
           (activeOreCategory === "telescoped" && (t.telescopedFlag || (t.conformalTargetSet && t.conformalTargetSet.length >= 2))) ||
           (t.oreCategory === activeOreCategory) ||
           (t.conformalTargetSet && t.conformalTargetSet.includes(activeOreCategory));
 
-        if (activeFilter === "TOP_RANKED") return t.rank <= 5 && passesL && passesArea && passesOre;
-        if (activeFilter === "HIGH_CONF") return (t.conformalInterval ? t.conformalInterval[0] >= 0.70 : false) && passesArea && passesOre;
-        return passesL && passesArea && passesOre;
+        if (activeFilter === "TOP_RANKED") return t.rank <= 5 && passesL && passesArea && passesDepth && passesOre;
+        if (activeFilter === "HIGH_CONF") return (t.conformalInterval ? t.conformalInterval[0] >= 0.70 : false) && passesArea && passesDepth && passesOre;
+        return passesL && passesArea && passesDepth && passesOre;
       });
 
       filtered.forEach(t => {
@@ -2245,11 +2343,13 @@ def main():
 
       const lThr = parseFloat(document.getElementById("ctrl-l-thr") ? document.getElementById("ctrl-l-thr").value : 0.50);
       const minAreaHa = parseFloat(document.getElementById("ctrl-min-area") ? document.getElementById("ctrl-min-area").value : 5.0);
+      const maxDepth = parseInt(document.getElementById("ctrl-z-depth") ? document.getElementById("ctrl-z-depth").value : 600, 10);
 
       let filtered = activeTargetsList.filter(t => {
         const passesL = t.conformalInterval ? (t.conformalInterval[0] >= lThr) : true;
         const targetAreaHa = (t.area_sq_km || 0.05) * 100.0;
         const passesArea = targetAreaHa >= minAreaHa;
+        const passesDepth = (t.depthMeters || 50) <= maxDepth;
 
         const passesOre = activeOreCategory === "ALL" ||
           (activeOreCategory === "telescoped" && (t.telescopedFlag || (t.conformalTargetSet && t.conformalTargetSet.length >= 2))) ||
@@ -2265,7 +2365,7 @@ def main():
           (t.oreCategoryLabel && t.oreCategoryLabel.toLowerCase().includes(searchQuery)) ||
           t.structuralDomain.toLowerCase().includes(searchQuery) ||
           t.primaryDriver.toLowerCase().includes(searchQuery);
-        return matchesFilter && matchesSearch && passesL && passesArea && passesOre;
+        return matchesFilter && matchesSearch && passesL && passesArea && passesDepth && passesOre;
       });
 
       const countLabel = `${filtered.length} TARGETS`;
@@ -2360,6 +2460,8 @@ def main():
       const slider = document.getElementById("ascii-z-slider");
       if (slider && slider.value != val) slider.value = val;
       renderAsciiTomography();
+      renderTable();
+      updateMapTargetMarkers();
     }
 
     function renderAsciiTomography() {
@@ -2647,6 +2749,7 @@ def main():
       document.getElementById("lbl-l-thr").innerText = parseFloat(val).toFixed(2);
       renderTable();
       updateMapTargetMarkers();
+      applyHeatmapThreshold();
       if (activeAnalyticsSubTab === "conformal") renderConformalChart();
     }
 
@@ -2659,13 +2762,14 @@ def main():
     function resetDefaults() {
       document.getElementById("ctrl-l-thr").value = "0.50";
       document.getElementById("lbl-l-thr").innerText = "0.50";
-      document.getElementById("ctrl-z-depth").value = "380";
-      document.getElementById("lbl-z-depth").innerText = "-380 m";
+      document.getElementById("ctrl-z-depth").value = "450";
+      document.getElementById("lbl-z-depth").innerText = "-450 m";
       document.getElementById("ctrl-min-area").value = "5";
       document.getElementById("lbl-min-area").innerText = "5.0 ha";
-      onAsciiZChange(380);
+      onAsciiZChange(450);
       renderTable();
       updateMapTargetMarkers();
+      applyHeatmapThreshold();
       if (activeAnalyticsSubTab === "conformal") renderConformalChart();
     }
 
