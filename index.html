@@ -141,9 +141,10 @@
       overflow: hidden;
     }
 
-    /* Top Telemetry & Command Bar */
+    /* ==================== 2-BAR TOP MASTHEAD ARCHITECTURE ==================== */
+    /* Bar 1: Primary Masthead & Navigation (46px height) */
     .top-header {
-      height: 54px;
+      height: 46px;
       flex-shrink: 0;
       display: flex;
       align-items: center;
@@ -152,12 +153,14 @@
       background: var(--bg-surface);
       border-bottom: 1px solid var(--border-hairline);
       z-index: 50;
+      gap: 16px;
     }
 
     .brand-wrap {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
+      flex-shrink: 0;
     }
 
     .sift-logo-mark {
@@ -167,13 +170,88 @@
       color: var(--text-primary);
     }
 
-    .header-telemetry-bar {
+    .brand-title {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      line-height: 1;
+      color: var(--text-primary);
+      display: flex;
+      align-items: baseline;
+      white-space: nowrap;
+    }
+
+    .brand-subtitle {
+      font-family: var(--font-mono);
+      font-weight: 400;
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+      margin-left: 6px;
+      white-space: nowrap;
+    }
+
+    .header-right-meta {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .system-status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
       font-family: var(--font-mono);
-      font-size: 11px;
+      font-size: 9.5px;
       color: var(--text-secondary);
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    /* Bar 2: Secondary Telemetry & Command Bar (42px height) */
+    .sub-header-bar {
+      height: 42px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      background: var(--bg-canvas);
+      border-bottom: 1px solid var(--border-hairline);
+      z-index: 45;
+      gap: 14px;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    .sub-bar-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .sub-bar-section-label {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      margin-right: 2px;
+      white-space: nowrap;
+    }
+
+    .sub-bar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
     }
 
     .telemetry-chip {
@@ -184,12 +262,21 @@
       border-radius: 4px;
       background: var(--bg-elevated);
       border: 1px solid var(--border-subtle);
+      white-space: nowrap;
     }
 
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
+    .chip-label {
+      color: var(--text-muted);
+      font-size: 10px;
+      font-family: var(--font-mono);
+      white-space: nowrap;
+    }
+
+    .chip-val {
+      color: var(--text-primary);
+      font-weight: 700;
+      font-family: var(--font-mono);
+      font-size: 11px;
     }
 
     /* Primary Navigation Switcher (Mission Control vs Workspace) */
@@ -888,7 +975,7 @@
       display: flex;
       overflow: hidden;
       position: relative;
-      height: calc(100vh - 54px);
+      height: calc(100vh - 88px);
     }
 
     /* Collapsible Progressive Disclosure Drawer */
@@ -1356,24 +1443,23 @@
 </head>
 <body class="dark antialiased">
   <div class="app-shell">
-    <!-- TOP TELEMETRY & COMMAND BAR -->
+    <!-- ==================== BAR 1: TOP PRIMARY MASTHEAD ==================== -->
     <header class="top-header">
       <div class="brand-wrap">
         <div class="sift-logo-mark" aria-hidden="true">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="9" stroke="var(--border-strong)"/>
             <line x1="12" y1="1" x2="12" y2="23" stroke="var(--accent-primary)"/>
             <line x1="1" y1="12" x2="23" y2="12" stroke="var(--accent-primary)"/>
             <circle cx="12" cy="12" r="2.5" fill="var(--accent-primary)"/>
           </svg>
         </div>
-        <div style="display:flex; flex-direction:column; justify-content:center;">
-          <h1 class="panel-title" style="font-size: 13.5px; font-weight: 800; letter-spacing: 0.04em; line-height: 1.1; margin:0;">
-            SIFT <span style="font-weight:400; color:var(--text-muted); font-size:11px; margin-left:4px;">// SPATIAL INFERENCE &amp; FAULT TARGETING</span>
+        <div class="brand-text-block">
+          <h1 class="brand-title">
+            SIFT <span class="brand-subtitle">// SPATIAL INFERENCE &amp; FAULT TARGETING</span>
           </h1>
-          <span style="font-family:var(--font-mono); font-size:8.5px; color:var(--text-muted); letter-spacing:0.06em; line-height:1.2;">AUTONOMOUS 7-PASS GEOSPATIAL INTELLIGENCE PLATFORM</span>
         </div>
-        <span id="region-resolution-badge" class="panel-tag" style="margin-left: 8px;">250M ULTRA-HD</span>
+        <span id="region-resolution-badge" class="panel-tag">250M ULTRA-HD</span>
       </div>
 
       <!-- MAIN NAVIGATION TABS -->
@@ -1388,55 +1474,74 @@
         </button>
       </nav>
 
-      <!-- CENTER LIVE STREAM METRICS -->
-      <div class="header-telemetry-bar">
-        <div style="display:flex; align-items:center; gap:6px; border-right:1px solid var(--border-hairline); padding-right:12px;">
-          <span id="braille-scanner" style="color:var(--text-primary); font-size:14px; font-weight:700;">⠁</span>
-          <span style="font-size:9.5px; color:var(--text-muted); letter-spacing:0.04em;">SENSOR INGESTION</span>
+      <!-- RIGHT STATUS & THEME TOGGLE -->
+      <div class="header-right-meta">
+        <div class="system-status-pill">
+          <span id="braille-scanner" style="color:var(--text-primary); font-size:13px; font-weight:700;">⠁</span>
+          <span>INGESTION ACTIVE</span>
+        </div>
+        <button class="btn-icon" onclick="toggleTheme()" title="Toggle Monochromatic Theme (Dark/Light)" aria-label="Toggle Theme">
+          <svg id="theme-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- ==================== BAR 2: SECONDARY TELEMETRY & COMMAND BAR ==================== -->
+    <div id="sub-header-bar" class="sub-header-bar">
+      <!-- LEFT: Live Model Telemetry Chips -->
+      <div class="sub-bar-left">
+        <span class="sub-bar-section-label">MODEL TELEMETRY:</span>
+        <div class="telemetry-chip">
+          <span class="chip-label">XGB 3.1:</span>
+          <span id="chip-xgb" class="chip-val">0.847</span>
         </div>
         <div class="telemetry-chip">
-          <span style="color:var(--text-muted); font-size:10px;">XGB 3.1:</span>
-          <span id="chip-xgb" style="color:var(--text-primary); font-weight:700;">0.847</span>
+          <span class="chip-label">nnPU U-NET:</span>
+          <span id="chip-unet" class="chip-val">0.803</span>
         </div>
         <div class="telemetry-chip">
-          <span style="color:var(--text-muted); font-size:10px;">nnPU U-NET:</span>
-          <span id="chip-unet" style="color:var(--text-primary); font-weight:700;">0.803</span>
+          <span class="chip-label">FUSED PR-AUC:</span>
+          <span id="chip-fused" class="chip-val">0.913</span>
         </div>
         <div class="telemetry-chip">
-          <span style="color:var(--text-muted); font-size:10px;">FUSED PR-AUC:</span>
-          <span id="chip-fused" style="color:var(--text-primary); font-weight:700;">0.913</span>
-        </div>
-        <div class="telemetry-chip">
-          <span style="color:var(--text-muted); font-size:10px;">PRIOR ĉ:</span>
-          <span id="chip-chat" style="color:var(--text-secondary); font-weight:600;">0.285</span>
+          <span class="chip-label">PRIOR ĉ:</span>
+          <span id="chip-chat" class="chip-val">0.285</span>
         </div>
       </div>
 
-      <!-- RIGHT COMMANDS & WORKSPACE TOOLS -->
-      <div class="header-actions">
-        <!-- Workspace-Only Tools Group -->
-        <div id="header-workspace-tools" style="display:none; align-items:center; gap:8px;">
-          <!-- Layout Mode Switcher -->
-          <div class="view-mode-pill">
-            <button id="btn-mode-split" class="view-mode-btn active" onclick="setLayoutMode('split')" title="Split Studio (Map + Analytics)">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
-              SPLIT
-            </button>
-            <button id="btn-mode-map" class="view-mode-btn" onclick="setLayoutMode('map')" title="Expansive Map View">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/></svg>
-              MAP
-            </button>
-            <button id="btn-mode-analytics" class="view-mode-btn" onclick="setLayoutMode('analytics')" title="Analytical Deep-Dive">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-              ANALYTICS
-            </button>
-          </div>
+      <!-- RIGHT: Workspace Controls & Filter Selectors -->
+      <div id="header-workspace-tools" class="sub-bar-right">
+        <!-- Layout Mode Switcher -->
+        <div class="view-mode-pill">
+          <button id="btn-mode-split" class="view-mode-btn active" onclick="setLayoutMode('split')" title="Split Studio (Map + Analytics)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+            SPLIT
+          </button>
+          <button id="btn-mode-map" class="view-mode-btn" onclick="setLayoutMode('map')" title="Expansive Map View">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/></svg>
+            MAP
+          </button>
+          <button id="btn-mode-analytics" class="view-mode-btn" onclick="setLayoutMode('analytics')" title="Analytical Deep-Dive">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            ANALYTICS
+          </button>
+        </div>
 
-          <!-- Regional Selector & Archived Training Runs -->
-          <select class="select-dataset" id="dataset-select" onchange="selectRegion(this.value)" aria-label="Select Target Region">
-            <option value="EAST_KALIMANTAN" selected>EAST KALIMANTAN (PROVINCE-WIDE 250M MODEL)</option>
-            <option value="KALIMANTAN">BORNEO ISLAND-WIDE (500M REGIONAL BASELINE)</option>
-            <optgroup id="optgroup-archived-runs" label="ARCHIVED TRAINING RUNS">
+        <!-- Regional Selector & Archived Training Runs -->
+        <select class="select-dataset" id="dataset-select" onchange="selectRegion(this.value)" aria-label="Select Target Region">
+          <option value="EAST_KALIMANTAN" selected>EAST KALIMANTAN (PROVINCE-WIDE 250M MODEL)</option>
+          <option value="KALIMANTAN">BORNEO ISLAND-WIDE (500M REGIONAL BASELINE)</option>
+          <optgroup id="optgroup-archived-runs" label="ARCHIVED TRAINING RUNS">
             <option value="RUN_BORNEO_20261026_111533_576293">BORNEO ARCHIVE (2026-10-26 11:15 // PR-AUC: 0.165)</option>
             <option value="RUN_BORNEO_20261026_111724_480115_ACTIVE">BORNEO ARCHIVE (2026-10-26 11:17 // PR-AUC: 0.156)</option>
             <option value="RUN_BORNEO_20261026_115003_967025">BORNEO ARCHIVE (2026-10-26 11:50 // PR-AUC: 0.156)</option>
@@ -1485,22 +1590,14 @@
           </select>
         </div>
 
-        <!-- Theme Toggle -->
-        <button class="btn-icon" onclick="toggleTheme()" title="Toggle Monochromatic Theme (Dark/Light)" aria-label="Toggle Theme">
-          <svg id="theme-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="5"></circle>
-            <line x1="12" y1="1" x2="12" y2="3"></line>
-            <line x1="12" y1="21" x2="12" y2="23"></line>
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-            <line x1="1" y1="12" x2="3" y2="12"></line>
-            <line x1="21" y1="12" x2="23" y2="12"></line>
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-          </svg>
-        </button>
+        <!-- Home Shortcut on Bar 2 -->
+        <div id="header-home-tools" class="sub-bar-right" style="display:none;">
+          <button onclick="launchWorkspace('EAST_KALIMANTAN')" class="hero-btn-primary" style="padding: 4px 12px; font-size:10.5px; border-radius:4px;">
+            LAUNCH 250M WORKSPACE →
+          </button>
+        </div>
       </div>
-    </header>
+    </div>
 
     <!-- VIEW 1: HOMEPAGE // MISSION CONTROL -->
     <div id="view-home" class="view-home-container">
@@ -2115,6 +2212,7 @@
       const btnHome = document.getElementById("nav-btn-home");
       const btnWs = document.getElementById("nav-btn-workspace");
       const wsTools = document.getElementById("header-workspace-tools");
+      const homeTools = document.getElementById("header-home-tools");
 
       if (viewName === "home") {
         if (homeEl) homeEl.style.display = "flex";
@@ -2122,6 +2220,7 @@
         if (btnHome) btnHome.classList.add("active");
         if (btnWs) btnWs.classList.remove("active");
         if (wsTools) wsTools.style.display = "none";
+        if (homeTools) homeTools.style.display = "flex";
         try { history.replaceState(null, "", "#home"); } catch(e) {}
       } else {
         if (homeEl) homeEl.style.display = "none";
@@ -2129,6 +2228,7 @@
         if (btnHome) btnHome.classList.remove("active");
         if (btnWs) btnWs.classList.add("active");
         if (wsTools) wsTools.style.display = "flex";
+        if (homeTools) homeTools.style.display = "none";
         try { history.replaceState(null, "", "#workspace"); } catch(e) {}
         if (map) {
           setTimeout(() => {
