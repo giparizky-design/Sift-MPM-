@@ -4100,8 +4100,7 @@
     function appendTerminalLine(text) {
       const box = document.getElementById("train-terminal-logs");
       if (!box) return;
-      box.innerText += (box.innerText ? "
-" : "") + text;
+      box.innerText += (box.innerText ? String.fromCharCode(10) : "") + text;
       if (autoScrollLogs) {
         box.scrollTop = box.scrollHeight;
       }
@@ -4118,8 +4117,7 @@
           // 1. Logs
           const box = document.getElementById("train-terminal-logs");
           if (box && state.logs && Array.isArray(state.logs)) {
-            const joined = state.logs.join("
-");
+            const joined = state.logs.join(String.fromCharCode(10));
             if (box.innerText !== joined) {
               box.innerText = joined;
               if (autoScrollLogs) box.scrollTop = box.scrollHeight;
@@ -4264,7 +4262,7 @@
             <td style="text-align:right;">
               <div style="display:flex; justify-content:flex-end; gap:6px;">
                 <button type="button" class="btn-icon" onclick="loadArchivedRunIntoWorkspace('${r.run_id}')" style="font-size:9.5px; padding:3px 8px;" title="Load run into Exploration Workspace">WORKSPACE →</button>
-                <button type="button" class="btn-icon" onclick="renameRunInCatalog('${r.run_id}', '${labelText.replace(/'/g, "\'")}')" style="font-size:9.5px; padding:3px 6px;" title="Rename model">RENAME</button>
+                <button type="button" class="btn-icon" onclick="renameRunInCatalog('${r.run_id}')" style="font-size:9.5px; padding:3px 6px;" title="Rename model">RENAME</button>
                 ${!isActive ? `<button type="button" class="btn-icon" onclick="deleteRunFromCatalog('${r.run_id}')" style="font-size:9.5px; padding:3px 6px; color:#EF4444;" title="Delete archived run">✕</button>` : ''}
               </div>
             </td>
@@ -4279,8 +4277,10 @@
       showView("workspace");
     }
 
-    function renameRunInCatalog(runId, currentLabel) {
-      const newName = prompt("Enter new name/label for model run " + runId + ":", currentLabel || "");
+    function renameRunInCatalog(runId) {
+      const item = (cachedModelRuns || []).find(r => r.run_id === runId);
+      const currentLabel = item ? (item.label || item.run_id) : runId;
+      const newName = prompt("Enter new name/label for model run " + runId + ":", currentLabel);
       if (!newName || newName.trim() === currentLabel) return;
 
       fetch("/api/runs/rename", {
