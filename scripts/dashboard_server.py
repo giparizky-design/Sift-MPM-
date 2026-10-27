@@ -290,6 +290,31 @@ def _enrich_target_properties(props: dict, card: Optional[dict], region_name: st
         shap_attr = card.get("mineral_systems_shap_attribution") or {}
         outmogc_gate = card.get("outmogc_boundary_gate") or {}
 
+    # Discard non-informative placeholder strings
+    conformal_set = [x for x in conformal_set if x and str(x).lower() not in ("primary_target", "target", "primary", "none", "null")]
+
+    phys = (card.get("physics_and_geology_summary") or {}) if card else {}
+    alt = phys.get("alteration") or {}
+    struct = phys.get("geomechanics_and_structure") or {}
+    cov = phys.get("cover_and_conductivity") or {}
+
+    al_oh = str(alt.get("al_oh_crystallinity_2200nm") or "").lower()
+    doublet = bool(alt.get("kaolinite_alunite_doublet", False))
+    fe_ox = float(alt.get("fe_oxide_intensity") or props.get("alteration_mean") or 0.0)
+    td = float(struct.get("dilation_tendency_Td_max") or props.get("dilation_tendency_Td_max") or 0.5)
+    depth = float(cov.get("regolith_cover_depth_m") or props.get("regolith_cover_depth_m") or 25.0)
+
+    # Centroid coordinates
+    lat = 0.0
+    lon = 115.0
+    if card and card.get("geometry") and card["geometry"].get("centroid_lat_lon"):
+        lat, lon = card["geometry"]["centroid_lat_lon"]
+    elif "lat" in props and "lon" in props:
+        try:
+            lat, lon = float(props["lat"]), float(props["lon"])
+        except (ValueError, TypeError):
+            pass
+
     if not conformal_set:
         raw_class = str(props.get("target_class") or props.get("classification") or props.get("commodity") or "").lower()
         if any(k in raw_class for k in ("porphyry", "copper", "cu", "tembaga")):
@@ -300,8 +325,26 @@ def _enrich_target_properties(props: dict, card: Optional[dict], region_name: st
             conformal_set = ["epithermal_au"] if any(k in region_name.lower() for k in ("kalimantan", "borneo", "indonesia")) else ["primary_gold"]
         elif any(k in raw_class for k in ("laterite", "nickel", "ni")):
             conformal_set = ["laterite_fe_ni"]
+        elif "yilgarn" in region_name.lower():
+            conformal_set = ["primary_gold"]
         else:
-            conformal_set = ["primary_gold"] if "yilgarn" in region_name.lower() else ["porphyry_cu"]
+            # Deterministic, physics-based deposit mechanics for Kalimantan / Borneo:
+            if (lat < -1.8 and 115.2 <= lon <= 116.5) or (depth >= 45.0 and fe_ox > 0.85 and td > 0.85):
+                conformal_set = ["laterite_fe_ni"]
+            elif fe_ox > 0.78 and td > 0.90:
+                conformal_set = ["skarn_fe_cu"]
+            elif (al_oh == "high" or doublet) and (td >= 0.70 or depth < 30.0):
+                conformal_set = ["epithermal_au"]
+            else:
+                conformal_set = ["porphyry_cu"]
+
+    # Check for poly-phase telescoped overprinting
+    if not telescoped and doublet and td >= 0.70 and fe_ox >= 0.70:
+        telescoped = True
+        if "porphyry_cu" not in conformal_set:
+            conformal_set.append("porphyry_cu")
+        if "epithermal_au" not in conformal_set:
+            conformal_set.append("epithermal_au")
 
     primary_ore = conformal_set[0] if conformal_set else "porphyry_cu"
     ORE_LABEL_MAP = {
@@ -311,17 +354,49 @@ def _enrich_target_properties(props: dict, card: Optional[dict], region_name: st
         "laterite_fe_ni": "Lateritic Fe-Ni",
         "primary_gold": "Orogenic Gold",
         "orogenic_gold": "Orogenic Gold",
+        "coal": "Kutai Basin Coal",
     }
+    COMMODITY_MAP = {
+        "porphyry_cu": "Copper, Gold (Cu-Au)",
+        "skarn_fe_cu": "Iron, Copper (Fe-Cu)",
+        "epithermal_au": "Gold, Silver (Au-Ag)",
+        "laterite_fe_ni": "Nickel, Cobalt, Iron (Ni-Co-Fe)",
+        "primary_gold": "Gold (Au)",
+        "orogenic_gold": "Gold (Au)",
+        "coal": "Coal (Thermal / Coking)",
+    }
+    DEPOSIT_SYSTEM_MAP = {
+        "porphyry_cu": "Magmatic-Hydrothermal Porphyry",
+        "skarn_fe_cu": "Contact Metasomatic Skarn",
+        "epithermal_au": "High/Low-Sulfidation Epithermal",
+        "laterite_fe_ni": "Ultramafic Residual Laterite",
+        "primary_gold": "Orogenic Shear-Hosted Vein",
+        "orogenic_gold": "Orogenic Shear-Hosted Vein",
+        "coal": "Deltaic / Fluvial Sedimentary Basin",
+    }
+
     label = ORE_LABEL_MAP.get(primary_ore, primary_ore.replace("_", " ").title())
+    commodity = COMMODITY_MAP.get(primary_ore, "Polymetallic")
+    system = DEPOSIT_SYSTEM_MAP.get(primary_ore, "Hydrothermal Mineral System")
     if telescoped:
         label = f"Telescoped ({label} + Poly)"
+        commodity = f"Polymetallic ({commodity})"
 
     props["ore_category"] = primary_ore
     props["ore_category_label"] = label
+    props["commodity"] = commodity
+    props["deposit_system"] = system
     props["conformal_90pct_target_set"] = conformal_set
     props["telescoped_system_flag"] = telescoped
     props["outmogc_boundary_gate"] = outmogc_gate
     props["mineral_systems_shap_attribution"] = shap_attr
+    if card is not None:
+        card["ore_category"] = primary_ore
+        card["ore_category_label"] = label
+        card["commodity"] = commodity
+        card["deposit_system"] = system
+        card["conformal_90pct_target_set"] = conformal_set
+        card["telescoped_system_flag"] = telescoped
     return props
 
 
@@ -341,11 +416,11 @@ def _init_bundle_cache() -> None:
                                 card_map = {c.get("target_id"): c for c in b_val.get("site_cards", []) if isinstance(c, dict)}
                                 for feat in b_val.get("predicted_targets_geojson", {}).get("features", []):
                                     props = feat.get("properties", {})
-                                    if "ore_category" not in props:
+                                    if "ore_category" not in props or props.get("ore_category") in ("primary_target", "primary", "target"):
                                         tid = props.get("target_id")
                                         _enrich_target_properties(props, card_map.get(tid), reg_name)
                                 for c in b_val.get("site_cards", []):
-                                    if isinstance(c, dict) and "ore_category" not in c:
+                                    if isinstance(c, dict) and ("ore_category" not in c or c.get("ore_category") in ("primary_target", "primary", "target")):
                                         _enrich_target_properties(c, c, reg_name)
                         _BUNDLE_CACHE.update(data)
                         logger.info("Pre-seeded bundle cache with %d regions from ui/index.html (all ore categories enriched)", len(data))
@@ -418,7 +493,7 @@ def _load_bundle_from_run_dir(run_dir: Path, region_name: str) -> dict:
             pass
 
     for c in site_cards:
-        if "ore_category" not in c:
+        if "ore_category" not in c or c.get("ore_category") in ("primary_target", "primary", "target"):
             _enrich_target_properties(c, c, region_name)
 
     boundary_geojson = None
@@ -1035,12 +1110,18 @@ def _load_region_bundle(region: str, force_reload: bool = False) -> dict:
                 c_ll = geom.centroid
                 hits = 0
                 nearest_m = 2500.0
+                nearest_mine_name = None
+                nearest_mine_commodity = None
                 if len(mine_coords) > 0:
                     d_deg = np.hypot(mine_coords[:, 0] - c_ll.x, mine_coords[:, 1] - c_ll.y)
                     hit_mask = d_deg <= 0.04
                     hits = int(hit_mask.sum())
                     captured_idx.update(np.where(hit_mask)[0].tolist())
-                    nearest_m = round(float(d_deg.min()) * 111_000.0, 1)
+                    min_idx = int(np.argmin(d_deg))
+                    nearest_m = round(float(d_deg[min_idx]) * 111_000.0, 1)
+                    if min_idx < len(actual_mines):
+                        nearest_mine_name = actual_mines[min_idx].get("name")
+                        nearest_mine_commodity = actual_mines[min_idx].get("commodity")
                 card = card_by_id.get(tid)
                 props = {
                     "target_id": tid,
@@ -1056,6 +1137,8 @@ def _load_region_bundle(region: str, force_reload: bool = False) -> dict:
                     "propensity_weight_w": round(float(row.get("propensity_weight_w", 10.0)), 2),
                     "actual_mines_hit": hits,
                     "nearest_actual_mine_m": nearest_m,
+                    "nearest_mine_name": nearest_mine_name,
+                    "nearest_mine_commodity": nearest_mine_commodity,
                     "classification": "Known Deposit Feeder Hit" if hits > 0 else "HD Camp Step-Out Target",
                     "site_card": card,
                 }
@@ -1888,7 +1971,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
         if parsed.path == "/api/region":
             qs = parse_qs(parsed.query)
-            region = qs.get("name", ["YILGARN"])[0]
+            region = qs.get("region", qs.get("name", ["EAST_KALIMANTAN"]))[0]
             bundle = _load_region_bundle(region)
             self._send_json(bundle)
             return

@@ -518,7 +518,31 @@ def main():
     .ore-badge-epithermal_au::before { background: #CBD5E1; }
     .ore-badge-laterite_fe_ni::before { background: #94A3B8; }
     .ore-badge-primary_gold::before { background: #F8FAFC; }
+    .ore-badge-coal::before { background: #94A3B8; }
     .ore-badge-telescoped::before { background: #FFFFFF; box-shadow: 0 0 6px rgba(255, 255, 255, 0.8); }
+
+    /* High-Definition Monochromatic Leaflet Tooltip HUD */
+    .leaflet-tooltip {
+      background: rgba(11, 14, 20, 0.96) !important;
+      border: 1px solid rgba(255, 255, 255, 0.20) !important;
+      color: #FFFFFF !important;
+      border-radius: 4px !important;
+      padding: 8px 10px !important;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+      backdrop-filter: blur(8px) !important;
+      -webkit-backdrop-filter: blur(8px) !important;
+    }
+    .leaflet-tooltip-top:before { border-top-color: rgba(11, 14, 20, 0.96) !important; }
+    .leaflet-tooltip-bottom:before { border-bottom-color: rgba(11, 14, 20, 0.96) !important; }
+    .leaflet-tooltip-left:before { border-left-color: rgba(11, 14, 20, 0.96) !important; }
+    .leaflet-tooltip-right:before { border-right-color: rgba(11, 14, 20, 0.96) !important; }
+    body.light-theme .leaflet-tooltip {
+      background: rgba(255, 255, 255, 0.96) !important;
+      border: 1px solid rgba(0, 0, 0, 0.20) !important;
+      color: #090A0C !important;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+    }
+    body.light-theme .leaflet-tooltip-top:before { border-top-color: rgba(255, 255, 255, 0.96) !important; }
 
     .btn-icon {
       background: var(--bg-elevated);
@@ -2218,6 +2242,9 @@ def main():
                   <p id="target-card-domain" class="font-editorial" style="font-size:12.5px; font-style:italic; color:var(--text-secondary); margin-top:2px;">
                     Regional Target Discovery — Ingestion Active
                   </p>
+                  <p id="target-card-ore-details" style="font-family:var(--font-mono); font-size:10px; color:var(--text-secondary); margin-top:3px;">
+                    Ore: <b id="target-card-commodity" style="color:var(--text-primary);">-</b> // System: <span id="target-card-system">-</span>
+                  </p>
                 </div>
                 <div style="display:flex; gap:6px; align-items:center;">
                   <span id="target-card-ore-badge" class="badge-pill ore-badge ore-badge-porphyry_cu">
@@ -2737,7 +2764,30 @@ def main():
       "epithermal_au": "Epithermal Au-Ag",
       "laterite_fe_ni": "Lateritic Fe-Ni",
       "primary_gold": "Orogenic Gold",
-      "orogenic_gold": "Orogenic Gold"
+      "orogenic_gold": "Orogenic Gold",
+      "coal": "Kutai Basin Coal"
+    };
+
+    const ORE_COMMODITY_MAP = {
+      "porphyry_cu": "Copper, Gold (Cu-Au)",
+      "skarn_fe_cu": "Iron, Copper (Fe-Cu)",
+      "epithermal_au": "Gold, Silver (Au-Ag)",
+      "laterite_fe_ni": "Nickel, Cobalt, Iron (Ni-Co-Fe)",
+      "primary_gold": "Gold (Au)",
+      "orogenic_gold": "Gold (Au)",
+      "coal": "Coal (Thermal / Coking)",
+      "telescoped": "Polymetallic (Cu-Au-Ag-Fe)"
+    };
+
+    const ORE_SYSTEM_MAP = {
+      "porphyry_cu": "Magmatic-Hydrothermal Porphyry",
+      "skarn_fe_cu": "Contact Metasomatic Skarn",
+      "epithermal_au": "High/Low-Sulfidation Epithermal",
+      "laterite_fe_ni": "Ultramafic Residual Laterite",
+      "primary_gold": "Orogenic Shear-Hosted Vein",
+      "orogenic_gold": "Orogenic Shear-Hosted Vein",
+      "coal": "Deltaic / Fluvial Sedimentary Basin",
+      "telescoped": "Overprinting Porphyry-Epithermal"
     };
 
     const ORE_COLORS = {
@@ -2746,6 +2796,7 @@ def main():
       epithermal_au: { stroke: "#CBD5E1", fill: "#CBD5E1" },
       laterite_fe_ni: { stroke: "#94A3B8", fill: "#94A3B8" },
       primary_gold: { stroke: "#F8FAFC", fill: "#F8FAFC" },
+      coal: { stroke: "#94A3B8", fill: "#94A3B8" },
       telescoped: { stroke: "#FFFFFF", fill: "#FFFFFF" }
     };
 
@@ -2984,10 +3035,14 @@ def main():
           const struct = phys.geomechanics_and_structure || {};
           const cover = phys.cover_and_conductivity || {};
 
-          const conformalSet = sc.conformal_90pct_target_set || (sc.properties && sc.properties.conformal_90pct_target_set) || [];
-          const primaryOre = sc.ore_category || (sc.properties && sc.properties.ore_category) || (conformalSet[0]) || "porphyry_cu";
-          const oreLabel = sc.ore_category_label || (sc.properties && sc.properties.ore_category_label) || ORE_LABEL_MAP[primaryOre] || primaryOre.replace(/_/g, ' ');
+          const conformalSet = (sc.conformal_90pct_target_set || (sc.properties && sc.properties.conformal_90pct_target_set) || []).filter(x => x && !['primary_target', 'target'].includes(x));
+          const primaryOre = (sc.ore_category && sc.ore_category !== 'primary_target') || (sc.properties && sc.properties.ore_category && sc.properties.ore_category !== 'primary_target') || (conformalSet[0]) || "porphyry_cu";
+          const oreLabel = (sc.ore_category_label && sc.ore_category_label !== 'Primary Target') || (sc.properties && sc.properties.ore_category_label && sc.properties.ore_category_label !== 'Primary Target') || ORE_LABEL_MAP[primaryOre] || primaryOre.replace(/_/g, ' ');
           const isTelescoped = Boolean(sc.telescoped_system_flag || (sc.properties && sc.properties.telescoped_system_flag) || (conformalSet.length >= 2));
+          const commodity = sc.commodity || (sc.properties && sc.properties.commodity) || ORE_COMMODITY_MAP[primaryOre] || "Polymetallic";
+          const system = sc.deposit_system || (sc.properties && sc.properties.deposit_system) || ORE_SYSTEM_MAP[primaryOre] || "Hydrothermal Mineral System";
+          const nearestMine = sc.nearest_mine_name || (sc.properties && sc.properties.nearest_mine_name) || null;
+          const nearestDist = sc.nearest_actual_mine_m || (sc.properties && sc.properties.nearest_actual_mine_m) || null;
 
           return {
             id: sc.target_id,
@@ -3005,6 +3060,10 @@ def main():
             area_sq_km: geom.area_sq_km || 1.0,
             oreCategory: primaryOre,
             oreCategoryLabel: oreLabel,
+            commodity: commodity,
+            depositSystem: system,
+            nearestMine: nearestMine,
+            nearestMineDist: nearestDist,
             conformalTargetSet: conformalSet,
             telescopedFlag: isTelescoped,
             shapAttribution: sc.mineral_systems_shap_attribution || (sc.properties && sc.properties.mineral_systems_shap_attribution) || {}
@@ -3024,10 +3083,14 @@ def main():
               }
             } catch (e) {}
           }
-          const conformalSet = p.conformal_90pct_target_set || [];
-          const primaryOre = p.ore_category || (conformalSet[0]) || "porphyry_cu";
-          const oreLabel = p.ore_category_label || ORE_LABEL_MAP[primaryOre] || primaryOre.replace(/_/g, ' ');
+          const conformalSet = (p.conformal_90pct_target_set || []).filter(x => x && !['primary_target', 'target'].includes(x));
+          const primaryOre = (p.ore_category && p.ore_category !== 'primary_target') || (conformalSet[0]) || "porphyry_cu";
+          const oreLabel = (p.ore_category_label && p.ore_category_label !== 'Primary Target') || ORE_LABEL_MAP[primaryOre] || primaryOre.replace(/_/g, ' ');
           const isTelescoped = Boolean(p.telescoped_system_flag || (conformalSet.length >= 2));
+          const commodity = p.commodity || ORE_COMMODITY_MAP[primaryOre] || "Polymetallic";
+          const system = p.deposit_system || ORE_SYSTEM_MAP[primaryOre] || "Hydrothermal Mineral System";
+          const nearestMine = p.nearest_mine_name || null;
+          const nearestDist = p.nearest_actual_mine_m || null;
 
           return {
             id: p.target_id || `TGT_${idx+1}`,
@@ -3045,6 +3108,10 @@ def main():
             area_sq_km: p.area_sq_km || 1.0,
             oreCategory: primaryOre,
             oreCategoryLabel: oreLabel,
+            commodity: commodity,
+            depositSystem: system,
+            nearestMine: nearestMine,
+            nearestMineDist: nearestDist,
             conformalTargetSet: conformalSet,
             telescopedFlag: isTelescoped,
             shapAttribution: p.mineral_systems_shap_attribution || {}
@@ -3377,13 +3444,48 @@ def main():
             const p = feat.properties || {};
             const scoreVal = (p.calibrated_deposit_prob ?? p.rank_score ?? 0).toFixed(3);
             const areaVal = (p.area_sq_km || 0).toFixed(2);
+            const depthVal = Math.round((p.regolith_cover_depth_m || 25.0) * 8.0 + 80.0);
+            const cLow = ((p.lower_bound_L !== undefined) ? Number(p.lower_bound_L) : 0.50).toFixed(3);
+            const cHigh = ((p.upper_bound_U !== undefined) ? Number(p.upper_bound_U) : 1.00).toFixed(3);
+
+            const conformalSet = (p.conformal_90pct_target_set && p.conformal_90pct_target_set.filter(x => x && !['primary_target', 'target'].includes(x))) || [];
+            const oreCat = (p.ore_category && p.ore_category !== 'primary_target') ? p.ore_category : (conformalSet[0] || 'porphyry_cu');
+            const isTelescoped = Boolean(p.telescoped_system_flag || (conformalSet.length >= 2));
+            const oreLabel = (p.ore_category_label && p.ore_category_label !== 'Primary Target') ? p.ore_category_label : (ORE_LABEL_MAP[oreCat] || oreCat.replace(/_/g, ' ').toUpperCase());
+            const commodity = p.commodity || ORE_COMMODITY_MAP[oreCat] || 'Polymetallic';
+            const system = p.deposit_system || ORE_SYSTEM_MAP[oreCat] || 'Hydrothermal Mineral System';
+            const oreTheme = isTelescoped ? ORE_COLORS.telescoped : (ORE_COLORS[oreCat] || ORE_COLORS.porphyry_cu);
+
+            const proxHit = p.actual_mines_hit > 0 || (p.nearest_actual_mine_m && p.nearest_actual_mine_m <= 15000);
+            const proxText = p.nearest_mine_name ? `⌖ Near: ${p.nearest_mine_name} (${(p.nearest_actual_mine_m / 1000).toFixed(1)} km)` : (proxHit ? `⌖ Known Deposit Proximal (${(p.nearest_actual_mine_m / 1000).toFixed(1)} km)` : '');
+
             layer.bindTooltip(
-              `<div style="font-family:monospace; font-size:11px; line-height:1.4;">
-                <b style="color:#38bdf8;">TARGET POLYGON: ${p.target_id || p.id || 'Target'}</b><br/>
-                <span>Rank #${p.rank || 1} // ${p.classification || 'Porphyry Cu-Au'}</span><br/>
-                <span>Calibrated Prob: <b>${scoreVal}</b> | Footprint: <b>${areaVal} km²</b></span>
+              `<div style="font-family:'IBM Plex Mono',monospace; font-size:11px; line-height:1.45; min-width:230px; color:#ffffff;">
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.15); padding-bottom:3px; margin-bottom:5px;">
+                  <b style="color:#38bdf8; font-weight:700; letter-spacing:0.04em;">${p.target_id || p.id || 'TARGET'}</b>
+                  <span style="font-size:10px; color:#94a3b8; font-weight:600;">RANK #${p.rank || 1}</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px;">
+                  <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${oreTheme.stroke}; box-shadow:0 0 6px ${oreTheme.stroke};"></span>
+                  <b style="color:#ffffff; font-size:12px; letter-spacing:0.02em;">${isTelescoped ? '⚡ TELESCOPED: ' : ''}${oreLabel.toUpperCase()}</b>
+                </div>
+                <div style="color:#e2e8f0; font-size:11px; margin-bottom:2px;">
+                  Ore Commodity: <b style="color:#ffffff;">${commodity}</b>
+                </div>
+                <div style="color:#94a3b8; font-size:10px; margin-bottom:5px;">
+                  Deposit Type: <span style="color:#cbd5e1;">${system}</span>
+                </div>
+                <div style="border-top:1px dashed rgba(255,255,255,0.12); padding-top:4px; display:flex; justify-content:space-between; font-size:10.5px;">
+                  <span>Cal. Prob: <b style="color:#ffffff;">${scoreVal}</b></span>
+                  <span>Footprint: <b style="color:#ffffff;">${areaVal} km²</b></span>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:10px; color:#94a3b8; margin-top:2px;">
+                  <span>90% CI: <b>[${cLow} - ${cHigh}]</b></span>
+                  <span>Est. Depth: <b>${depthVal}m</b></span>
+                </div>
+                ${proxText ? `<div style="margin-top:4px; padding-top:3px; border-top:1px solid rgba(255,255,255,0.08); font-size:9.5px; color:#f59e0b;">${proxText}</div>` : ''}
               </div>`,
-              { direction: 'top', sticky: true }
+              { direction: 'top', sticky: true, opacity: 0.98 }
             );
             layer.on('click', () => {
               const matched = activeTargetsList.find(t => t.id === (p.target_id || p.id));
@@ -3641,15 +3743,33 @@ def main():
         });
 
         marker.bindTooltip(
-          `<div style="font-family:monospace; font-size:11px; line-height:1.4;">
-            <b style="color:#38bdf8;">TARGET SITE: ${t.id}</b><br/>
-            <span style="color:${oreTheme.stroke}; font-weight:700;">${t.telescopedFlag ? '⚡ TELESCOPED: ' : ''}${t.oreCategoryLabel || oreCat.toUpperCase()}</span><br/>
-            <span>Rank #${t.rank || 1} // ${t.classification}</span><br/>
-            <span>Calibrated Deposit Prob: <b>${t.prospectivityScore.toFixed(3)}</b></span><br/>
-            <span>Regolith Depth: <b>${t.depthMeters}m</b> | CI: <b>[${t.conformalInterval.join(' - ')}]</b></span><br/>
-            <span style="color:#f59e0b; font-size:10px;">Click to inspect drill telemetry &amp; fly-to</span>
+          `<div style="font-family:'IBM Plex Mono',monospace; font-size:11px; line-height:1.45; min-width:230px; color:#ffffff;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.15); padding-bottom:3px; margin-bottom:5px;">
+              <b style="color:#38bdf8; font-weight:700;">${t.id}</b>
+              <span style="font-size:10px; color:#94a3b8; font-weight:600;">RANK #${t.rank || 1}</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px;">
+              <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${oreTheme.stroke}; box-shadow:0 0 6px ${oreTheme.stroke};"></span>
+              <b style="color:#ffffff; font-size:12px;">${t.telescopedFlag ? '⚡ TELESCOPED: ' : ''}${t.oreCategoryLabel || oreCat.toUpperCase()}</b>
+            </div>
+            <div style="color:#e2e8f0; font-size:11px; margin-bottom:2px;">
+              Ore Commodity: <b style="color:#ffffff;">${t.commodity || ORE_COMMODITY_MAP[oreCat] || 'Polymetallic'}</b>
+            </div>
+            <div style="color:#94a3b8; font-size:10px; margin-bottom:5px;">
+              Deposit Type: <span style="color:#cbd5e1;">${t.depositSystem || ORE_SYSTEM_MAP[oreCat] || 'Hydrothermal Mineral System'}</span>
+            </div>
+            <div style="border-top:1px dashed rgba(255,255,255,0.12); padding-top:4px; display:flex; justify-content:space-between; font-size:10.5px;">
+              <span>Cal. Prob: <b style="color:#ffffff;">${t.prospectivityScore.toFixed(3)}</b></span>
+              <span>Area: <b style="color:#ffffff;">${(t.area_sq_km || 0).toFixed(2)} km²</b></span>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:10px; color:#94a3b8; margin-top:2px;">
+              <span>90% CI: <b>[${(t.conformalInterval || [0.5, 1.0]).join(' - ')}]</b></span>
+              <span>Cover: <b>${t.depthMeters}m</b></span>
+            </div>
+            ${t.nearestMine ? `<div style="margin-top:4px; padding-top:3px; border-top:1px solid rgba(255,255,255,0.08); font-size:9.5px; color:#f59e0b;">⌖ Proximal: ${t.nearestMine}</div>` : ''}
+            <div style="color:#94a3b8; font-size:9.5px; margin-top:4px; text-align:right;">Click to inspect drill site</div>
           </div>`,
-          { direction: "top", sticky: true }
+          { direction: "top", sticky: true, opacity: 0.98 }
         );
 
         marker.on("click", () => {
@@ -3810,6 +3930,13 @@ def main():
         const label = target.oreCategoryLabel || ORE_LABEL_MAP[cat] || cat.toUpperCase();
         oreBadge.innerText = (target.telescopedFlag ? "TELESCOPED: " : "") + label.toUpperCase();
         oreBadge.className = `badge-pill ore-badge ore-badge-${cat}`;
+      }
+
+      if (document.getElementById("target-card-commodity")) {
+        document.getElementById("target-card-commodity").innerText = target.commodity || ORE_COMMODITY_MAP[target.oreCategory || "porphyry_cu"] || "Polymetallic";
+      }
+      if (document.getElementById("target-card-system")) {
+        document.getElementById("target-card-system").innerText = target.depositSystem || ORE_SYSTEM_MAP[target.oreCategory || "porphyry_cu"] || "Hydrothermal Mineral System";
       }
 
       const cLow = target.conformalInterval ? target.conformalInterval[0] : 0.50;
