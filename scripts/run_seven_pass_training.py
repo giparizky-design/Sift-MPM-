@@ -101,6 +101,11 @@ def run_region_seven_pass(
     reset_from_zero: bool = False,
     train_10x: bool = False,
     incremental: bool = True,
+    n_estimators: Optional[int] = None,
+    n_bag: Optional[int] = None,
+    dae_epochs: Optional[int] = None,
+    round_idx: Optional[int] = None,
+    total_rounds: Optional[int] = None,
 ) -> dict:
     """Execute the complete 7-Pass pipeline strictly specialized on Kalimantan."""
     reg_clean = region_name.upper().strip()
@@ -330,18 +335,19 @@ def run_region_seven_pass(
     # -------------------------------------------------------------------------
     # Pass 3.1: TwoStageK4Ensemble (4 Independent XGBoost Heads + Stacking)
     # -------------------------------------------------------------------------
-    n_estimators = 500 if train_10x else 100
-    n_bag = 10 if train_10x else 5
-    dae_epochs = 15 if train_10x else 3
+    eff_n_estimators = n_estimators if n_estimators is not None else (500 if train_10x else 100)
+    eff_n_bag = n_bag if n_bag is not None else (10 if train_10x else 5)
+    eff_dae_epochs = dae_epochs if dae_epochs is not None else (15 if train_10x else 3)
 
+    round_str = f" [Round {round_idx}/{total_rounds}]" if round_idx and total_rounds else ""
     logger.info(
-        "[%s] Configured K=4 Ensemble: n_estimators=%d, n_bag=%d, dae_epochs=%d (train_10x=%s)",
-        region_name, n_estimators, n_bag, dae_epochs, train_10x,
+        "[%s]%s Configured K=4 Ensemble: n_estimators=%d, n_bag=%d, dae_epochs=%d (train_10x=%s, warm_started=%s)",
+        region_name, round_str, eff_n_estimators, eff_n_bag, eff_dae_epochs, train_10x, (prior_ensemble is not None),
     )
 
     k4_ensemble = TwoStageK4Ensemble(
-        n_estimators=n_estimators,
-        n_bag=n_bag,
+        n_estimators=eff_n_estimators,
+        n_bag=eff_n_bag,
         random_state=42,
     )
     k4_ensemble.fit(
@@ -387,7 +393,7 @@ def run_region_seven_pass(
         y_grid_k4=y_k4_2d,
         block_ids_50m=fold_ids_2d,
         decimate_factor=5,
-        epochs=dae_epochs,
+        epochs=eff_dae_epochs,
         checkpoints_dir=models_dir,
     )
 
@@ -698,9 +704,11 @@ def run_region_seven_pass(
             f"{'incremental_warm_start' if prior_ensemble is not None else ('learned_from_zero' if reset_from_zero else 'standard')}"
         ),
         "is_warm_started": bool(prior_ensemble is not None),
-        "n_estimators": n_estimators,
-        "n_bag": n_bag,
-        "dae_epochs": dae_epochs,
+        "round_idx": round_idx,
+        "total_rounds": total_rounds,
+        "n_estimators": eff_n_estimators,
+        "n_bag": eff_n_bag,
+        "dae_epochs": eff_dae_epochs,
         "resolution_m": 250.0 if (stack.array.shape[1] == 2400) else 500.0,
     }
     (out_dir / "seven_pass_summary.json").write_text(json.dumps(summary, indent=2) + "\n")

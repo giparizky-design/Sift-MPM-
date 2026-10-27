@@ -4,7 +4,7 @@
     "rank": 1,
     "rank_score": 0.95,
     "conformal_90pct_target_set": [
-      "porphyry_cu",
+      "skarn_fe_cu",
       "epithermal_au"
     ],
     "telescoped_system_flag": true,
@@ -16,182 +16,182 @@
     },
     "exploration_logistics_propensity": 0.05,
     "mineral_systems_shap_attribution": {
-      "porphyry_cu": {
+      "skarn_fe_cu": {
         "1_energy_and_metal_sources": {
-          "total_shap": -0.6914,
-          "mean_abs_shap": 0.3457,
+          "total_shap": -3.7552,
+          "mean_abs_shap": 1.8776,
           "n_features": 2,
           "top_features": [
             {
               "feature": "moho_gravity_step_mgal_km",
-              "shap_value": -0.3462,
-              "feature_value": 3.2025
+              "shap_value": -3.3557,
+              "feature_value": 0.3172
             },
             {
               "feature": "crustal_thickness_km",
-              "shap_value": -0.3452,
-              "feature_value": 38.7575
+              "shap_value": -0.3995,
+              "feature_value": 31.3513
             }
           ]
         },
         "2_crustal_conduits": {
-          "total_shap": -1.1947,
-          "mean_abs_shap": 0.3982,
+          "total_shap": -0.8268,
+          "mean_abs_shap": 0.2756,
           "n_features": 3,
           "top_features": [
             {
-              "feature": "active_fault_density",
-              "shap_value": -0.6718,
-              "feature_value": 0.3957
+              "feature": "dist_active_faults_m",
+              "shap_value": -0.4544,
+              "feature_value": 161.6433
             },
             {
-              "feature": "dist_active_faults_m",
-              "shap_value": -0.5004,
-              "feature_value": 0.0
+              "feature": "active_fault_density",
+              "shap_value": -0.3506,
+              "feature_value": 0.2798
             },
             {
               "feature": "dist_topo_lineaments_km",
-              "shap_value": -0.0225,
-              "feature_value": 0.0
+              "shap_value": -0.0218,
+              "feature_value": 0.0647
             }
           ]
         },
         "3_physicochemical_traps": {
-          "total_shap": -0.4259,
-          "mean_abs_shap": 0.213,
+          "total_shap": 2.5465,
+          "mean_abs_shap": 1.4554,
           "n_features": 2,
           "top_features": [
             {
               "feature": "dilation_tendency_Td",
-              "shap_value": -0.3645,
-              "feature_value": 0.9681
+              "shap_value": 2.7286,
+              "feature_value": 0.9099
             },
             {
               "feature": "slip_tendency_Ts",
-              "shap_value": -0.0614,
-              "feature_value": 0.4516
+              "shap_value": -0.1821,
+              "feature_value": 0.5746
             }
           ]
         },
         "4_alteration_and_anomaly": {
-          "total_shap": -9.1677,
-          "mean_abs_shap": 0.5825,
-          "n_features": 16,
+          "total_shap": 1.6875,
+          "mean_abs_shap": 0.6155,
+          "n_features": 14,
           "top_features": [
             {
-              "feature": "regolith_cover_m",
-              "shap_value": -2.3088,
-              "feature_value": 7.0664
-            },
-            {
               "feature": "dist_plate_boundary_km",
-              "shap_value": -1.729,
-              "feature_value": 73.927
+              "shap_value": 2.515,
+              "feature_value": 337.0535
             },
             {
-              "feature": "dist_volcanic_arc_km",
-              "shap_value": -1.2622,
-              "feature_value": 371.1636
+              "feature": "coastal_shelf_dist_km",
+              "shap_value": 2.357,
+              "feature_value": 56.7248
             },
             {
-              "feature": "oof_prob_skarn",
-              "shap_value": -0.9179,
-              "feature_value": 0.0
+              "feature": "terrain_ruggedness_tri",
+              "shap_value": -1.1108,
+              "feature_value": 73.2964
             },
             {
-              "feature": "outcrop_exposure_index",
-              "shap_value": -0.7561,
-              "feature_value": 0.5575
+              "feature": "dem_plan_curvature",
+              "shap_value": -0.7316,
+              "feature_value": -0.0001
+            },
+            {
+              "feature": "dem_tpi_regional",
+              "shap_value": -0.5309,
+              "feature_value": -145.4639
             }
           ]
         }
       },
       "epithermal_au": {
         "1_energy_and_metal_sources": {
-          "total_shap": -3.7313,
-          "mean_abs_shap": 1.999,
+          "total_shap": -6.3838,
+          "mean_abs_shap": 3.1919,
           "n_features": 2,
           "top_features": [
             {
               "feature": "moho_gravity_step_mgal_km",
-              "shap_value": -3.8646,
-              "feature_value": 3.2025
+              "shap_value": -5.1109,
+              "feature_value": 0.3172
             },
             {
               "feature": "crustal_thickness_km",
-              "shap_value": 0.1333,
-              "feature_value": 38.7575
+              "shap_value": -1.2729,
+              "feature_value": 31.3513
             }
           ]
         },
         "2_crustal_conduits": {
-          "total_shap": -1.1819,
-          "mean_abs_shap": 0.6586,
+          "total_shap": -1.3349,
+          "mean_abs_shap": 0.6218,
           "n_features": 3,
           "top_features": [
             {
               "feature": "active_fault_density",
-              "shap_value": -1.5727,
-              "feature_value": 0.3957
+              "shap_value": -1.5494,
+              "feature_value": 0.2798
             },
             {
               "feature": "dist_active_faults_m",
-              "shap_value": 0.3969,
-              "feature_value": 0.0
+              "shap_value": 0.2653,
+              "feature_value": 161.6433
             },
             {
               "feature": "dist_topo_lineaments_km",
-              "shap_value": -0.0061,
-              "feature_value": 0.0
+              "shap_value": -0.0508,
+              "feature_value": 0.0647
             }
           ]
         },
         "3_physicochemical_traps": {
-          "total_shap": -0.4376,
-          "mean_abs_shap": 0.2188,
+          "total_shap": -1.4423,
+          "mean_abs_shap": 0.7212,
           "n_features": 2,
           "top_features": [
             {
               "feature": "dilation_tendency_Td",
-              "shap_value": -0.435,
-              "feature_value": 0.9681
+              "shap_value": -1.4265,
+              "feature_value": 0.9099
             },
             {
               "feature": "slip_tendency_Ts",
-              "shap_value": -0.0026,
-              "feature_value": 0.4516
+              "shap_value": -0.0158,
+              "feature_value": 0.5746
             }
           ]
         },
         "4_alteration_and_anomaly": {
-          "total_shap": -7.0866,
-          "mean_abs_shap": 0.5963,
+          "total_shap": -5.437,
+          "mean_abs_shap": 0.5619,
           "n_features": 14,
           "top_features": [
             {
-              "feature": "dist_plate_boundary_km",
-              "shap_value": -2.5825,
-              "feature_value": 73.927
-            },
-            {
               "feature": "coastal_shelf_dist_km",
-              "shap_value": -2.4992,
-              "feature_value": 33.0681
+              "shap_value": -2.9652,
+              "feature_value": 56.7248
             },
             {
-              "feature": "terrain_ruggedness_tri",
-              "shap_value": -0.9843,
-              "feature_value": 227.9995
+              "feature": "dist_plate_boundary_km",
+              "shap_value": -2.0918,
+              "feature_value": 337.0535
             },
             {
               "feature": "dem_tpi_regional",
-              "shap_value": -0.8539,
-              "feature_value": 34.4902
+              "shap_value": 0.9843,
+              "feature_value": -145.4639
+            },
+            {
+              "feature": "terrain_ruggedness_tri",
+              "shap_value": -0.9252,
+              "feature_value": 73.2964
             },
             {
               "feature": "bouguer_gravity_mgal",
-              "shap_value": 0.3305,
-              "feature_value": -131.8604
+              "shap_value": -0.3206,
+              "feature_value": -21.1535
             }
           ]
         }
@@ -199,19 +199,19 @@
     },
     "geometry": {
       "centroid_lat_lon": [
-        -2.6562,
-        119.3637
+        -2.0281,
+        115.6739
       ],
-      "area_sq_km": 0.077,
+      "area_sq_km": 114.163,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.103,
-      "elkan_noto_c_hat": 0.109,
-      "calibrated_deposit_prob": 1.0,
+      "fused_raw_score": 0.542,
+      "elkan_noto_c_hat": 0.1,
+      "calibrated_deposit_prob": 0.954,
       "conformal_90_ci": {
-        "lower_bound_L": 0.848,
-        "upper_bound_U": 1.0
+        "lower_bound_L": 0.802,
+        "upper_bound_U": 0.964
       },
       "exploration_propensity_e_x": 0.05,
       "propensity_weight_w": 0.29
@@ -222,16 +222,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.963
+        "fe_oxide_intensity": 0.83
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.963,
+        "dilation_tendency_Td_max": 0.922,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 7.4,
+        "regolith_cover_depth_m": 43.6,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -240,7 +240,7 @@
   {
     "target_id": "EAST_KALIMANTAN_TGT_0002",
     "rank": 2,
-    "rank_score": 0.946,
+    "rank_score": 0.912,
     "conformal_90pct_target_set": [
       "epithermal_au"
     ],
@@ -255,90 +255,90 @@
     "mineral_systems_shap_attribution": {
       "epithermal_au": {
         "1_energy_and_metal_sources": {
-          "total_shap": -3.5645,
-          "mean_abs_shap": 2.1284,
+          "total_shap": -0.0999,
+          "mean_abs_shap": 0.255,
           "n_features": 2,
           "top_features": [
             {
               "feature": "moho_gravity_step_mgal_km",
-              "shap_value": -3.9107,
-              "feature_value": 2.9191
+              "shap_value": -0.305,
+              "feature_value": 0.7373
             },
             {
               "feature": "crustal_thickness_km",
-              "shap_value": 0.3462,
-              "feature_value": 37.9965
+              "shap_value": 0.2051,
+              "feature_value": 32.8692
             }
           ]
         },
         "2_crustal_conduits": {
-          "total_shap": -1.2434,
-          "mean_abs_shap": 0.7249,
+          "total_shap": -0.177,
+          "mean_abs_shap": 0.8379,
           "n_features": 3,
           "top_features": [
             {
               "feature": "active_fault_density",
-              "shap_value": -1.709,
-              "feature_value": 0.4
+              "shap_value": -1.3454,
+              "feature_value": 0.3787
             },
             {
               "feature": "dist_active_faults_m",
-              "shap_value": 0.4184,
+              "shap_value": 1.1291,
               "feature_value": 0.0
             },
             {
               "feature": "dist_topo_lineaments_km",
-              "shap_value": 0.0472,
+              "shap_value": 0.0393,
               "feature_value": 0.0
             }
           ]
         },
         "3_physicochemical_traps": {
-          "total_shap": -0.2307,
-          "mean_abs_shap": 0.2301,
+          "total_shap": 0.7562,
+          "mean_abs_shap": 0.3781,
           "n_features": 2,
           "top_features": [
             {
-              "feature": "dilation_tendency_Td",
-              "shap_value": -0.3455,
-              "feature_value": 0.9681
+              "feature": "slip_tendency_Ts",
+              "shap_value": 0.5454,
+              "feature_value": 0.5893
             },
             {
-              "feature": "slip_tendency_Ts",
-              "shap_value": 0.1148,
-              "feature_value": 0.4516
+              "feature": "dilation_tendency_Td",
+              "shap_value": 0.2108,
+              "feature_value": 0.9331
             }
           ]
         },
         "4_alteration_and_anomaly": {
-          "total_shap": -0.4866,
-          "mean_abs_shap": 0.4868,
+          "total_shap": 1.375,
+          "mean_abs_shap": 0.7496,
           "n_features": 14,
           "top_features": [
             {
               "feature": "dist_plate_boundary_km",
-              "shap_value": -2.1242,
-              "feature_value": 87.584
+              "shap_value": 3.4418,
+              "feature_value": 304.6528
             },
             {
               "feature": "coastal_shelf_dist_km",
-              "shap_value": 1.8475,
-              "feature_value": 44.2797
+              "shap_value": 2.2161,
+              "feature_value": 41.3837
+            },
+            {
+              "feature": "dem_tpi_local",
+              "shap_value": -1.0825,
+              "feature_value": 84.5633
             },
             {
               "feature": "dem_tpi_regional",
-              "shap_value": 0.7458,
-              "feature_value": -258.6208
+              "shap_value": -0.9893,
+              "feature_value": 43.5899
             },
             {
               "feature": "terrain_ruggedness_tri",
-              "shap_value": -0.631,
-              "feature_value": 169.3375
-            },
-            {
-              "feature": "bouguer_gravity_mgal",
-              "shap_value": 0.3786,
-              "feature_value": -120.7941
+              "shap_value": -0.5911,
+              "feature_value": 103.9236
             }
           ]
         }
@@ -346,19 +346,19 @@
     },
     "geometry": {
       "centroid_lat_lon": [
-        -2.6303,
-        119.4941
+        -2.4462,
+        115.9023
       ],
-      "area_sq_km": 0.62,
+      "area_sq_km": 211.286,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.139,
-      "elkan_noto_c_hat": 0.109,
-      "calibrated_deposit_prob": 1.0,
+      "fused_raw_score": 0.276,
+      "elkan_noto_c_hat": 0.1,
+      "calibrated_deposit_prob": 0.881,
       "conformal_90_ci": {
-        "lower_bound_L": 0.823,
-        "upper_bound_U": 1.0
+        "lower_bound_L": 0.705,
+        "upper_bound_U": 0.906
       },
       "exploration_propensity_e_x": 0.05,
       "propensity_weight_w": 0.29
@@ -369,16 +369,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.963
+        "fe_oxide_intensity": 0.832
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.963,
+        "dilation_tendency_Td_max": 0.922,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 9.5,
+        "regolith_cover_depth_m": 36.2,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -387,11 +387,12 @@
   {
     "target_id": "EAST_KALIMANTAN_TGT_0003",
     "rank": 3,
-    "rank_score": 0.941,
+    "rank_score": 0.895,
     "conformal_90pct_target_set": [
+      "porphyry_cu",
       "epithermal_au"
     ],
-    "telescoped_system_flag": false,
+    "telescoped_system_flag": true,
     "outmogc_boundary_gate": {
       "porphyry_cu": 1.0,
       "skarn_fe_cu": 1.0,
@@ -400,92 +401,182 @@
     },
     "exploration_logistics_propensity": 0.05,
     "mineral_systems_shap_attribution": {
-      "epithermal_au": {
+      "porphyry_cu": {
         "1_energy_and_metal_sources": {
-          "total_shap": -4.1855,
-          "mean_abs_shap": 2.456,
+          "total_shap": -2.3566,
+          "mean_abs_shap": 1.1783,
           "n_features": 2,
           "top_features": [
             {
               "feature": "moho_gravity_step_mgal_km",
-              "shap_value": -4.5487,
-              "feature_value": 2.9402
+              "shap_value": -1.8967,
+              "feature_value": 1.3297
             },
             {
               "feature": "crustal_thickness_km",
-              "shap_value": 0.3632,
-              "feature_value": 36.5047
+              "shap_value": -0.4599,
+              "feature_value": 34.7805
             }
           ]
         },
         "2_crustal_conduits": {
-          "total_shap": -1.1724,
-          "mean_abs_shap": 0.7191,
+          "total_shap": -1.4418,
+          "mean_abs_shap": 0.4806,
           "n_features": 3,
           "top_features": [
             {
               "feature": "active_fault_density",
-              "shap_value": -1.6649,
-              "feature_value": 0.4
+              "shap_value": -0.7774,
+              "feature_value": 0.3872
             },
             {
               "feature": "dist_active_faults_m",
-              "shap_value": 0.4454,
+              "shap_value": -0.6447,
               "feature_value": 0.0
             },
             {
               "feature": "dist_topo_lineaments_km",
-              "shap_value": 0.0471,
+              "shap_value": -0.0197,
               "feature_value": 0.0
             }
           ]
         },
         "3_physicochemical_traps": {
-          "total_shap": -0.2068,
-          "mean_abs_shap": 0.2412,
+          "total_shap": 0.1769,
+          "mean_abs_shap": 0.1217,
           "n_features": 2,
           "top_features": [
             {
-              "feature": "dilation_tendency_Td",
-              "shap_value": -0.3446,
-              "feature_value": 0.9681
+              "feature": "slip_tendency_Ts",
+              "shap_value": 0.2102,
+              "feature_value": 0.6979
             },
             {
-              "feature": "slip_tendency_Ts",
-              "shap_value": 0.1378,
-              "feature_value": 0.4516
+              "feature": "dilation_tendency_Td",
+              "shap_value": -0.0333,
+              "feature_value": 0.7013
             }
           ]
         },
         "4_alteration_and_anomaly": {
-          "total_shap": -0.0456,
-          "mean_abs_shap": 0.5211,
-          "n_features": 14,
+          "total_shap": -8.4158,
+          "mean_abs_shap": 0.6738,
+          "n_features": 16,
           "top_features": [
             {
               "feature": "dist_plate_boundary_km",
-              "shap_value": -2.1486,
-              "feature_value": 86.6806
+              "shap_value": -4.043,
+              "feature_value": 334.066
             },
             {
-              "feature": "coastal_shelf_dist_km",
-              "shap_value": 1.964,
-              "feature_value": 43.3086
+              "feature": "regolith_cover_m",
+              "shap_value": -2.1074,
+              "feature_value": 20.3405
+            },
+            {
+              "feature": "outcrop_exposure_index",
+              "shap_value": -0.7663,
+              "feature_value": 0.3256
+            },
+            {
+              "feature": "dist_volcanic_arc_km",
+              "shap_value": -0.6661,
+              "feature_value": 500.0
             },
             {
               "feature": "dem_tpi_regional",
-              "shap_value": 1.0032,
-              "feature_value": -404.1621
+              "shap_value": 0.6499,
+              "feature_value": -301.0307
+            }
+          ]
+        }
+      },
+      "epithermal_au": {
+        "1_energy_and_metal_sources": {
+          "total_shap": 2.9002,
+          "mean_abs_shap": 1.4501,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "moho_gravity_step_mgal_km",
+              "shap_value": 2.3899,
+              "feature_value": 1.3297
+            },
+            {
+              "feature": "crustal_thickness_km",
+              "shap_value": 0.5103,
+              "feature_value": 34.7805
+            }
+          ]
+        },
+        "2_crustal_conduits": {
+          "total_shap": 0.0655,
+          "mean_abs_shap": 0.621,
+          "n_features": 3,
+          "top_features": [
+            {
+              "feature": "dist_active_faults_m",
+              "shap_value": 0.9233,
+              "feature_value": 0.0
+            },
+            {
+              "feature": "active_fault_density",
+              "shap_value": -0.8988,
+              "feature_value": 0.3872
+            },
+            {
+              "feature": "dist_topo_lineaments_km",
+              "shap_value": 0.041,
+              "feature_value": 0.0
+            }
+          ]
+        },
+        "3_physicochemical_traps": {
+          "total_shap": 0.3109,
+          "mean_abs_shap": 0.1555,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "slip_tendency_Ts",
+              "shap_value": 0.1832,
+              "feature_value": 0.6979
+            },
+            {
+              "feature": "dilation_tendency_Td",
+              "shap_value": 0.1277,
+              "feature_value": 0.7013
+            }
+          ]
+        },
+        "4_alteration_and_anomaly": {
+          "total_shap": 4.7723,
+          "mean_abs_shap": 0.6176,
+          "n_features": 14,
+          "top_features": [
+            {
+              "feature": "dem_tpi_regional",
+              "shap_value": 2.3575,
+              "feature_value": -301.0307
+            },
+            {
+              "feature": "coastal_shelf_dist_km",
+              "shap_value": 2.0541,
+              "feature_value": 124.9653
+            },
+            {
+              "feature": "dist_plate_boundary_km",
+              "shap_value": 1.5946,
+              "feature_value": 334.066
             },
             {
               "feature": "terrain_ruggedness_tri",
-              "shap_value": -0.8122,
-              "feature_value": 224.2523
+              "shap_value": -1.5861,
+              "feature_value": 98.7099
             },
             {
               "feature": "bouguer_gravity_mgal",
-              "shap_value": 0.3631,
-              "feature_value": -94.9835
+              "shap_value": 0.3143,
+              "feature_value": -80.1356
             }
           ]
         }
@@ -493,19 +584,19 @@
     },
     "geometry": {
       "centroid_lat_lon": [
-        -2.6238,
-        119.4875
+        1.2622,
+        116.2387
       ],
-      "area_sq_km": 0.155,
+      "area_sq_km": 17.659,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.128,
-      "elkan_noto_c_hat": 0.109,
-      "calibrated_deposit_prob": 1.0,
+      "fused_raw_score": 0.439,
+      "elkan_noto_c_hat": 0.1,
+      "calibrated_deposit_prob": 0.957,
       "conformal_90_ci": {
-        "lower_bound_L": 0.829,
-        "upper_bound_U": 1.0
+        "lower_bound_L": 0.684,
+        "upper_bound_U": 0.963
       },
       "exploration_propensity_e_x": 0.05,
       "propensity_weight_w": 0.29
@@ -516,16 +607,16 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.963
+        "fe_oxide_intensity": 0.653
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.963,
+        "dilation_tendency_Td_max": 0.653,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 12.3,
+        "regolith_cover_depth_m": 16.8,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
@@ -534,1582 +625,7 @@
   {
     "target_id": "EAST_KALIMANTAN_TGT_0004",
     "rank": 4,
-    "rank_score": 0.927,
-    "conformal_90pct_target_set": [
-      "porphyry_cu",
-      "epithermal_au"
-    ],
-    "telescoped_system_flag": true,
-    "outmogc_boundary_gate": {
-      "porphyry_cu": 1.0,
-      "skarn_fe_cu": 1.0,
-      "epithermal_au": 1.0,
-      "laterite_fe_ni": 1.0
-    },
-    "exploration_logistics_propensity": 0.05,
-    "mineral_systems_shap_attribution": {
-      "porphyry_cu": {
-        "1_energy_and_metal_sources": {
-          "total_shap": -0.6247,
-          "mean_abs_shap": 0.3124,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "crustal_thickness_km",
-              "shap_value": -0.3431,
-              "feature_value": 39.2553
-            },
-            {
-              "feature": "moho_gravity_step_mgal_km",
-              "shap_value": -0.2816,
-              "feature_value": 2.8477
-            }
-          ]
-        },
-        "2_crustal_conduits": {
-          "total_shap": -1.3011,
-          "mean_abs_shap": 0.4337,
-          "n_features": 3,
-          "top_features": [
-            {
-              "feature": "active_fault_density",
-              "shap_value": -0.7702,
-              "feature_value": 0.3999
-            },
-            {
-              "feature": "dist_active_faults_m",
-              "shap_value": -0.5084,
-              "feature_value": 0.0
-            },
-            {
-              "feature": "dist_topo_lineaments_km",
-              "shap_value": -0.0225,
-              "feature_value": 0.0
-            }
-          ]
-        },
-        "3_physicochemical_traps": {
-          "total_shap": -0.4215,
-          "mean_abs_shap": 0.2107,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "dilation_tendency_Td",
-              "shap_value": -0.3107,
-              "feature_value": 0.9681
-            },
-            {
-              "feature": "slip_tendency_Ts",
-              "shap_value": -0.1108,
-              "feature_value": 0.4516
-            }
-          ]
-        },
-        "4_alteration_and_anomaly": {
-          "total_shap": -10.7443,
-          "mean_abs_shap": 0.6717,
-          "n_features": 16,
-          "top_features": [
-            {
-              "feature": "regolith_cover_m",
-              "shap_value": -2.3376,
-              "feature_value": 6.6937
-            },
-            {
-              "feature": "dist_plate_boundary_km",
-              "shap_value": -1.7931,
-              "feature_value": 66.6978
-            },
-            {
-              "feature": "dem_tpi_regional",
-              "shap_value": -1.3927,
-              "feature_value": -69.9254
-            },
-            {
-              "feature": "dist_volcanic_arc_km",
-              "shap_value": -1.281,
-              "feature_value": 388.9436
-            },
-            {
-              "feature": "oof_prob_skarn",
-              "shap_value": -0.8554,
-              "feature_value": 0.0
-            }
-          ]
-        }
-      },
-      "epithermal_au": {
-        "1_energy_and_metal_sources": {
-          "total_shap": -3.2969,
-          "mean_abs_shap": 1.9083,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "moho_gravity_step_mgal_km",
-              "shap_value": -3.5567,
-              "feature_value": 2.8477
-            },
-            {
-              "feature": "crustal_thickness_km",
-              "shap_value": 0.2598,
-              "feature_value": 39.2553
-            }
-          ]
-        },
-        "2_crustal_conduits": {
-          "total_shap": -1.6217,
-          "mean_abs_shap": 0.8428,
-          "n_features": 3,
-          "top_features": [
-            {
-              "feature": "active_fault_density",
-              "shap_value": -2.0751,
-              "feature_value": 0.3999
-            },
-            {
-              "feature": "dist_active_faults_m",
-              "shap_value": 0.3891,
-              "feature_value": 0.0
-            },
-            {
-              "feature": "dist_topo_lineaments_km",
-              "shap_value": 0.0643,
-              "feature_value": 0.0
-            }
-          ]
-        },
-        "3_physicochemical_traps": {
-          "total_shap": -0.6032,
-          "mean_abs_shap": 0.3149,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "dilation_tendency_Td",
-              "shap_value": -0.6165,
-              "feature_value": 0.9681
-            },
-            {
-              "feature": "slip_tendency_Ts",
-              "shap_value": 0.0133,
-              "feature_value": 0.4516
-            }
-          ]
-        },
-        "4_alteration_and_anomaly": {
-          "total_shap": -4.8403,
-          "mean_abs_shap": 0.43,
-          "n_features": 14,
-          "top_features": [
-            {
-              "feature": "dist_plate_boundary_km",
-              "shap_value": -2.6891,
-              "feature_value": 66.6978
-            },
-            {
-              "feature": "terrain_ruggedness_tri",
-              "shap_value": -1.0553,
-              "feature_value": 194.9058
-            },
-            {
-              "feature": "coastal_shelf_dist_km",
-              "shap_value": -0.8844,
-              "feature_value": 38.2564
-            },
-            {
-              "feature": "bouguer_gravity_mgal",
-              "shap_value": 0.3491,
-              "feature_value": -139.2575
-            },
-            {
-              "feature": "outcrop_exposure_index",
-              "shap_value": -0.2488,
-              "feature_value": 0.5397
-            }
-          ]
-        }
-      }
-    },
-    "geometry": {
-      "centroid_lat_lon": [
-        -2.7912,
-        119.2738
-      ],
-      "area_sq_km": 0.077,
-      "window_footprint_km": 3.2
-    },
-    "probabilities": {
-      "fused_raw_score": 0.099,
-      "elkan_noto_c_hat": 0.109,
-      "calibrated_deposit_prob": 0.993,
-      "conformal_90_ci": {
-        "lower_bound_L": 0.843,
-        "upper_bound_U": 1.0
-      },
-      "exploration_propensity_e_x": 0.05,
-      "propensity_weight_w": 0.29
-    },
-    "physics_and_geology_summary": {
-      "alteration": {
-        "sensor_source": "EMIT_SWIR",
-        "al_oh_crystallinity_2200nm": "high",
-        "kaolinite_alunite_doublet": true,
-        "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.963
-      },
-      "geomechanics_and_structure": {
-        "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.963,
-        "sar_cloude_pottier_alpha_deg": 45.0,
-        "moho_gravity_gradient_step_mGal_km": 1.5
-      },
-      "cover_and_conductivity": {
-        "regolith_cover_depth_m": 7.1,
-        "aem_conductance_0_300m_S": 15.0,
-        "reductant_trap_inferred": true
-      }
-    }
-  },
-  {
-    "target_id": "EAST_KALIMANTAN_TGT_0005",
-    "rank": 5,
-    "rank_score": 0.917,
-    "conformal_90pct_target_set": [
-      "porphyry_cu",
-      "epithermal_au"
-    ],
-    "telescoped_system_flag": true,
-    "outmogc_boundary_gate": {
-      "porphyry_cu": 1.0,
-      "skarn_fe_cu": 1.0,
-      "epithermal_au": 1.0,
-      "laterite_fe_ni": 1.0
-    },
-    "exploration_logistics_propensity": 0.05,
-    "mineral_systems_shap_attribution": {
-      "porphyry_cu": {
-        "1_energy_and_metal_sources": {
-          "total_shap": -2.9408,
-          "mean_abs_shap": 1.4704,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "moho_gravity_step_mgal_km",
-              "shap_value": -2.5124,
-              "feature_value": 0.7051
-            },
-            {
-              "feature": "crustal_thickness_km",
-              "shap_value": -0.4284,
-              "feature_value": 34.4127
-            }
-          ]
-        },
-        "2_crustal_conduits": {
-          "total_shap": -0.3798,
-          "mean_abs_shap": 0.1266,
-          "n_features": 3,
-          "top_features": [
-            {
-              "feature": "dist_active_faults_m",
-              "shap_value": -0.3642,
-              "feature_value": 0.0
-            },
-            {
-              "feature": "dist_topo_lineaments_km",
-              "shap_value": -0.012,
-              "feature_value": 0.0
-            },
-            {
-              "feature": "active_fault_density",
-              "shap_value": -0.0036,
-              "feature_value": 0.4075
-            }
-          ]
-        },
-        "3_physicochemical_traps": {
-          "total_shap": -0.1464,
-          "mean_abs_shap": 0.0732,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "dilation_tendency_Td",
-              "shap_value": -0.0991,
-              "feature_value": 0.9331
-            },
-            {
-              "feature": "slip_tendency_Ts",
-              "shap_value": -0.0473,
-              "feature_value": 0.5893
-            }
-          ]
-        },
-        "4_alteration_and_anomaly": {
-          "total_shap": -5.759,
-          "mean_abs_shap": 0.4965,
-          "n_features": 16,
-          "top_features": [
-            {
-              "feature": "dist_plate_boundary_km",
-              "shap_value": -1.8293,
-              "feature_value": 307.7252
-            },
-            {
-              "feature": "regolith_cover_m",
-              "shap_value": -1.3891,
-              "feature_value": 15.5495
-            },
-            {
-              "feature": "dem_tpi_regional",
-              "shap_value": 0.765,
-              "feature_value": 73.4037
-            },
-            {
-              "feature": "coastal_shelf_dist_km",
-              "shap_value": -0.7044,
-              "feature_value": 43.2201
-            },
-            {
-              "feature": "dist_volcanic_arc_km",
-              "shap_value": -0.6493,
-              "feature_value": 500.0
-            }
-          ]
-        }
-      },
-      "epithermal_au": {
-        "1_energy_and_metal_sources": {
-          "total_shap": -4.0167,
-          "mean_abs_shap": 2.5375,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "moho_gravity_step_mgal_km",
-              "shap_value": -4.5459,
-              "feature_value": 0.7051
-            },
-            {
-              "feature": "crustal_thickness_km",
-              "shap_value": 0.5292,
-              "feature_value": 34.4127
-            }
-          ]
-        },
-        "2_crustal_conduits": {
-          "total_shap": 0.4338,
-          "mean_abs_shap": 0.4442,
-          "n_features": 3,
-          "top_features": [
-            {
-              "feature": "dist_active_faults_m",
-              "shap_value": 0.8832,
-              "feature_value": 0.0
-            },
-            {
-              "feature": "active_fault_density",
-              "shap_value": -0.4493,
-              "feature_value": 0.4075
-            },
-            {
-              "feature": "dist_topo_lineaments_km",
-              "shap_value": -0.0001,
-              "feature_value": 0.0
-            }
-          ]
-        },
-        "3_physicochemical_traps": {
-          "total_shap": 0.6982,
-          "mean_abs_shap": 0.3491,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "slip_tendency_Ts",
-              "shap_value": 0.4188,
-              "feature_value": 0.5893
-            },
-            {
-              "feature": "dilation_tendency_Td",
-              "shap_value": 0.2794,
-              "feature_value": 0.9331
-            }
-          ]
-        },
-        "4_alteration_and_anomaly": {
-          "total_shap": 2.8058,
-          "mean_abs_shap": 0.4372,
-          "n_features": 14,
-          "top_features": [
-            {
-              "feature": "coastal_shelf_dist_km",
-              "shap_value": 2.6928,
-              "feature_value": 43.2201
-            },
-            {
-              "feature": "bouguer_gravity_mgal",
-              "shap_value": 0.5776,
-              "feature_value": -73.273
-            },
-            {
-              "feature": "dem_tpi_regional",
-              "shap_value": -0.5429,
-              "feature_value": 73.4037
-            },
-            {
-              "feature": "terrain_ruggedness_tri",
-              "shap_value": -0.5157,
-              "feature_value": 169.2428
-            },
-            {
-              "feature": "dist_plate_boundary_km",
-              "shap_value": 0.3827,
-              "feature_value": 307.7252
-            }
-          ]
-        }
-      }
-    },
-    "geometry": {
-      "centroid_lat_lon": [
-        -2.54,
-        115.8587
-      ],
-      "area_sq_km": 0.155,
-      "window_footprint_km": 3.2
-    },
-    "probabilities": {
-      "fused_raw_score": 0.107,
-      "elkan_noto_c_hat": 0.109,
-      "calibrated_deposit_prob": 1.0,
-      "conformal_90_ci": {
-        "lower_bound_L": 0.842,
-        "upper_bound_U": 1.0
-      },
-      "exploration_propensity_e_x": 0.05,
-      "propensity_weight_w": 0.29
-    },
-    "physics_and_geology_summary": {
-      "alteration": {
-        "sensor_source": "EMIT_SWIR",
-        "al_oh_crystallinity_2200nm": "high",
-        "kaolinite_alunite_doublet": true,
-        "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.922
-      },
-      "geomechanics_and_structure": {
-        "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.922,
-        "sar_cloude_pottier_alpha_deg": 45.0,
-        "moho_gravity_gradient_step_mGal_km": 1.5
-      },
-      "cover_and_conductivity": {
-        "regolith_cover_depth_m": 14.5,
-        "aem_conductance_0_300m_S": 15.0,
-        "reductant_trap_inferred": true
-      }
-    }
-  },
-  {
-    "target_id": "EAST_KALIMANTAN_TGT_0006",
-    "rank": 6,
-    "rank_score": 0.911,
-    "conformal_90pct_target_set": [
-      "porphyry_cu",
-      "epithermal_au"
-    ],
-    "telescoped_system_flag": true,
-    "outmogc_boundary_gate": {
-      "porphyry_cu": 1.0,
-      "skarn_fe_cu": 1.0,
-      "epithermal_au": 1.0,
-      "laterite_fe_ni": 1.0
-    },
-    "exploration_logistics_propensity": 0.05,
-    "mineral_systems_shap_attribution": {
-      "porphyry_cu": {
-        "1_energy_and_metal_sources": {
-          "total_shap": -1.9832,
-          "mean_abs_shap": 0.9916,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "moho_gravity_step_mgal_km",
-              "shap_value": -1.5553,
-              "feature_value": 0.8264
-            },
-            {
-              "feature": "crustal_thickness_km",
-              "shap_value": -0.4279,
-              "feature_value": 33.763
-            }
-          ]
-        },
-        "2_crustal_conduits": {
-          "total_shap": -0.8637,
-          "mean_abs_shap": 0.2879,
-          "n_features": 3,
-          "top_features": [
-            {
-              "feature": "active_fault_density",
-              "shap_value": -0.4543,
-              "feature_value": 0.3904
-            },
-            {
-              "feature": "dist_active_faults_m",
-              "shap_value": -0.3925,
-              "feature_value": 0.0
-            },
-            {
-              "feature": "dist_topo_lineaments_km",
-              "shap_value": -0.0169,
-              "feature_value": 0.0
-            }
-          ]
-        },
-        "3_physicochemical_traps": {
-          "total_shap": -0.2095,
-          "mean_abs_shap": 0.1047,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "dilation_tendency_Td",
-              "shap_value": -0.1492,
-              "feature_value": 0.9331
-            },
-            {
-              "feature": "slip_tendency_Ts",
-              "shap_value": -0.0603,
-              "feature_value": 0.5893
-            }
-          ]
-        },
-        "4_alteration_and_anomaly": {
-          "total_shap": -9.0488,
-          "mean_abs_shap": 0.6696,
-          "n_features": 16,
-          "top_features": [
-            {
-              "feature": "dist_plate_boundary_km",
-              "shap_value": -3.4275,
-              "feature_value": 305.9195
-            },
-            {
-              "feature": "regolith_cover_m",
-              "shap_value": -2.3493,
-              "feature_value": 17.2146
-            },
-            {
-              "feature": "outcrop_exposure_index",
-              "shap_value": -0.7259,
-              "feature_value": 0.5715
-            },
-            {
-              "feature": "dist_volcanic_arc_km",
-              "shap_value": -0.7217,
-              "feature_value": 500.0
-            },
-            {
-              "feature": "dem_tpi_regional",
-              "shap_value": 0.7209,
-              "feature_value": 144.6156
-            }
-          ]
-        }
-      },
-      "epithermal_au": {
-        "1_energy_and_metal_sources": {
-          "total_shap": 0.1652,
-          "mean_abs_shap": 0.0826,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "moho_gravity_step_mgal_km",
-              "shap_value": 0.1213,
-              "feature_value": 0.8264
-            },
-            {
-              "feature": "crustal_thickness_km",
-              "shap_value": 0.0439,
-              "feature_value": 33.763
-            }
-          ]
-        },
-        "2_crustal_conduits": {
-          "total_shap": -0.1895,
-          "mean_abs_shap": 0.8524,
-          "n_features": 3,
-          "top_features": [
-            {
-              "feature": "active_fault_density",
-              "shap_value": -1.3733,
-              "feature_value": 0.3904
-            },
-            {
-              "feature": "dist_active_faults_m",
-              "shap_value": 1.1213,
-              "feature_value": 0.0
-            },
-            {
-              "feature": "dist_topo_lineaments_km",
-              "shap_value": 0.0625,
-              "feature_value": 0.0
-            }
-          ]
-        },
-        "3_physicochemical_traps": {
-          "total_shap": 0.6313,
-          "mean_abs_shap": 0.3156,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "slip_tendency_Ts",
-              "shap_value": 0.5465,
-              "feature_value": 0.5893
-            },
-            {
-              "feature": "dilation_tendency_Td",
-              "shap_value": 0.0848,
-              "feature_value": 0.9331
-            }
-          ]
-        },
-        "4_alteration_and_anomaly": {
-          "total_shap": -0.2153,
-          "mean_abs_shap": 0.5338,
-          "n_features": 14,
-          "top_features": [
-            {
-              "feature": "dist_plate_boundary_km",
-              "shap_value": 3.577,
-              "feature_value": 305.9195
-            },
-            {
-              "feature": "dem_tpi_regional",
-              "shap_value": -1.0534,
-              "feature_value": 144.6156
-            },
-            {
-              "feature": "terrain_ruggedness_tri",
-              "shap_value": -1.0225,
-              "feature_value": 162.0119
-            },
-            {
-              "feature": "dem_tpi_local",
-              "shap_value": -0.456,
-              "feature_value": 85.5295
-            },
-            {
-              "feature": "coastal_shelf_dist_km",
-              "shap_value": -0.3678,
-              "feature_value": 38.4701
-            }
-          ]
-        }
-      }
-    },
-    "geometry": {
-      "centroid_lat_lon": [
-        -2.5962,
-        115.865
-      ],
-      "area_sq_km": 0.155,
-      "window_footprint_km": 3.2
-    },
-    "probabilities": {
-      "fused_raw_score": 0.12,
-      "elkan_noto_c_hat": 0.109,
-      "calibrated_deposit_prob": 1.0,
-      "conformal_90_ci": {
-        "lower_bound_L": 0.854,
-        "upper_bound_U": 1.0
-      },
-      "exploration_propensity_e_x": 0.05,
-      "propensity_weight_w": 0.29
-    },
-    "physics_and_geology_summary": {
-      "alteration": {
-        "sensor_source": "EMIT_SWIR",
-        "al_oh_crystallinity_2200nm": "high",
-        "kaolinite_alunite_doublet": true,
-        "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.922
-      },
-      "geomechanics_and_structure": {
-        "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.922,
-        "sar_cloude_pottier_alpha_deg": 45.0,
-        "moho_gravity_gradient_step_mGal_km": 1.5
-      },
-      "cover_and_conductivity": {
-        "regolith_cover_depth_m": 17.4,
-        "aem_conductance_0_300m_S": 15.0,
-        "reductant_trap_inferred": true
-      }
-    }
-  },
-  {
-    "target_id": "EAST_KALIMANTAN_TGT_0007",
-    "rank": 7,
-    "rank_score": 0.909,
-    "conformal_90pct_target_set": [
-      "epithermal_au"
-    ],
-    "telescoped_system_flag": false,
-    "outmogc_boundary_gate": {
-      "porphyry_cu": 1.0,
-      "skarn_fe_cu": 1.0,
-      "epithermal_au": 1.0,
-      "laterite_fe_ni": 1.0
-    },
-    "exploration_logistics_propensity": 0.05,
-    "mineral_systems_shap_attribution": {
-      "epithermal_au": {
-        "1_energy_and_metal_sources": {
-          "total_shap": -3.6436,
-          "mean_abs_shap": 2.2249,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "moho_gravity_step_mgal_km",
-              "shap_value": -4.0467,
-              "feature_value": 3.3133
-            },
-            {
-              "feature": "crustal_thickness_km",
-              "shap_value": 0.4031,
-              "feature_value": 34.7491
-            }
-          ]
-        },
-        "2_crustal_conduits": {
-          "total_shap": -0.6778,
-          "mean_abs_shap": 0.5353,
-          "n_features": 3,
-          "top_features": [
-            {
-              "feature": "active_fault_density",
-              "shap_value": -1.1419,
-              "feature_value": 0.3391
-            },
-            {
-              "feature": "dist_active_faults_m",
-              "shap_value": 0.4559,
-              "feature_value": 0.0
-            },
-            {
-              "feature": "dist_topo_lineaments_km",
-              "shap_value": 0.0082,
-              "feature_value": 0.0
-            }
-          ]
-        },
-        "3_physicochemical_traps": {
-          "total_shap": -0.6357,
-          "mean_abs_shap": 0.4375,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "dilation_tendency_Td",
-              "shap_value": -0.7553,
-              "feature_value": 0.9681
-            },
-            {
-              "feature": "slip_tendency_Ts",
-              "shap_value": 0.1196,
-              "feature_value": 0.4516
-            }
-          ]
-        },
-        "4_alteration_and_anomaly": {
-          "total_shap": -5.8408,
-          "mean_abs_shap": 0.5874,
-          "n_features": 14,
-          "top_features": [
-            {
-              "feature": "dist_plate_boundary_km",
-              "shap_value": -2.629,
-              "feature_value": 69.7416
-            },
-            {
-              "feature": "coastal_shelf_dist_km",
-              "shap_value": -2.4707,
-              "feature_value": 28.5025
-            },
-            {
-              "feature": "terrain_ruggedness_tri",
-              "shap_value": -0.7876,
-              "feature_value": 149.9709
-            },
-            {
-              "feature": "dem_tpi_regional",
-              "shap_value": 0.7569,
-              "feature_value": -102.3821
-            },
-            {
-              "feature": "bouguer_gravity_mgal",
-              "shap_value": -0.3306,
-              "feature_value": -62.1841
-            }
-          ]
-        }
-      }
-    },
-    "geometry": {
-      "centroid_lat_lon": [
-        -2.6329,
-        119.3295
-      ],
-      "area_sq_km": 7.977,
-      "window_footprint_km": 3.2
-    },
-    "probabilities": {
-      "fused_raw_score": 0.11,
-      "elkan_noto_c_hat": 0.109,
-      "calibrated_deposit_prob": 0.993,
-      "conformal_90_ci": {
-        "lower_bound_L": 0.834,
-        "upper_bound_U": 0.997
-      },
-      "exploration_propensity_e_x": 0.05,
-      "propensity_weight_w": 0.29
-    },
-    "physics_and_geology_summary": {
-      "alteration": {
-        "sensor_source": "EMIT_SWIR",
-        "al_oh_crystallinity_2200nm": "high",
-        "kaolinite_alunite_doublet": true,
-        "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.963
-      },
-      "geomechanics_and_structure": {
-        "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.963,
-        "sar_cloude_pottier_alpha_deg": 45.0,
-        "moho_gravity_gradient_step_mGal_km": 1.5
-      },
-      "cover_and_conductivity": {
-        "regolith_cover_depth_m": 16.3,
-        "aem_conductance_0_300m_S": 15.0,
-        "reductant_trap_inferred": true
-      }
-    }
-  },
-  {
-    "target_id": "EAST_KALIMANTAN_TGT_0008",
-    "rank": 8,
-    "rank_score": 0.908,
-    "conformal_90pct_target_set": [
-      "porphyry_cu",
-      "epithermal_au"
-    ],
-    "telescoped_system_flag": true,
-    "outmogc_boundary_gate": {
-      "porphyry_cu": 1.0,
-      "skarn_fe_cu": 1.0,
-      "epithermal_au": 1.0,
-      "laterite_fe_ni": 1.0
-    },
-    "exploration_logistics_propensity": 0.05,
-    "mineral_systems_shap_attribution": {
-      "porphyry_cu": {
-        "1_energy_and_metal_sources": {
-          "total_shap": -1.7567,
-          "mean_abs_shap": 0.8783,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "moho_gravity_step_mgal_km",
-              "shap_value": -1.5025,
-              "feature_value": 0.8512
-            },
-            {
-              "feature": "crustal_thickness_km",
-              "shap_value": -0.2542,
-              "feature_value": 33.6916
-            }
-          ]
-        },
-        "2_crustal_conduits": {
-          "total_shap": -0.8172,
-          "mean_abs_shap": 0.2724,
-          "n_features": 3,
-          "top_features": [
-            {
-              "feature": "active_fault_density",
-              "shap_value": -0.4068,
-              "feature_value": 0.3688
-            },
-            {
-              "feature": "dist_active_faults_m",
-              "shap_value": -0.3925,
-              "feature_value": 0.0
-            },
-            {
-              "feature": "dist_topo_lineaments_km",
-              "shap_value": -0.0179,
-              "feature_value": 0.0
-            }
-          ]
-        },
-        "3_physicochemical_traps": {
-          "total_shap": -0.2154,
-          "mean_abs_shap": 0.1077,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "dilation_tendency_Td",
-              "shap_value": -0.1492,
-              "feature_value": 0.9331
-            },
-            {
-              "feature": "slip_tendency_Ts",
-              "shap_value": -0.0662,
-              "feature_value": 0.5893
-            }
-          ]
-        },
-        "4_alteration_and_anomaly": {
-          "total_shap": -9.5784,
-          "mean_abs_shap": 0.7026,
-          "n_features": 16,
-          "top_features": [
-            {
-              "feature": "dist_plate_boundary_km",
-              "shap_value": -3.3943,
-              "feature_value": 304.7418
-            },
-            {
-              "feature": "regolith_cover_m",
-              "shap_value": -2.32,
-              "feature_value": 19.3953
-            },
-            {
-              "feature": "dem_aspect",
-              "shap_value": -0.9379,
-              "feature_value": 85.2269
-            },
-            {
-              "feature": "dem_tpi_regional",
-              "shap_value": 0.72,
-              "feature_value": 144.423
-            },
-            {
-              "feature": "coastal_shelf_dist_km",
-              "shap_value": -0.716,
-              "feature_value": 38.1805
-            }
-          ]
-        }
-      },
-      "epithermal_au": {
-        "1_energy_and_metal_sources": {
-          "total_shap": 0.4563,
-          "mean_abs_shap": 0.2725,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "moho_gravity_step_mgal_km",
-              "shap_value": 0.5006,
-              "feature_value": 0.8512
-            },
-            {
-              "feature": "crustal_thickness_km",
-              "shap_value": -0.0443,
-              "feature_value": 33.6916
-            }
-          ]
-        },
-        "2_crustal_conduits": {
-          "total_shap": -0.8013,
-          "mean_abs_shap": 1.0116,
-          "n_features": 3,
-          "top_features": [
-            {
-              "feature": "active_fault_density",
-              "shap_value": -1.918,
-              "feature_value": 0.3688
-            },
-            {
-              "feature": "dist_active_faults_m",
-              "shap_value": 1.0658,
-              "feature_value": 0.0
-            },
-            {
-              "feature": "dist_topo_lineaments_km",
-              "shap_value": 0.0509,
-              "feature_value": 0.0
-            }
-          ]
-        },
-        "3_physicochemical_traps": {
-          "total_shap": 0.3205,
-          "mean_abs_shap": 0.3557,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "slip_tendency_Ts",
-              "shap_value": 0.5159,
-              "feature_value": 0.5893
-            },
-            {
-              "feature": "dilation_tendency_Td",
-              "shap_value": -0.1954,
-              "feature_value": 0.9331
-            }
-          ]
-        },
-        "4_alteration_and_anomaly": {
-          "total_shap": -1.5915,
-          "mean_abs_shap": 0.566,
-          "n_features": 14,
-          "top_features": [
-            {
-              "feature": "dist_plate_boundary_km",
-              "shap_value": 3.0808,
-              "feature_value": 304.7418
-            },
-            {
-              "feature": "dem_tpi_regional",
-              "shap_value": -1.3428,
-              "feature_value": 144.423
-            },
-            {
-              "feature": "terrain_ruggedness_tri",
-              "shap_value": -1.0228,
-              "feature_value": 155.4691
-            },
-            {
-              "feature": "dem_tpi_local",
-              "shap_value": -0.8102,
-              "feature_value": 110.0588
-            },
-            {
-              "feature": "outcrop_exposure_index",
-              "shap_value": -0.3979,
-              "feature_value": 0.501
-            }
-          ]
-        }
-      }
-    },
-    "geometry": {
-      "centroid_lat_lon": [
-        -2.5862,
-        115.8763
-      ],
-      "area_sq_km": 0.232,
-      "window_footprint_km": 3.2
-    },
-    "probabilities": {
-      "fused_raw_score": 0.122,
-      "elkan_noto_c_hat": 0.109,
-      "calibrated_deposit_prob": 1.0,
-      "conformal_90_ci": {
-        "lower_bound_L": 0.853,
-        "upper_bound_U": 1.0
-      },
-      "exploration_propensity_e_x": 0.05,
-      "propensity_weight_w": 0.29
-    },
-    "physics_and_geology_summary": {
-      "alteration": {
-        "sensor_source": "EMIT_SWIR",
-        "al_oh_crystallinity_2200nm": "high",
-        "kaolinite_alunite_doublet": true,
-        "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.922
-      },
-      "geomechanics_and_structure": {
-        "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.922,
-        "sar_cloude_pottier_alpha_deg": 45.0,
-        "moho_gravity_gradient_step_mGal_km": 1.5
-      },
-      "cover_and_conductivity": {
-        "regolith_cover_depth_m": 18.8,
-        "aem_conductance_0_300m_S": 15.0,
-        "reductant_trap_inferred": true
-      }
-    }
-  },
-  {
-    "target_id": "EAST_KALIMANTAN_TGT_0009",
-    "rank": 9,
-    "rank_score": 0.908,
-    "conformal_90pct_target_set": [
-      "porphyry_cu",
-      "epithermal_au"
-    ],
-    "telescoped_system_flag": true,
-    "outmogc_boundary_gate": {
-      "porphyry_cu": 1.0,
-      "skarn_fe_cu": 1.0,
-      "epithermal_au": 1.0,
-      "laterite_fe_ni": 1.0
-    },
-    "exploration_logistics_propensity": 0.05,
-    "mineral_systems_shap_attribution": {
-      "porphyry_cu": {
-        "1_energy_and_metal_sources": {
-          "total_shap": -1.8165,
-          "mean_abs_shap": 0.9083,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "moho_gravity_step_mgal_km",
-              "shap_value": -1.5085,
-              "feature_value": 0.8474
-            },
-            {
-              "feature": "crustal_thickness_km",
-              "shap_value": -0.308,
-              "feature_value": 34.1887
-            }
-          ]
-        },
-        "2_crustal_conduits": {
-          "total_shap": -0.8046,
-          "mean_abs_shap": 0.2682,
-          "n_features": 3,
-          "top_features": [
-            {
-              "feature": "active_fault_density",
-              "shap_value": -0.3957,
-              "feature_value": 0.3729
-            },
-            {
-              "feature": "dist_active_faults_m",
-              "shap_value": -0.391,
-              "feature_value": 0.0
-            },
-            {
-              "feature": "dist_topo_lineaments_km",
-              "shap_value": -0.0179,
-              "feature_value": 0.0
-            }
-          ]
-        },
-        "3_physicochemical_traps": {
-          "total_shap": -0.2154,
-          "mean_abs_shap": 0.1077,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "dilation_tendency_Td",
-              "shap_value": -0.1492,
-              "feature_value": 0.9331
-            },
-            {
-              "feature": "slip_tendency_Ts",
-              "shap_value": -0.0662,
-              "feature_value": 0.5893
-            }
-          ]
-        },
-        "4_alteration_and_anomaly": {
-          "total_shap": -9.2652,
-          "mean_abs_shap": 0.6924,
-          "n_features": 16,
-          "top_features": [
-            {
-              "feature": "dist_plate_boundary_km",
-              "shap_value": -3.3929,
-              "feature_value": 305.1507
-            },
-            {
-              "feature": "regolith_cover_m",
-              "shap_value": -2.3493,
-              "feature_value": 19.0852
-            },
-            {
-              "feature": "dem_aspect",
-              "shap_value": -0.7242,
-              "feature_value": 130.751
-            },
-            {
-              "feature": "coastal_shelf_dist_km",
-              "shap_value": -0.716,
-              "feature_value": 38.0294
-            },
-            {
-              "feature": "dem_tpi_regional",
-              "shap_value": 0.7109,
-              "feature_value": 223.0252
-            }
-          ]
-        }
-      },
-      "epithermal_au": {
-        "1_energy_and_metal_sources": {
-          "total_shap": 0.3307,
-          "mean_abs_shap": 0.1653,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "moho_gravity_step_mgal_km",
-              "shap_value": 0.2255,
-              "feature_value": 0.8474
-            },
-            {
-              "feature": "crustal_thickness_km",
-              "shap_value": 0.1052,
-              "feature_value": 34.1887
-            }
-          ]
-        },
-        "2_crustal_conduits": {
-          "total_shap": -0.7941,
-          "mean_abs_shap": 1.0566,
-          "n_features": 3,
-          "top_features": [
-            {
-              "feature": "active_fault_density",
-              "shap_value": -1.9819,
-              "feature_value": 0.3729
-            },
-            {
-              "feature": "dist_active_faults_m",
-              "shap_value": 1.1393,
-              "feature_value": 0.0
-            },
-            {
-              "feature": "dist_topo_lineaments_km",
-              "shap_value": 0.0485,
-              "feature_value": 0.0
-            }
-          ]
-        },
-        "3_physicochemical_traps": {
-          "total_shap": 0.4359,
-          "mean_abs_shap": 0.3406,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "slip_tendency_Ts",
-              "shap_value": 0.5585,
-              "feature_value": 0.5893
-            },
-            {
-              "feature": "dilation_tendency_Td",
-              "shap_value": -0.1226,
-              "feature_value": 0.9331
-            }
-          ]
-        },
-        "4_alteration_and_anomaly": {
-          "total_shap": 0.0972,
-          "mean_abs_shap": 0.5883,
-          "n_features": 14,
-          "top_features": [
-            {
-              "feature": "dist_plate_boundary_km",
-              "shap_value": 3.6158,
-              "feature_value": 305.1507
-            },
-            {
-              "feature": "dem_tpi_regional",
-              "shap_value": -1.4457,
-              "feature_value": 223.0252
-            },
-            {
-              "feature": "terrain_ruggedness_tri",
-              "shap_value": -1.0441,
-              "feature_value": 163.1846
-            },
-            {
-              "feature": "dem_tpi_local",
-              "shap_value": -0.8297,
-              "feature_value": 173.606
-            },
-            {
-              "feature": "bouguer_gravity_mgal",
-              "shap_value": 0.3753,
-              "feature_value": -69.3584
-            }
-          ]
-        }
-      }
-    },
-    "geometry": {
-      "centroid_lat_lon": [
-        -2.5929,
-        115.8729
-      ],
-      "area_sq_km": 0.232,
-      "window_footprint_km": 3.2
-    },
-    "probabilities": {
-      "fused_raw_score": 0.145,
-      "elkan_noto_c_hat": 0.109,
-      "calibrated_deposit_prob": 1.0,
-      "conformal_90_ci": {
-        "lower_bound_L": 0.834,
-        "upper_bound_U": 1.0
-      },
-      "exploration_propensity_e_x": 0.05,
-      "propensity_weight_w": 0.29
-    },
-    "physics_and_geology_summary": {
-      "alteration": {
-        "sensor_source": "EMIT_SWIR",
-        "al_oh_crystallinity_2200nm": "high",
-        "kaolinite_alunite_doublet": true,
-        "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.922
-      },
-      "geomechanics_and_structure": {
-        "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.922,
-        "sar_cloude_pottier_alpha_deg": 45.0,
-        "moho_gravity_gradient_step_mGal_km": 1.5
-      },
-      "cover_and_conductivity": {
-        "regolith_cover_depth_m": 18.9,
-        "aem_conductance_0_300m_S": 15.0,
-        "reductant_trap_inferred": true
-      }
-    }
-  },
-  {
-    "target_id": "EAST_KALIMANTAN_TGT_0010",
-    "rank": 10,
-    "rank_score": 0.904,
-    "conformal_90pct_target_set": [
-      "porphyry_cu",
-      "epithermal_au"
-    ],
-    "telescoped_system_flag": true,
-    "outmogc_boundary_gate": {
-      "porphyry_cu": 1.0,
-      "skarn_fe_cu": 1.0,
-      "epithermal_au": 1.0,
-      "laterite_fe_ni": 1.0
-    },
-    "exploration_logistics_propensity": 0.05,
-    "mineral_systems_shap_attribution": {
-      "porphyry_cu": {
-        "1_energy_and_metal_sources": {
-          "total_shap": -2.7818,
-          "mean_abs_shap": 1.3909,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "moho_gravity_step_mgal_km",
-              "shap_value": -2.5271,
-              "feature_value": 0.7192
-            },
-            {
-              "feature": "crustal_thickness_km",
-              "shap_value": -0.2547,
-              "feature_value": 34.6235
-            }
-          ]
-        },
-        "2_crustal_conduits": {
-          "total_shap": -0.3319,
-          "mean_abs_shap": 0.1419,
-          "n_features": 3,
-          "top_features": [
-            {
-              "feature": "dist_active_faults_m",
-              "shap_value": -0.3658,
-              "feature_value": 0.0
-            },
-            {
-              "feature": "active_fault_density",
-              "shap_value": 0.0469,
-              "feature_value": 0.4005
-            },
-            {
-              "feature": "dist_topo_lineaments_km",
-              "shap_value": -0.013,
-              "feature_value": 0.0
-            }
-          ]
-        },
-        "3_physicochemical_traps": {
-          "total_shap": -0.1523,
-          "mean_abs_shap": 0.0761,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "dilation_tendency_Td",
-              "shap_value": -0.0991,
-              "feature_value": 0.9331
-            },
-            {
-              "feature": "slip_tendency_Ts",
-              "shap_value": -0.0532,
-              "feature_value": 0.5893
-            }
-          ]
-        },
-        "4_alteration_and_anomaly": {
-          "total_shap": -6.6204,
-          "mean_abs_shap": 0.5326,
-          "n_features": 16,
-          "top_features": [
-            {
-              "feature": "dist_plate_boundary_km",
-              "shap_value": -1.812,
-              "feature_value": 306.6706
-            },
-            {
-              "feature": "regolith_cover_m",
-              "shap_value": -1.3598,
-              "feature_value": 19.5659
-            },
-            {
-              "feature": "dem_aspect",
-              "shap_value": -0.9267,
-              "feature_value": 35.1257
-            },
-            {
-              "feature": "dem_tpi_regional",
-              "shap_value": 0.744,
-              "feature_value": 106.4051
-            },
-            {
-              "feature": "coastal_shelf_dist_km",
-              "shap_value": -0.7119,
-              "feature_value": 44.5267
-            }
-          ]
-        }
-      },
-      "epithermal_au": {
-        "1_energy_and_metal_sources": {
-          "total_shap": 0.269,
-          "mean_abs_shap": 0.7583,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "crustal_thickness_km",
-              "shap_value": 0.8928,
-              "feature_value": 34.6235
-            },
-            {
-              "feature": "moho_gravity_step_mgal_km",
-              "shap_value": -0.6238,
-              "feature_value": 0.7192
-            }
-          ]
-        },
-        "2_crustal_conduits": {
-          "total_shap": 0.7142,
-          "mean_abs_shap": 0.6053,
-          "n_features": 3,
-          "top_features": [
-            {
-              "feature": "dist_active_faults_m",
-              "shap_value": 1.2456,
-              "feature_value": 0.0
-            },
-            {
-              "feature": "active_fault_density",
-              "shap_value": -0.5508,
-              "feature_value": 0.4005
-            },
-            {
-              "feature": "dist_topo_lineaments_km",
-              "shap_value": 0.0194,
-              "feature_value": 0.0
-            }
-          ]
-        },
-        "3_physicochemical_traps": {
-          "total_shap": 1.646,
-          "mean_abs_shap": 0.823,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "dilation_tendency_Td",
-              "shap_value": 1.0564,
-              "feature_value": 0.9331
-            },
-            {
-              "feature": "slip_tendency_Ts",
-              "shap_value": 0.5896,
-              "feature_value": 0.5893
-            }
-          ]
-        },
-        "4_alteration_and_anomaly": {
-          "total_shap": 8.3716,
-          "mean_abs_shap": 0.7695,
-          "n_features": 14,
-          "top_features": [
-            {
-              "feature": "dist_plate_boundary_km",
-              "shap_value": 4.5604,
-              "feature_value": 306.6706
-            },
-            {
-              "feature": "coastal_shelf_dist_km",
-              "shap_value": 3.1971,
-              "feature_value": 44.5267
-            },
-            {
-              "feature": "bouguer_gravity_mgal",
-              "shap_value": 0.9059,
-              "feature_value": -76.8778
-            },
-            {
-              "feature": "dem_tpi_regional",
-              "shap_value": -0.5724,
-              "feature_value": 106.4051
-            },
-            {
-              "feature": "dem_elevation",
-              "shap_value": 0.5108,
-              "feature_value": 711.309
-            }
-          ]
-        }
-      }
-    },
-    "geometry": {
-      "centroid_lat_lon": [
-        -2.5088,
-        115.8713
-      ],
-      "area_sq_km": 0.077,
-      "window_footprint_km": 3.2
-    },
-    "probabilities": {
-      "fused_raw_score": 0.126,
-      "elkan_noto_c_hat": 0.109,
-      "calibrated_deposit_prob": 1.0,
-      "conformal_90_ci": {
-        "lower_bound_L": 0.847,
-        "upper_bound_U": 1.0
-      },
-      "exploration_propensity_e_x": 0.05,
-      "propensity_weight_w": 0.29
-    },
-    "physics_and_geology_summary": {
-      "alteration": {
-        "sensor_source": "EMIT_SWIR",
-        "al_oh_crystallinity_2200nm": "high",
-        "kaolinite_alunite_doublet": true,
-        "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.922
-      },
-      "geomechanics_and_structure": {
-        "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.922,
-        "sar_cloude_pottier_alpha_deg": 45.0,
-        "moho_gravity_gradient_step_mGal_km": 1.5
-      },
-      "cover_and_conductivity": {
-        "regolith_cover_depth_m": 21.3,
-        "aem_conductance_0_300m_S": 15.0,
-        "reductant_trap_inferred": true
-      }
-    }
-  },
-  {
-    "target_id": "EAST_KALIMANTAN_TGT_0011",
-    "rank": 11,
-    "rank_score": 0.9,
+    "rank_score": 0.868,
     "conformal_90pct_target_set": [
       "skarn_fe_cu",
       "epithermal_au"
@@ -2125,180 +641,180 @@
     "mineral_systems_shap_attribution": {
       "skarn_fe_cu": {
         "1_energy_and_metal_sources": {
-          "total_shap": -1.8112,
-          "mean_abs_shap": 0.9056,
+          "total_shap": -3.1418,
+          "mean_abs_shap": 1.6775,
           "n_features": 2,
           "top_features": [
             {
               "feature": "moho_gravity_step_mgal_km",
-              "shap_value": -1.535,
-              "feature_value": 0.9377
+              "shap_value": -3.2484,
+              "feature_value": 0.1429
             },
             {
               "feature": "crustal_thickness_km",
-              "shap_value": -0.2762,
-              "feature_value": 33.6216
+              "shap_value": 0.1066,
+              "feature_value": 31.79
             }
           ]
         },
         "2_crustal_conduits": {
-          "total_shap": -2.1121,
-          "mean_abs_shap": 0.704,
+          "total_shap": -1.0693,
+          "mean_abs_shap": 0.3564,
           "n_features": 3,
           "top_features": [
             {
-              "feature": "active_fault_density",
-              "shap_value": -1.2265,
-              "feature_value": 0.3125
-            },
-            {
               "feature": "dist_active_faults_m",
-              "shap_value": -0.6954,
+              "shap_value": -0.5441,
               "feature_value": 0.0
             },
             {
+              "feature": "active_fault_density",
+              "shap_value": -0.2927,
+              "feature_value": 0.2599
+            },
+            {
               "feature": "dist_topo_lineaments_km",
-              "shap_value": -0.1902,
+              "shap_value": -0.2325,
               "feature_value": 0.0
             }
           ]
         },
         "3_physicochemical_traps": {
-          "total_shap": 0.1705,
-          "mean_abs_shap": 0.6643,
+          "total_shap": -0.8001,
+          "mean_abs_shap": 1.8298,
           "n_features": 2,
           "top_features": [
             {
-              "feature": "dilation_tendency_Td",
-              "shap_value": 0.7495,
-              "feature_value": 0.9331
+              "feature": "slip_tendency_Ts",
+              "shap_value": -2.2299,
+              "feature_value": 0.3068
             },
             {
-              "feature": "slip_tendency_Ts",
-              "shap_value": -0.579,
-              "feature_value": 0.5893
+              "feature": "dilation_tendency_Td",
+              "shap_value": 1.4298,
+              "feature_value": 0.9869
             }
           ]
         },
         "4_alteration_and_anomaly": {
-          "total_shap": -11.892,
-          "mean_abs_shap": 0.8494,
+          "total_shap": 3.3324,
+          "mean_abs_shap": 0.4261,
           "n_features": 14,
           "top_features": [
             {
               "feature": "coastal_shelf_dist_km",
-              "shap_value": -5.6847,
-              "feature_value": 50.5758
+              "shap_value": 2.4044,
+              "feature_value": 57.1236
             },
             {
               "feature": "dist_plate_boundary_km",
-              "shap_value": -1.6951,
-              "feature_value": 338.881
+              "shap_value": 1.4165,
+              "feature_value": 345.2849
             },
             {
               "feature": "terrain_ruggedness_tri",
-              "shap_value": -1.11,
-              "feature_value": 108.9124
+              "shap_value": -0.5982,
+              "feature_value": 65.9706
             },
             {
-              "feature": "dem_elevation",
-              "shap_value": -0.8526,
-              "feature_value": 557.1716
+              "feature": "bouguer_gravity_mgal",
+              "shap_value": 0.5659,
+              "feature_value": -28.8464
             },
             {
-              "feature": "dem_aspect",
-              "shap_value": -0.8159,
-              "feature_value": 186.222
+              "feature": "outcrop_exposure_index",
+              "shap_value": -0.1987,
+              "feature_value": 0.2127
             }
           ]
         }
       },
       "epithermal_au": {
         "1_energy_and_metal_sources": {
-          "total_shap": -3.4276,
-          "mean_abs_shap": 1.7138,
+          "total_shap": -7.1676,
+          "mean_abs_shap": 3.5838,
           "n_features": 2,
           "top_features": [
             {
               "feature": "moho_gravity_step_mgal_km",
-              "shap_value": -3.2774,
-              "feature_value": 0.9377
+              "shap_value": -5.6212,
+              "feature_value": 0.1429
             },
             {
               "feature": "crustal_thickness_km",
-              "shap_value": -0.1502,
-              "feature_value": 33.6216
+              "shap_value": -1.5464,
+              "feature_value": 31.79
             }
           ]
         },
         "2_crustal_conduits": {
-          "total_shap": -0.7134,
-          "mean_abs_shap": 0.4686,
+          "total_shap": -1.3087,
+          "mean_abs_shap": 0.4638,
           "n_features": 3,
           "top_features": [
             {
               "feature": "active_fault_density",
-              "shap_value": -1.0596,
-              "feature_value": 0.3125
-            },
-            {
-              "feature": "dist_active_faults_m",
-              "shap_value": 0.3153,
-              "feature_value": 0.0
+              "shap_value": -1.1989,
+              "feature_value": 0.2599
             },
             {
               "feature": "dist_topo_lineaments_km",
-              "shap_value": 0.0309,
+              "shap_value": -0.1511,
+              "feature_value": 0.0
+            },
+            {
+              "feature": "dist_active_faults_m",
+              "shap_value": 0.0413,
               "feature_value": 0.0
             }
           ]
         },
         "3_physicochemical_traps": {
-          "total_shap": -0.243,
-          "mean_abs_shap": 0.2213,
+          "total_shap": -0.9936,
+          "mean_abs_shap": 0.6042,
           "n_features": 2,
           "top_features": [
             {
               "feature": "dilation_tendency_Td",
-              "shap_value": -0.3428,
-              "feature_value": 0.9331
+              "shap_value": -1.101,
+              "feature_value": 0.9869
             },
             {
               "feature": "slip_tendency_Ts",
-              "shap_value": 0.0998,
-              "feature_value": 0.5893
+              "shap_value": 0.1074,
+              "feature_value": 0.3068
             }
           ]
         },
         "4_alteration_and_anomaly": {
-          "total_shap": -9.2961,
-          "mean_abs_shap": 0.6805,
+          "total_shap": -6.6433,
+          "mean_abs_shap": 0.4939,
           "n_features": 14,
           "top_features": [
             {
               "feature": "coastal_shelf_dist_km",
-              "shap_value": -2.8442,
-              "feature_value": 50.5758
+              "shap_value": -2.4437,
+              "feature_value": 57.1236
             },
             {
               "feature": "dist_plate_boundary_km",
-              "shap_value": -2.2309,
-              "feature_value": 338.881
-            },
-            {
-              "feature": "dem_tpi_regional",
-              "shap_value": -1.5647,
-              "feature_value": 134.6317
+              "shap_value": -1.7775,
+              "feature_value": 345.2849
             },
             {
               "feature": "terrain_ruggedness_tri",
-              "shap_value": -0.7127,
-              "feature_value": 108.9124
+              "shap_value": -0.5681,
+              "feature_value": 65.9706
             },
             {
-              "feature": "dem_tpi_local",
-              "shap_value": -0.595,
-              "feature_value": 168.1645
+              "feature": "dem_elevation",
+              "shap_value": -0.5068,
+              "feature_value": 275.391
+            },
+            {
+              "feature": "bouguer_gravity_mgal",
+              "shap_value": -0.4866,
+              "feature_value": -28.8464
             }
           ]
         }
@@ -2306,19 +822,257 @@
     },
     "geometry": {
       "centroid_lat_lon": [
-        -2.646,
-        115.553
+        -1.7043,
+        115.6596
       ],
-      "area_sq_km": 0.775,
+      "area_sq_km": 110.755,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.197,
-      "elkan_noto_c_hat": 0.109,
-      "calibrated_deposit_prob": 0.999,
+      "fused_raw_score": 0.254,
+      "elkan_noto_c_hat": 0.1,
+      "calibrated_deposit_prob": 0.855,
       "conformal_90_ci": {
-        "lower_bound_L": 0.837,
-        "upper_bound_U": 1.0
+        "lower_bound_L": 0.742,
+        "upper_bound_U": 0.904
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 0.29
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.707
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.985,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 44.2,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "EAST_KALIMANTAN_TGT_0005",
+    "rank": 5,
+    "rank_score": 0.864,
+    "conformal_90pct_target_set": [
+      "porphyry_cu",
+      "skarn_fe_cu"
+    ],
+    "telescoped_system_flag": true,
+    "outmogc_boundary_gate": {
+      "porphyry_cu": 1.0,
+      "skarn_fe_cu": 1.0,
+      "epithermal_au": 1.0,
+      "laterite_fe_ni": 1.0
+    },
+    "exploration_logistics_propensity": 0.05,
+    "mineral_systems_shap_attribution": {
+      "porphyry_cu": {
+        "1_energy_and_metal_sources": {
+          "total_shap": 1.3977,
+          "mean_abs_shap": 1.1617,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "moho_gravity_step_mgal_km",
+              "shap_value": 1.8605,
+              "feature_value": 0.7709
+            },
+            {
+              "feature": "crustal_thickness_km",
+              "shap_value": -0.4628,
+              "feature_value": 33.2799
+            }
+          ]
+        },
+        "2_crustal_conduits": {
+          "total_shap": -1.0732,
+          "mean_abs_shap": 0.3577,
+          "n_features": 3,
+          "top_features": [
+            {
+              "feature": "dist_active_faults_m",
+              "shap_value": -0.6365,
+              "feature_value": 0.0
+            },
+            {
+              "feature": "active_fault_density",
+              "shap_value": -0.4224,
+              "feature_value": 0.3608
+            },
+            {
+              "feature": "dist_topo_lineaments_km",
+              "shap_value": -0.0143,
+              "feature_value": 0.0
+            }
+          ]
+        },
+        "3_physicochemical_traps": {
+          "total_shap": -0.1157,
+          "mean_abs_shap": 0.1207,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "dilation_tendency_Td",
+              "shap_value": -0.1786,
+              "feature_value": 0.9331
+            },
+            {
+              "feature": "slip_tendency_Ts",
+              "shap_value": 0.0629,
+              "feature_value": 0.5893
+            }
+          ]
+        },
+        "4_alteration_and_anomaly": {
+          "total_shap": -7.8015,
+          "mean_abs_shap": 0.5906,
+          "n_features": 16,
+          "top_features": [
+            {
+              "feature": "dist_plate_boundary_km",
+              "shap_value": -3.3502,
+              "feature_value": 330.59
+            },
+            {
+              "feature": "regolith_cover_m",
+              "shap_value": -2.2326,
+              "feature_value": 25.9824
+            },
+            {
+              "feature": "outcrop_exposure_index",
+              "shap_value": -0.7839,
+              "feature_value": 0.3833
+            },
+            {
+              "feature": "oof_prob_skarn",
+              "shap_value": -0.6128,
+              "feature_value": 0.1332
+            },
+            {
+              "feature": "dist_volcanic_arc_km",
+              "shap_value": -0.5419,
+              "feature_value": 500.0
+            }
+          ]
+        }
+      },
+      "skarn_fe_cu": {
+        "1_energy_and_metal_sources": {
+          "total_shap": -0.5912,
+          "mean_abs_shap": 0.2956,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "moho_gravity_step_mgal_km",
+              "shap_value": -0.4435,
+              "feature_value": 0.7709
+            },
+            {
+              "feature": "crustal_thickness_km",
+              "shap_value": -0.1477,
+              "feature_value": 33.2799
+            }
+          ]
+        },
+        "2_crustal_conduits": {
+          "total_shap": -2.0723,
+          "mean_abs_shap": 0.6908,
+          "n_features": 3,
+          "top_features": [
+            {
+              "feature": "active_fault_density",
+              "shap_value": -1.2368,
+              "feature_value": 0.3608
+            },
+            {
+              "feature": "dist_active_faults_m",
+              "shap_value": -0.6257,
+              "feature_value": 0.0
+            },
+            {
+              "feature": "dist_topo_lineaments_km",
+              "shap_value": -0.2098,
+              "feature_value": 0.0
+            }
+          ]
+        },
+        "3_physicochemical_traps": {
+          "total_shap": 1.9015,
+          "mean_abs_shap": 1.1939,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "dilation_tendency_Td",
+              "shap_value": 2.1446,
+              "feature_value": 0.9331
+            },
+            {
+              "feature": "slip_tendency_Ts",
+              "shap_value": -0.2431,
+              "feature_value": 0.5893
+            }
+          ]
+        },
+        "4_alteration_and_anomaly": {
+          "total_shap": -1.6624,
+          "mean_abs_shap": 0.4285,
+          "n_features": 14,
+          "top_features": [
+            {
+              "feature": "coastal_shelf_dist_km",
+              "shap_value": 1.3739,
+              "feature_value": 57.4207
+            },
+            {
+              "feature": "dem_slope",
+              "shap_value": -0.832,
+              "feature_value": 10.3967
+            },
+            {
+              "feature": "dem_elevation",
+              "shap_value": -0.7052,
+              "feature_value": 504.6019
+            },
+            {
+              "feature": "dist_plate_boundary_km",
+              "shap_value": 0.6071,
+              "feature_value": 330.59
+            },
+            {
+              "feature": "dem_tpi_regional",
+              "shap_value": -0.5967,
+              "feature_value": 76.5561
+            }
+          ]
+        }
+      }
+    },
+    "geometry": {
+      "centroid_lat_lon": [
+        -2.5344,
+        115.6472
+      ],
+      "area_sq_km": 0.62,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.126,
+      "elkan_noto_c_hat": 0.1,
+      "calibrated_deposit_prob": 0.775,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.721,
+        "upper_bound_U": 0.786
       },
       "exploration_propensity_e_x": 0.05,
       "propensity_weight_w": 0.29
@@ -2338,21 +1092,20 @@
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 22.2,
+        "regolith_cover_depth_m": 30.5,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
     }
   },
   {
-    "target_id": "EAST_KALIMANTAN_TGT_0012",
-    "rank": 12,
-    "rank_score": 0.898,
+    "target_id": "EAST_KALIMANTAN_TGT_0006",
+    "rank": 6,
+    "rank_score": 0.859,
     "conformal_90pct_target_set": [
-      "porphyry_cu",
-      "epithermal_au"
+      "porphyry_cu"
     ],
-    "telescoped_system_flag": true,
+    "telescoped_system_flag": false,
     "outmogc_boundary_gate": {
       "porphyry_cu": 1.0,
       "skarn_fe_cu": 1.0,
@@ -2363,418 +1116,90 @@
     "mineral_systems_shap_attribution": {
       "porphyry_cu": {
         "1_energy_and_metal_sources": {
-          "total_shap": -3.243,
-          "mean_abs_shap": 1.6215,
+          "total_shap": 5.4915,
+          "mean_abs_shap": 2.7458,
           "n_features": 2,
           "top_features": [
             {
               "feature": "moho_gravity_step_mgal_km",
-              "shap_value": -3.0034,
-              "feature_value": 0.1704
+              "shap_value": 5.0336,
+              "feature_value": 3.4132
             },
             {
               "feature": "crustal_thickness_km",
-              "shap_value": -0.2396,
-              "feature_value": 32.3568
+              "shap_value": 0.4579,
+              "feature_value": 31.7345
             }
           ]
         },
         "2_crustal_conduits": {
-          "total_shap": -0.4689,
-          "mean_abs_shap": 0.1563,
+          "total_shap": 1.0884,
+          "mean_abs_shap": 0.3628,
           "n_features": 3,
           "top_features": [
             {
               "feature": "dist_active_faults_m",
-              "shap_value": -0.3816,
-              "feature_value": 0.0
+              "shap_value": 0.7831,
+              "feature_value": 3881.9185
             },
             {
               "feature": "active_fault_density",
-              "shap_value": -0.0743,
-              "feature_value": 0.1896
+              "shap_value": 0.2371,
+              "feature_value": 0.134
             },
             {
               "feature": "dist_topo_lineaments_km",
-              "shap_value": -0.013,
-              "feature_value": 0.0
+              "shap_value": 0.0682,
+              "feature_value": 1.5528
             }
           ]
         },
         "3_physicochemical_traps": {
-          "total_shap": -0.1642,
-          "mean_abs_shap": 0.0821,
+          "total_shap": 0.0892,
+          "mean_abs_shap": 0.0446,
           "n_features": 2,
           "top_features": [
             {
               "feature": "dilation_tendency_Td",
-              "shap_value": -0.0996,
-              "feature_value": 0.9869
+              "shap_value": 0.0508,
+              "feature_value": 0.5484
             },
             {
               "feature": "slip_tendency_Ts",
-              "shap_value": -0.0646,
-              "feature_value": 0.3068
+              "shap_value": 0.0384,
+              "feature_value": 0.2558
             }
           ]
         },
         "4_alteration_and_anomaly": {
-          "total_shap": -7.6007,
-          "mean_abs_shap": 0.5585,
+          "total_shap": 1.5363,
+          "mean_abs_shap": 0.3388,
           "n_features": 16,
           "top_features": [
-            {
-              "feature": "dist_plate_boundary_km",
-              "shap_value": -1.9337,
-              "feature_value": 331.2388
-            },
-            {
-              "feature": "regolith_cover_m",
-              "shap_value": -1.2799,
-              "feature_value": 30.8105
-            },
-            {
-              "feature": "dem_aspect",
-              "shap_value": -0.9852,
-              "feature_value": 99.8497
-            },
-            {
-              "feature": "oof_prob_skarn",
-              "shap_value": -0.7215,
-              "feature_value": 0.0
-            },
-            {
-              "feature": "coastal_shelf_dist_km",
-              "shap_value": -0.702,
-              "feature_value": 43.3302
-            }
-          ]
-        }
-      },
-      "epithermal_au": {
-        "1_energy_and_metal_sources": {
-          "total_shap": -8.1382,
-          "mean_abs_shap": 4.0691,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "moho_gravity_step_mgal_km",
-              "shap_value": -7.1249,
-              "feature_value": 0.1704
-            },
-            {
-              "feature": "crustal_thickness_km",
-              "shap_value": -1.0133,
-              "feature_value": 32.3568
-            }
-          ]
-        },
-        "2_crustal_conduits": {
-          "total_shap": -0.3822,
-          "mean_abs_shap": 0.2339,
-          "n_features": 3,
-          "top_features": [
-            {
-              "feature": "active_fault_density",
-              "shap_value": -0.3786,
-              "feature_value": 0.1896
-            },
-            {
-              "feature": "dist_topo_lineaments_km",
-              "shap_value": -0.1634,
-              "feature_value": 0.0
-            },
-            {
-              "feature": "dist_active_faults_m",
-              "shap_value": 0.1598,
-              "feature_value": 0.0
-            }
-          ]
-        },
-        "3_physicochemical_traps": {
-          "total_shap": -1.0814,
-          "mean_abs_shap": 0.5633,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "dilation_tendency_Td",
-              "shap_value": -1.104,
-              "feature_value": 0.9869
-            },
-            {
-              "feature": "slip_tendency_Ts",
-              "shap_value": 0.0226,
-              "feature_value": 0.3068
-            }
-          ]
-        },
-        "4_alteration_and_anomaly": {
-          "total_shap": -5.4669,
-          "mean_abs_shap": 0.5478,
-          "n_features": 14,
-          "top_features": [
-            {
-              "feature": "dist_plate_boundary_km",
-              "shap_value": -2.9607,
-              "feature_value": 331.2388
-            },
-            {
-              "feature": "dem_tpi_regional",
-              "shap_value": -1.2055,
-              "feature_value": 85.3939
-            },
-            {
-              "feature": "coastal_shelf_dist_km",
-              "shap_value": 0.9417,
-              "feature_value": 43.3302
-            },
-            {
-              "feature": "terrain_ruggedness_tri",
-              "shap_value": -0.6513,
-              "feature_value": 105.4046
-            },
-            {
-              "feature": "dem_elevation",
-              "shap_value": -0.5051,
-              "feature_value": 362.5843
-            }
-          ]
-        }
-      }
-    },
-    "geometry": {
-      "centroid_lat_lon": [
-        -1.7422,
-        115.7819
-      ],
-      "area_sq_km": 1.239,
-      "window_footprint_km": 3.2
-    },
-    "probabilities": {
-      "fused_raw_score": 0.106,
-      "elkan_noto_c_hat": 0.109,
-      "calibrated_deposit_prob": 0.997,
-      "conformal_90_ci": {
-        "lower_bound_L": 0.842,
-        "upper_bound_U": 1.0
-      },
-      "exploration_propensity_e_x": 0.05,
-      "propensity_weight_w": 0.29
-    },
-    "physics_and_geology_summary": {
-      "alteration": {
-        "sensor_source": "EMIT_SWIR",
-        "al_oh_crystallinity_2200nm": "high",
-        "kaolinite_alunite_doublet": true,
-        "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.985
-      },
-      "geomechanics_and_structure": {
-        "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.985,
-        "sar_cloude_pottier_alpha_deg": 45.0,
-        "moho_gravity_gradient_step_mGal_km": 1.5
-      },
-      "cover_and_conductivity": {
-        "regolith_cover_depth_m": 34.4,
-        "aem_conductance_0_300m_S": 15.0,
-        "reductant_trap_inferred": true
-      }
-    }
-  },
-  {
-    "target_id": "EAST_KALIMANTAN_TGT_0013",
-    "rank": 13,
-    "rank_score": 0.896,
-    "conformal_90pct_target_set": [
-      "porphyry_cu",
-      "epithermal_au"
-    ],
-    "telescoped_system_flag": true,
-    "outmogc_boundary_gate": {
-      "porphyry_cu": 1.0,
-      "skarn_fe_cu": 1.0,
-      "epithermal_au": 1.0,
-      "laterite_fe_ni": 1.0
-    },
-    "exploration_logistics_propensity": 0.05,
-    "mineral_systems_shap_attribution": {
-      "porphyry_cu": {
-        "1_energy_and_metal_sources": {
-          "total_shap": -0.6135,
-          "mean_abs_shap": 0.3067,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "crustal_thickness_km",
-              "shap_value": -0.3431,
-              "feature_value": 39.1306
-            },
-            {
-              "feature": "moho_gravity_step_mgal_km",
-              "shap_value": -0.2704,
-              "feature_value": 2.8684
-            }
-          ]
-        },
-        "2_crustal_conduits": {
-          "total_shap": -1.3688,
-          "mean_abs_shap": 0.4563,
-          "n_features": 3,
-          "top_features": [
-            {
-              "feature": "active_fault_density",
-              "shap_value": -0.7673,
-              "feature_value": 0.3999
-            },
-            {
-              "feature": "dist_active_faults_m",
-              "shap_value": -0.579,
-              "feature_value": 0.0
-            },
-            {
-              "feature": "dist_topo_lineaments_km",
-              "shap_value": -0.0225,
-              "feature_value": 0.0
-            }
-          ]
-        },
-        "3_physicochemical_traps": {
-          "total_shap": -0.4336,
-          "mean_abs_shap": 0.2168,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "dilation_tendency_Td",
-              "shap_value": -0.3579,
-              "feature_value": 0.9681
-            },
-            {
-              "feature": "slip_tendency_Ts",
-              "shap_value": -0.0757,
-              "feature_value": 0.4516
-            }
-          ]
-        },
-        "4_alteration_and_anomaly": {
-          "total_shap": -10.4988,
-          "mean_abs_shap": 0.6563,
-          "n_features": 16,
-          "top_features": [
-            {
-              "feature": "regolith_cover_m",
-              "shap_value": -2.3376,
-              "feature_value": 6.5675
-            },
-            {
-              "feature": "dist_plate_boundary_km",
-              "shap_value": -1.7773,
-              "feature_value": 66.3802
-            },
-            {
-              "feature": "dem_tpi_regional",
-              "shap_value": -1.3927,
-              "feature_value": -54.2317
-            },
             {
               "feature": "dist_volcanic_arc_km",
-              "shap_value": -1.2814,
-              "feature_value": 388.9221
+              "shap_value": 1.8308,
+              "feature_value": 380.5885
             },
             {
               "feature": "oof_prob_skarn",
-              "shap_value": -0.8554,
-              "feature_value": 0.0
-            }
-          ]
-        }
-      },
-      "epithermal_au": {
-        "1_energy_and_metal_sources": {
-          "total_shap": -3.3182,
-          "mean_abs_shap": 1.9098,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "moho_gravity_step_mgal_km",
-              "shap_value": -3.5689,
-              "feature_value": 2.8684
-            },
-            {
-              "feature": "crustal_thickness_km",
-              "shap_value": 0.2507,
-              "feature_value": 39.1306
-            }
-          ]
-        },
-        "2_crustal_conduits": {
-          "total_shap": -1.5681,
-          "mean_abs_shap": 0.8328,
-          "n_features": 3,
-          "top_features": [
-            {
-              "feature": "active_fault_density",
-              "shap_value": -2.0332,
-              "feature_value": 0.3999
-            },
-            {
-              "feature": "dist_active_faults_m",
-              "shap_value": 0.4002,
+              "shap_value": -1.1962,
               "feature_value": 0.0
             },
-            {
-              "feature": "dist_topo_lineaments_km",
-              "shap_value": 0.0649,
-              "feature_value": 0.0
-            }
-          ]
-        },
-        "3_physicochemical_traps": {
-          "total_shap": -0.6205,
-          "mean_abs_shap": 0.3102,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "dilation_tendency_Td",
-              "shap_value": -0.6141,
-              "feature_value": 0.9681
-            },
-            {
-              "feature": "slip_tendency_Ts",
-              "shap_value": -0.0064,
-              "feature_value": 0.4516
-            }
-          ]
-        },
-        "4_alteration_and_anomaly": {
-          "total_shap": -4.9851,
-          "mean_abs_shap": 0.4337,
-          "n_features": 14,
-          "top_features": [
             {
               "feature": "dist_plate_boundary_km",
-              "shap_value": -2.676,
-              "feature_value": 66.3802
+              "shap_value": 0.9227,
+              "feature_value": 59.7523
             },
             {
-              "feature": "terrain_ruggedness_tri",
-              "shap_value": -1.0398,
-              "feature_value": 217.4865
+              "feature": "dem_tpi_regional",
+              "shap_value": -0.4036,
+              "feature_value": -206.8801
             },
             {
-              "feature": "coastal_shelf_dist_km",
-              "shap_value": -0.8853,
-              "feature_value": 37.8881
-            },
-            {
-              "feature": "bouguer_gravity_mgal",
-              "shap_value": 0.3252,
-              "feature_value": -137.0574
-            },
-            {
-              "feature": "outcrop_exposure_index",
-              "shap_value": -0.249,
-              "feature_value": 0.5639
+              "feature": "regolith_cover_m",
+              "shap_value": 0.3867,
+              "feature_value": 48.2329
             }
           ]
         }
@@ -2782,22 +1207,22 @@
     },
     "geometry": {
       "centroid_lat_lon": [
-        -2.7875,
-        119.2713
+        -2.6509,
+        119.2349
       ],
-      "area_sq_km": 0.155,
+      "area_sq_km": 17.426,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.098,
-      "elkan_noto_c_hat": 0.109,
-      "calibrated_deposit_prob": 0.983,
+      "fused_raw_score": 0.52,
+      "elkan_noto_c_hat": 0.1,
+      "calibrated_deposit_prob": 0.864,
       "conformal_90_ci": {
-        "lower_bound_L": 0.834,
-        "upper_bound_U": 1.0
+        "lower_bound_L": 0.625,
+        "upper_bound_U": 0.911
       },
       "exploration_propensity_e_x": 0.05,
-      "propensity_weight_w": 0.29
+      "propensity_weight_w": 4.98
     },
     "physics_and_geology_summary": {
       "alteration": {
@@ -2805,7 +1230,7 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.963
+        "fe_oxide_intensity": 0.71
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
@@ -2814,254 +1239,16 @@
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 7.4,
+        "regolith_cover_depth_m": 49.8,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
     }
   },
   {
-    "target_id": "EAST_KALIMANTAN_TGT_0014",
-    "rank": 14,
-    "rank_score": 0.896,
-    "conformal_90pct_target_set": [
-      "porphyry_cu",
-      "epithermal_au"
-    ],
-    "telescoped_system_flag": true,
-    "outmogc_boundary_gate": {
-      "porphyry_cu": 1.0,
-      "skarn_fe_cu": 1.0,
-      "epithermal_au": 1.0,
-      "laterite_fe_ni": 1.0
-    },
-    "exploration_logistics_propensity": 0.05,
-    "mineral_systems_shap_attribution": {
-      "porphyry_cu": {
-        "1_energy_and_metal_sources": {
-          "total_shap": -0.7488,
-          "mean_abs_shap": 0.3744,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "moho_gravity_step_mgal_km",
-              "shap_value": -0.3961,
-              "feature_value": 3.2294
-            },
-            {
-              "feature": "crustal_thickness_km",
-              "shap_value": -0.3527,
-              "feature_value": 36.2541
-            }
-          ]
-        },
-        "2_crustal_conduits": {
-          "total_shap": -1.2605,
-          "mean_abs_shap": 0.4202,
-          "n_features": 3,
-          "top_features": [
-            {
-              "feature": "active_fault_density",
-              "shap_value": -0.7383,
-              "feature_value": 0.3919
-            },
-            {
-              "feature": "dist_active_faults_m",
-              "shap_value": -0.4997,
-              "feature_value": 0.0
-            },
-            {
-              "feature": "dist_topo_lineaments_km",
-              "shap_value": -0.0225,
-              "feature_value": 0.0
-            }
-          ]
-        },
-        "3_physicochemical_traps": {
-          "total_shap": -0.4142,
-          "mean_abs_shap": 0.2071,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "dilation_tendency_Td",
-              "shap_value": -0.3094,
-              "feature_value": 0.9681
-            },
-            {
-              "feature": "slip_tendency_Ts",
-              "shap_value": -0.1048,
-              "feature_value": 0.4516
-            }
-          ]
-        },
-        "4_alteration_and_anomaly": {
-          "total_shap": -10.0049,
-          "mean_abs_shap": 0.6465,
-          "n_features": 16,
-          "top_features": [
-            {
-              "feature": "regolith_cover_m",
-              "shap_value": -2.3088,
-              "feature_value": 11.8033
-            },
-            {
-              "feature": "dist_plate_boundary_km",
-              "shap_value": -1.7052,
-              "feature_value": 73.4792
-            },
-            {
-              "feature": "dem_tpi_regional",
-              "shap_value": -1.2398,
-              "feature_value": -186.9766
-            },
-            {
-              "feature": "dist_volcanic_arc_km",
-              "shap_value": -1.2073,
-              "feature_value": 370.5304
-            },
-            {
-              "feature": "oof_prob_skarn",
-              "shap_value": -0.8755,
-              "feature_value": 0.0
-            }
-          ]
-        }
-      },
-      "epithermal_au": {
-        "1_energy_and_metal_sources": {
-          "total_shap": -3.8626,
-          "mean_abs_shap": 2.241,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "moho_gravity_step_mgal_km",
-              "shap_value": -4.1723,
-              "feature_value": 3.2294
-            },
-            {
-              "feature": "crustal_thickness_km",
-              "shap_value": 0.3097,
-              "feature_value": 36.2541
-            }
-          ]
-        },
-        "2_crustal_conduits": {
-          "total_shap": -1.6815,
-          "mean_abs_shap": 0.8352,
-          "n_features": 3,
-          "top_features": [
-            {
-              "feature": "active_fault_density",
-              "shap_value": -2.0724,
-              "feature_value": 0.3919
-            },
-            {
-              "feature": "dist_active_faults_m",
-              "shap_value": 0.412,
-              "feature_value": 0.0
-            },
-            {
-              "feature": "dist_topo_lineaments_km",
-              "shap_value": -0.0211,
-              "feature_value": 0.0
-            }
-          ]
-        },
-        "3_physicochemical_traps": {
-          "total_shap": -0.4616,
-          "mean_abs_shap": 0.3359,
-          "n_features": 2,
-          "top_features": [
-            {
-              "feature": "dilation_tendency_Td",
-              "shap_value": -0.5667,
-              "feature_value": 0.9681
-            },
-            {
-              "feature": "slip_tendency_Ts",
-              "shap_value": 0.1051,
-              "feature_value": 0.4516
-            }
-          ]
-        },
-        "4_alteration_and_anomaly": {
-          "total_shap": -6.0713,
-          "mean_abs_shap": 0.5969,
-          "n_features": 14,
-          "top_features": [
-            {
-              "feature": "coastal_shelf_dist_km",
-              "shap_value": -2.6564,
-              "feature_value": 32.2047
-            },
-            {
-              "feature": "dist_plate_boundary_km",
-              "shap_value": -2.6427,
-              "feature_value": 73.4792
-            },
-            {
-              "feature": "terrain_ruggedness_tri",
-              "shap_value": -1.0767,
-              "feature_value": 220.5121
-            },
-            {
-              "feature": "dem_tpi_regional",
-              "shap_value": 0.618,
-              "feature_value": -186.9766
-            },
-            {
-              "feature": "bouguer_gravity_mgal",
-              "shap_value": 0.31,
-              "feature_value": -88.6931
-            }
-          ]
-        }
-      }
-    },
-    "geometry": {
-      "centroid_lat_lon": [
-        -2.645,
-        119.3613
-      ],
-      "area_sq_km": 0.155,
-      "window_footprint_km": 3.2
-    },
-    "probabilities": {
-      "fused_raw_score": 0.101,
-      "elkan_noto_c_hat": 0.109,
-      "calibrated_deposit_prob": 0.986,
-      "conformal_90_ci": {
-        "lower_bound_L": 0.834,
-        "upper_bound_U": 1.0
-      },
-      "exploration_propensity_e_x": 0.05,
-      "propensity_weight_w": 0.29
-    },
-    "physics_and_geology_summary": {
-      "alteration": {
-        "sensor_source": "EMIT_SWIR",
-        "al_oh_crystallinity_2200nm": "high",
-        "kaolinite_alunite_doublet": true,
-        "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.963
-      },
-      "geomechanics_and_structure": {
-        "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 0.963,
-        "sar_cloude_pottier_alpha_deg": 45.0,
-        "moho_gravity_gradient_step_mGal_km": 1.5
-      },
-      "cover_and_conductivity": {
-        "regolith_cover_depth_m": 12.0,
-        "aem_conductance_0_300m_S": 15.0,
-        "reductant_trap_inferred": true
-      }
-    }
-  },
-  {
-    "target_id": "EAST_KALIMANTAN_TGT_0015",
-    "rank": 15,
-    "rank_score": 0.896,
+    "target_id": "EAST_KALIMANTAN_TGT_0007",
+    "rank": 7,
+    "rank_score": 0.856,
     "conformal_90pct_target_set": [
       "epithermal_au"
     ],
@@ -3076,90 +1263,90 @@
     "mineral_systems_shap_attribution": {
       "epithermal_au": {
         "1_energy_and_metal_sources": {
-          "total_shap": -4.2495,
-          "mean_abs_shap": 2.1248,
+          "total_shap": 0.7745,
+          "mean_abs_shap": 0.3872,
           "n_features": 2,
           "top_features": [
             {
               "feature": "moho_gravity_step_mgal_km",
-              "shap_value": -2.9537,
-              "feature_value": 2.6052
+              "shap_value": 0.4615,
+              "feature_value": 1.339
             },
             {
               "feature": "crustal_thickness_km",
-              "shap_value": -1.2958,
-              "feature_value": 32.4261
+              "shap_value": 0.313,
+              "feature_value": 35.5315
             }
           ]
         },
         "2_crustal_conduits": {
-          "total_shap": -1.5421,
-          "mean_abs_shap": 0.6648,
+          "total_shap": -1.5297,
+          "mean_abs_shap": 1.0126,
           "n_features": 3,
           "top_features": [
             {
               "feature": "active_fault_density",
-              "shap_value": -1.7581,
-              "feature_value": 0.2885
+              "shap_value": -2.2838,
+              "feature_value": 0.3975
             },
             {
               "feature": "dist_active_faults_m",
-              "shap_value": 0.2261,
+              "shap_value": 0.6839,
               "feature_value": 0.0
             },
             {
               "feature": "dist_topo_lineaments_km",
-              "shap_value": -0.0101,
+              "shap_value": 0.0702,
               "feature_value": 0.0
             }
           ]
         },
         "3_physicochemical_traps": {
-          "total_shap": -1.5059,
-          "mean_abs_shap": 0.753,
+          "total_shap": -0.2081,
+          "mean_abs_shap": 0.1559,
           "n_features": 2,
           "top_features": [
             {
               "feature": "dilation_tendency_Td",
-              "shap_value": -0.7586,
-              "feature_value": 0.9999
+              "shap_value": -0.2599,
+              "feature_value": 0.7013
             },
             {
               "feature": "slip_tendency_Ts",
-              "shap_value": -0.7473,
-              "feature_value": 0.0309
+              "shap_value": 0.0518,
+              "feature_value": 0.6979
             }
           ]
         },
         "4_alteration_and_anomaly": {
-          "total_shap": -8.0469,
-          "mean_abs_shap": 0.5748,
+          "total_shap": -2.3244,
+          "mean_abs_shap": 0.4463,
           "n_features": 14,
           "top_features": [
             {
-              "feature": "coastal_shelf_dist_km",
-              "shap_value": -2.2691,
-              "feature_value": 30.8332
-            },
-            {
               "feature": "dist_plate_boundary_km",
-              "shap_value": -2.1526,
-              "feature_value": 73.4089
+              "shap_value": -3.2049,
+              "feature_value": 299.443
             },
             {
-              "feature": "terrain_ruggedness_tri",
-              "shap_value": -0.9053,
-              "feature_value": 146.6674
+              "feature": "coastal_shelf_dist_km",
+              "shap_value": 1.0951,
+              "feature_value": 123.9749
             },
             {
-              "feature": "dem_elevation",
-              "shap_value": -0.6651,
-              "feature_value": 373.2504
+              "feature": "bouguer_gravity_mgal",
+              "shap_value": 0.4824,
+              "feature_value": -92.3402
             },
             {
               "feature": "dem_tpi_regional",
-              "shap_value": -0.5473,
-              "feature_value": -12.7977
+              "shap_value": -0.3747,
+              "feature_value": -31.8238
+            },
+            {
+              "feature": "outcrop_exposure_index",
+              "shap_value": -0.3058,
+              "feature_value": 0.5316
             }
           ]
         }
@@ -3167,19 +1354,19 @@
     },
     "geometry": {
       "centroid_lat_lon": [
-        -2.4676,
-        119.4117
+        1.6726,
+        116.5804
       ],
-      "area_sq_km": 8.984,
+      "area_sq_km": 72.339,
       "window_footprint_km": 3.2
     },
     "probabilities": {
-      "fused_raw_score": 0.105,
-      "elkan_noto_c_hat": 0.109,
-      "calibrated_deposit_prob": 0.996,
+      "fused_raw_score": 0.118,
+      "elkan_noto_c_hat": 0.1,
+      "calibrated_deposit_prob": 0.906,
       "conformal_90_ci": {
-        "lower_bound_L": 0.842,
-        "upper_bound_U": 1.0
+        "lower_bound_L": 0.774,
+        "upper_bound_U": 0.932
       },
       "exploration_propensity_e_x": 0.05,
       "propensity_weight_w": 0.29
@@ -3190,16 +1377,2011 @@
         "al_oh_crystallinity_2200nm": "high",
         "kaolinite_alunite_doublet": true,
         "fe_mg_carbonate_shift_nm": 0.0,
-        "fe_oxide_intensity": 0.976
+        "fe_oxide_intensity": 0.652
       },
       "geomechanics_and_structure": {
         "slip_tendency_Ts_mean": 0.6,
-        "dilation_tendency_Td_max": 1.0,
+        "dilation_tendency_Td_max": 0.653,
         "sar_cloude_pottier_alpha_deg": 45.0,
         "moho_gravity_gradient_step_mGal_km": 1.5
       },
       "cover_and_conductivity": {
-        "regolith_cover_depth_m": 35.5,
+        "regolith_cover_depth_m": 17.7,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "EAST_KALIMANTAN_TGT_0008",
+    "rank": 8,
+    "rank_score": 0.855,
+    "conformal_90pct_target_set": [
+      "porphyry_cu",
+      "skarn_fe_cu",
+      "epithermal_au"
+    ],
+    "telescoped_system_flag": true,
+    "outmogc_boundary_gate": {
+      "porphyry_cu": 1.0,
+      "skarn_fe_cu": 1.0,
+      "epithermal_au": 1.0,
+      "laterite_fe_ni": 1.0
+    },
+    "exploration_logistics_propensity": 0.05,
+    "mineral_systems_shap_attribution": {
+      "porphyry_cu": {
+        "1_energy_and_metal_sources": {
+          "total_shap": -2.8101,
+          "mean_abs_shap": 1.6722,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "moho_gravity_step_mgal_km",
+              "shap_value": -3.0772,
+              "feature_value": 0.5217
+            },
+            {
+              "feature": "crustal_thickness_km",
+              "shap_value": 0.2671,
+              "feature_value": 31.8174
+            }
+          ]
+        },
+        "2_crustal_conduits": {
+          "total_shap": -0.5058,
+          "mean_abs_shap": 0.1856,
+          "n_features": 3,
+          "top_features": [
+            {
+              "feature": "dist_active_faults_m",
+              "shap_value": -0.5131,
+              "feature_value": 0.0
+            },
+            {
+              "feature": "active_fault_density",
+              "shap_value": 0.0255,
+              "feature_value": 0.3212
+            },
+            {
+              "feature": "dist_topo_lineaments_km",
+              "shap_value": -0.0182,
+              "feature_value": 0.0
+            }
+          ]
+        },
+        "3_physicochemical_traps": {
+          "total_shap": -0.245,
+          "mean_abs_shap": 0.1225,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "dilation_tendency_Td",
+              "shap_value": -0.1394,
+              "feature_value": 0.9869
+            },
+            {
+              "feature": "slip_tendency_Ts",
+              "shap_value": -0.1056,
+              "feature_value": 0.3068
+            }
+          ]
+        },
+        "4_alteration_and_anomaly": {
+          "total_shap": -6.1793,
+          "mean_abs_shap": 0.4255,
+          "n_features": 16,
+          "top_features": [
+            {
+              "feature": "dist_plate_boundary_km",
+              "shap_value": -2.0473,
+              "feature_value": 307.066
+            },
+            {
+              "feature": "regolith_cover_m",
+              "shap_value": -1.2741,
+              "feature_value": 45.6771
+            },
+            {
+              "feature": "dem_aspect",
+              "shap_value": -0.9269,
+              "feature_value": 158.4731
+            },
+            {
+              "feature": "outcrop_exposure_index",
+              "shap_value": -0.6357,
+              "feature_value": 0.2015
+            },
+            {
+              "feature": "dist_volcanic_arc_km",
+              "shap_value": -0.5568,
+              "feature_value": 500.0
+            }
+          ]
+        }
+      },
+      "skarn_fe_cu": {
+        "1_energy_and_metal_sources": {
+          "total_shap": -2.5777,
+          "mean_abs_shap": 1.4851,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "moho_gravity_step_mgal_km",
+              "shap_value": -2.774,
+              "feature_value": 0.5217
+            },
+            {
+              "feature": "crustal_thickness_km",
+              "shap_value": 0.1963,
+              "feature_value": 31.8174
+            }
+          ]
+        },
+        "2_crustal_conduits": {
+          "total_shap": -3.0441,
+          "mean_abs_shap": 1.0147,
+          "n_features": 3,
+          "top_features": [
+            {
+              "feature": "active_fault_density",
+              "shap_value": -1.7491,
+              "feature_value": 0.3212
+            },
+            {
+              "feature": "dist_active_faults_m",
+              "shap_value": -1.0827,
+              "feature_value": 0.0
+            },
+            {
+              "feature": "dist_topo_lineaments_km",
+              "shap_value": -0.2123,
+              "feature_value": 0.0
+            }
+          ]
+        },
+        "3_physicochemical_traps": {
+          "total_shap": -0.3292,
+          "mean_abs_shap": 1.1255,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "slip_tendency_Ts",
+              "shap_value": -1.2901,
+              "feature_value": 0.3068
+            },
+            {
+              "feature": "dilation_tendency_Td",
+              "shap_value": 0.9609,
+              "feature_value": 0.9869
+            }
+          ]
+        },
+        "4_alteration_and_anomaly": {
+          "total_shap": -10.1832,
+          "mean_abs_shap": 0.8093,
+          "n_features": 14,
+          "top_features": [
+            {
+              "feature": "coastal_shelf_dist_km",
+              "shap_value": -6.3526,
+              "feature_value": 22.2389
+            },
+            {
+              "feature": "dist_plate_boundary_km",
+              "shap_value": -1.4713,
+              "feature_value": 307.066
+            },
+            {
+              "feature": "dem_aspect",
+              "shap_value": -0.9606,
+              "feature_value": 158.4731
+            },
+            {
+              "feature": "dem_tpi_regional",
+              "shap_value": -0.877,
+              "feature_value": 43.5873
+            },
+            {
+              "feature": "terrain_ruggedness_tri",
+              "shap_value": -0.6675,
+              "feature_value": 63.2852
+            }
+          ]
+        }
+      },
+      "epithermal_au": {
+        "1_energy_and_metal_sources": {
+          "total_shap": -5.9456,
+          "mean_abs_shap": 2.9728,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "moho_gravity_step_mgal_km",
+              "shap_value": -4.4313,
+              "feature_value": 0.5217
+            },
+            {
+              "feature": "crustal_thickness_km",
+              "shap_value": -1.5143,
+              "feature_value": 31.8174
+            }
+          ]
+        },
+        "2_crustal_conduits": {
+          "total_shap": -0.9695,
+          "mean_abs_shap": 0.5965,
+          "n_features": 3,
+          "top_features": [
+            {
+              "feature": "active_fault_density",
+              "shap_value": -1.3066,
+              "feature_value": 0.3212
+            },
+            {
+              "feature": "dist_active_faults_m",
+              "shap_value": 0.41,
+              "feature_value": 0.0
+            },
+            {
+              "feature": "dist_topo_lineaments_km",
+              "shap_value": -0.0729,
+              "feature_value": 0.0
+            }
+          ]
+        },
+        "3_physicochemical_traps": {
+          "total_shap": -1.3571,
+          "mean_abs_shap": 0.6879,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "dilation_tendency_Td",
+              "shap_value": -1.3664,
+              "feature_value": 0.9869
+            },
+            {
+              "feature": "slip_tendency_Ts",
+              "shap_value": 0.0093,
+              "feature_value": 0.3068
+            }
+          ]
+        },
+        "4_alteration_and_anomaly": {
+          "total_shap": -6.2755,
+          "mean_abs_shap": 0.4668,
+          "n_features": 14,
+          "top_features": [
+            {
+              "feature": "coastal_shelf_dist_km",
+              "shap_value": -1.5495,
+              "feature_value": 22.2389
+            },
+            {
+              "feature": "dist_plate_boundary_km",
+              "shap_value": -1.3042,
+              "feature_value": 307.066
+            },
+            {
+              "feature": "dem_tpi_regional",
+              "shap_value": -0.9596,
+              "feature_value": 43.5873
+            },
+            {
+              "feature": "dem_elevation",
+              "shap_value": -0.5848,
+              "feature_value": 279.5947
+            },
+            {
+              "feature": "terrain_ruggedness_tri",
+              "shap_value": -0.5103,
+              "feature_value": 63.2852
+            }
+          ]
+        }
+      }
+    },
+    "geometry": {
+      "centroid_lat_lon": [
+        -1.6141,
+        116.0426
+      ],
+      "area_sq_km": 320.802,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.105,
+      "elkan_noto_c_hat": 0.1,
+      "calibrated_deposit_prob": 0.853,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.728,
+        "upper_bound_U": 0.89
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 0.29
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.724
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.985,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 52.3,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "EAST_KALIMANTAN_TGT_0009",
+    "rank": 9,
+    "rank_score": 0.849,
+    "conformal_90pct_target_set": [
+      "porphyry_cu",
+      "skarn_fe_cu"
+    ],
+    "telescoped_system_flag": true,
+    "outmogc_boundary_gate": {
+      "porphyry_cu": 1.0,
+      "skarn_fe_cu": 1.0,
+      "epithermal_au": 1.0,
+      "laterite_fe_ni": 1.0
+    },
+    "exploration_logistics_propensity": 0.05,
+    "mineral_systems_shap_attribution": {
+      "porphyry_cu": {
+        "1_energy_and_metal_sources": {
+          "total_shap": -3.4032,
+          "mean_abs_shap": 1.7016,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "moho_gravity_step_mgal_km",
+              "shap_value": -3.062,
+              "feature_value": 0.67
+            },
+            {
+              "feature": "crustal_thickness_km",
+              "shap_value": -0.3412,
+              "feature_value": 33.8736
+            }
+          ]
+        },
+        "2_crustal_conduits": {
+          "total_shap": -0.4291,
+          "mean_abs_shap": 0.2071,
+          "n_features": 3,
+          "top_features": [
+            {
+              "feature": "dist_active_faults_m",
+              "shap_value": -0.5109,
+              "feature_value": 0.0
+            },
+            {
+              "feature": "active_fault_density",
+              "shap_value": 0.0961,
+              "feature_value": 0.3145
+            },
+            {
+              "feature": "dist_topo_lineaments_km",
+              "shap_value": -0.0143,
+              "feature_value": 0.0
+            }
+          ]
+        },
+        "3_physicochemical_traps": {
+          "total_shap": -0.0813,
+          "mean_abs_shap": 0.0693,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "dilation_tendency_Td",
+              "shap_value": -0.1099,
+              "feature_value": 0.9331
+            },
+            {
+              "feature": "slip_tendency_Ts",
+              "shap_value": 0.0286,
+              "feature_value": 0.5893
+            }
+          ]
+        },
+        "4_alteration_and_anomaly": {
+          "total_shap": -6.4373,
+          "mean_abs_shap": 0.4877,
+          "n_features": 16,
+          "top_features": [
+            {
+              "feature": "dist_plate_boundary_km",
+              "shap_value": -1.9891,
+              "feature_value": 328.5101
+            },
+            {
+              "feature": "regolith_cover_m",
+              "shap_value": -1.2446,
+              "feature_value": 26.1622
+            },
+            {
+              "feature": "dem_aspect",
+              "shap_value": -1.0968,
+              "feature_value": 91.5671
+            },
+            {
+              "feature": "outcrop_exposure_index",
+              "shap_value": -0.6101,
+              "feature_value": 0.2648
+            },
+            {
+              "feature": "dist_volcanic_arc_km",
+              "shap_value": -0.5431,
+              "feature_value": 500.0
+            }
+          ]
+        }
+      },
+      "skarn_fe_cu": {
+        "1_energy_and_metal_sources": {
+          "total_shap": -2.6102,
+          "mean_abs_shap": 1.3051,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "moho_gravity_step_mgal_km",
+              "shap_value": -2.4913,
+              "feature_value": 0.67
+            },
+            {
+              "feature": "crustal_thickness_km",
+              "shap_value": -0.1189,
+              "feature_value": 33.8736
+            }
+          ]
+        },
+        "2_crustal_conduits": {
+          "total_shap": -1.8509,
+          "mean_abs_shap": 0.617,
+          "n_features": 3,
+          "top_features": [
+            {
+              "feature": "active_fault_density",
+              "shap_value": -1.2708,
+              "feature_value": 0.3145
+            },
+            {
+              "feature": "dist_active_faults_m",
+              "shap_value": -0.4733,
+              "feature_value": 0.0
+            },
+            {
+              "feature": "dist_topo_lineaments_km",
+              "shap_value": -0.1068,
+              "feature_value": 0.0
+            }
+          ]
+        },
+        "3_physicochemical_traps": {
+          "total_shap": 3.3342,
+          "mean_abs_shap": 1.7973,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "dilation_tendency_Td",
+              "shap_value": 3.4644,
+              "feature_value": 0.9331
+            },
+            {
+              "feature": "slip_tendency_Ts",
+              "shap_value": -0.1302,
+              "feature_value": 0.5893
+            }
+          ]
+        },
+        "4_alteration_and_anomaly": {
+          "total_shap": 0.6523,
+          "mean_abs_shap": 0.7055,
+          "n_features": 14,
+          "top_features": [
+            {
+              "feature": "coastal_shelf_dist_km",
+              "shap_value": 4.621,
+              "feature_value": 59.4098
+            },
+            {
+              "feature": "terrain_ruggedness_tri",
+              "shap_value": -1.614,
+              "feature_value": 93.8393
+            },
+            {
+              "feature": "dem_aspect",
+              "shap_value": -0.9347,
+              "feature_value": 91.5671
+            },
+            {
+              "feature": "dem_tpi_regional",
+              "shap_value": -0.6884,
+              "feature_value": 73.7888
+            },
+            {
+              "feature": "dist_plate_boundary_km",
+              "shap_value": 0.6439,
+              "feature_value": 328.5101
+            }
+          ]
+        }
+      }
+    },
+    "geometry": {
+      "centroid_lat_lon": [
+        -2.545,
+        115.6663
+      ],
+      "area_sq_km": 0.31,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.076,
+      "elkan_noto_c_hat": 0.1,
+      "calibrated_deposit_prob": 0.742,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.709,
+        "upper_bound_U": 0.766
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 0.29
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.922
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.922,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 25.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "EAST_KALIMANTAN_TGT_0010",
+    "rank": 10,
+    "rank_score": 0.847,
+    "conformal_90pct_target_set": [
+      "porphyry_cu",
+      "skarn_fe_cu"
+    ],
+    "telescoped_system_flag": true,
+    "outmogc_boundary_gate": {
+      "porphyry_cu": 1.0,
+      "skarn_fe_cu": 1.0,
+      "epithermal_au": 1.0,
+      "laterite_fe_ni": 1.0
+    },
+    "exploration_logistics_propensity": 0.05,
+    "mineral_systems_shap_attribution": {
+      "porphyry_cu": {
+        "1_energy_and_metal_sources": {
+          "total_shap": -3.4438,
+          "mean_abs_shap": 1.7219,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "moho_gravity_step_mgal_km",
+              "shap_value": -3.0286,
+              "feature_value": 0.525
+            },
+            {
+              "feature": "crustal_thickness_km",
+              "shap_value": -0.4152,
+              "feature_value": 33.1418
+            }
+          ]
+        },
+        "2_crustal_conduits": {
+          "total_shap": -0.5852,
+          "mean_abs_shap": 0.1951,
+          "n_features": 3,
+          "top_features": [
+            {
+              "feature": "dist_active_faults_m",
+              "shap_value": -0.5326,
+              "feature_value": 0.0
+            },
+            {
+              "feature": "active_fault_density",
+              "shap_value": -0.0383,
+              "feature_value": 0.2856
+            },
+            {
+              "feature": "dist_topo_lineaments_km",
+              "shap_value": -0.0143,
+              "feature_value": 0.0
+            }
+          ]
+        },
+        "3_physicochemical_traps": {
+          "total_shap": -0.0854,
+          "mean_abs_shap": 0.0672,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "dilation_tendency_Td",
+              "shap_value": -0.1099,
+              "feature_value": 0.9331
+            },
+            {
+              "feature": "slip_tendency_Ts",
+              "shap_value": 0.0245,
+              "feature_value": 0.5893
+            }
+          ]
+        },
+        "4_alteration_and_anomaly": {
+          "total_shap": -6.7067,
+          "mean_abs_shap": 0.444,
+          "n_features": 16,
+          "top_features": [
+            {
+              "feature": "dist_plate_boundary_km",
+              "shap_value": -2.1333,
+              "feature_value": 324.7156
+            },
+            {
+              "feature": "regolith_cover_m",
+              "shap_value": -1.1895,
+              "feature_value": 30.1612
+            },
+            {
+              "feature": "dem_tpi_regional",
+              "shap_value": -0.9237,
+              "feature_value": -148.3949
+            },
+            {
+              "feature": "outcrop_exposure_index",
+              "shap_value": -0.6629,
+              "feature_value": 0.2824
+            },
+            {
+              "feature": "dist_volcanic_arc_km",
+              "shap_value": -0.5555,
+              "feature_value": 500.0
+            }
+          ]
+        }
+      },
+      "skarn_fe_cu": {
+        "1_energy_and_metal_sources": {
+          "total_shap": -2.8415,
+          "mean_abs_shap": 1.4207,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "moho_gravity_step_mgal_km",
+              "shap_value": -2.6968,
+              "feature_value": 0.525
+            },
+            {
+              "feature": "crustal_thickness_km",
+              "shap_value": -0.1447,
+              "feature_value": 33.1418
+            }
+          ]
+        },
+        "2_crustal_conduits": {
+          "total_shap": -1.4787,
+          "mean_abs_shap": 0.4929,
+          "n_features": 3,
+          "top_features": [
+            {
+              "feature": "active_fault_density",
+              "shap_value": -0.8116,
+              "feature_value": 0.2856
+            },
+            {
+              "feature": "dist_active_faults_m",
+              "shap_value": -0.5641,
+              "feature_value": 0.0
+            },
+            {
+              "feature": "dist_topo_lineaments_km",
+              "shap_value": -0.103,
+              "feature_value": 0.0
+            }
+          ]
+        },
+        "3_physicochemical_traps": {
+          "total_shap": 2.6278,
+          "mean_abs_shap": 1.5357,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "dilation_tendency_Td",
+              "shap_value": 2.8496,
+              "feature_value": 0.9331
+            },
+            {
+              "feature": "slip_tendency_Ts",
+              "shap_value": -0.2218,
+              "feature_value": 0.5893
+            }
+          ]
+        },
+        "4_alteration_and_anomaly": {
+          "total_shap": -1.5834,
+          "mean_abs_shap": 0.3981,
+          "n_features": 14,
+          "top_features": [
+            {
+              "feature": "coastal_shelf_dist_km",
+              "shap_value": 1.8609,
+              "feature_value": 57.0271
+            },
+            {
+              "feature": "dem_aspect",
+              "shap_value": -0.7602,
+              "feature_value": 186.4482
+            },
+            {
+              "feature": "dem_elevation",
+              "shap_value": -0.6576,
+              "feature_value": 483.3523
+            },
+            {
+              "feature": "terrain_ruggedness_tri",
+              "shap_value": -0.4559,
+              "feature_value": 54.4689
+            },
+            {
+              "feature": "dem_tpi_local",
+              "shap_value": -0.3988,
+              "feature_value": 38.009
+            }
+          ]
+        }
+      }
+    },
+    "geometry": {
+      "centroid_lat_lon": [
+        -2.53,
+        115.7013
+      ],
+      "area_sq_km": 0.31,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.231,
+      "elkan_noto_c_hat": 0.1,
+      "calibrated_deposit_prob": 0.757,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.652,
+        "upper_bound_U": 0.825
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 0.29
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.922
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.922,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 32.8,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "EAST_KALIMANTAN_TGT_0011",
+    "rank": 11,
+    "rank_score": 0.844,
+    "conformal_90pct_target_set": [
+      "epithermal_au"
+    ],
+    "telescoped_system_flag": false,
+    "outmogc_boundary_gate": {
+      "porphyry_cu": 1.0,
+      "skarn_fe_cu": 1.0,
+      "epithermal_au": 1.0,
+      "laterite_fe_ni": 1.0
+    },
+    "exploration_logistics_propensity": 0.05,
+    "mineral_systems_shap_attribution": {
+      "epithermal_au": {
+        "1_energy_and_metal_sources": {
+          "total_shap": -3.1704,
+          "mean_abs_shap": 1.5852,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "moho_gravity_step_mgal_km",
+              "shap_value": -3.0788,
+              "feature_value": 1.2478
+            },
+            {
+              "feature": "crustal_thickness_km",
+              "shap_value": -0.0916,
+              "feature_value": 33.1244
+            }
+          ]
+        },
+        "2_crustal_conduits": {
+          "total_shap": -1.488,
+          "mean_abs_shap": 0.7903,
+          "n_features": 3,
+          "top_features": [
+            {
+              "feature": "active_fault_density",
+              "shap_value": -1.9295,
+              "feature_value": 0.3877
+            },
+            {
+              "feature": "dist_active_faults_m",
+              "shap_value": 0.3938,
+              "feature_value": 0.0
+            },
+            {
+              "feature": "dist_topo_lineaments_km",
+              "shap_value": 0.0477,
+              "feature_value": 0.0
+            }
+          ]
+        },
+        "3_physicochemical_traps": {
+          "total_shap": -0.8393,
+          "mean_abs_shap": 0.4197,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "slip_tendency_Ts",
+              "shap_value": -0.5763,
+              "feature_value": 0.6979
+            },
+            {
+              "feature": "dilation_tendency_Td",
+              "shap_value": -0.263,
+              "feature_value": 0.7013
+            }
+          ]
+        },
+        "4_alteration_and_anomaly": {
+          "total_shap": -5.8051,
+          "mean_abs_shap": 0.6896,
+          "n_features": 14,
+          "top_features": [
+            {
+              "feature": "coastal_shelf_dist_km",
+              "shap_value": -3.5524,
+              "feature_value": 179.7897
+            },
+            {
+              "feature": "dist_plate_boundary_km",
+              "shap_value": -2.2368,
+              "feature_value": 487.1305
+            },
+            {
+              "feature": "dem_tpi_regional",
+              "shap_value": 1.461,
+              "feature_value": -391.3554
+            },
+            {
+              "feature": "terrain_ruggedness_tri",
+              "shap_value": -0.9336,
+              "feature_value": 94.944
+            },
+            {
+              "feature": "bouguer_gravity_mgal",
+              "shap_value": -0.4065,
+              "feature_value": -53.1837
+            }
+          ]
+        }
+      }
+    },
+    "geometry": {
+      "centroid_lat_lon": [
+        1.2289,
+        114.8408
+      ],
+      "area_sq_km": 65.291,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.099,
+      "elkan_noto_c_hat": 0.1,
+      "calibrated_deposit_prob": 0.894,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.772,
+        "upper_bound_U": 0.924
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 0.29
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.653
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.653,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 19.9,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "EAST_KALIMANTAN_TGT_0012",
+    "rank": 12,
+    "rank_score": 0.836,
+    "conformal_90pct_target_set": [
+      "skarn_fe_cu",
+      "epithermal_au"
+    ],
+    "telescoped_system_flag": true,
+    "outmogc_boundary_gate": {
+      "porphyry_cu": 1.0,
+      "skarn_fe_cu": 1.0,
+      "epithermal_au": 1.0,
+      "laterite_fe_ni": 1.0
+    },
+    "exploration_logistics_propensity": 0.05,
+    "mineral_systems_shap_attribution": {
+      "skarn_fe_cu": {
+        "1_energy_and_metal_sources": {
+          "total_shap": -4.6871,
+          "mean_abs_shap": 2.3436,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "moho_gravity_step_mgal_km",
+              "shap_value": -4.4178,
+              "feature_value": 0.3097
+            },
+            {
+              "feature": "crustal_thickness_km",
+              "shap_value": -0.2693,
+              "feature_value": 30.9911
+            }
+          ]
+        },
+        "2_crustal_conduits": {
+          "total_shap": -1.6882,
+          "mean_abs_shap": 0.5627,
+          "n_features": 3,
+          "top_features": [
+            {
+              "feature": "active_fault_density",
+              "shap_value": -1.0588,
+              "feature_value": 0.0711
+            },
+            {
+              "feature": "dist_active_faults_m",
+              "shap_value": -0.4853,
+              "feature_value": 4191.231
+            },
+            {
+              "feature": "dist_topo_lineaments_km",
+              "shap_value": -0.1441,
+              "feature_value": 1.6765
+            }
+          ]
+        },
+        "3_physicochemical_traps": {
+          "total_shap": -1.6207,
+          "mean_abs_shap": 0.8104,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "slip_tendency_Ts",
+              "shap_value": -1.1343,
+              "feature_value": 0.168
+            },
+            {
+              "feature": "dilation_tendency_Td",
+              "shap_value": -0.4864,
+              "feature_value": 0.5406
+            }
+          ]
+        },
+        "4_alteration_and_anomaly": {
+          "total_shap": -5.05,
+          "mean_abs_shap": 0.4798,
+          "n_features": 14,
+          "top_features": [
+            {
+              "feature": "coastal_shelf_dist_km",
+              "shap_value": -2.7309,
+              "feature_value": 40.8065
+            },
+            {
+              "feature": "dem_tpi_regional",
+              "shap_value": -0.9398,
+              "feature_value": -97.8538
+            },
+            {
+              "feature": "dist_plate_boundary_km",
+              "shap_value": -0.8671,
+              "feature_value": 293.6669
+            },
+            {
+              "feature": "terrain_ruggedness_tri",
+              "shap_value": -0.476,
+              "feature_value": 45.9697
+            },
+            {
+              "feature": "dem_elevation",
+              "shap_value": -0.3355,
+              "feature_value": 152.4695
+            }
+          ]
+        }
+      },
+      "epithermal_au": {
+        "1_energy_and_metal_sources": {
+          "total_shap": -5.7138,
+          "mean_abs_shap": 2.8569,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "moho_gravity_step_mgal_km",
+              "shap_value": -5.1143,
+              "feature_value": 0.3097
+            },
+            {
+              "feature": "crustal_thickness_km",
+              "shap_value": -0.5995,
+              "feature_value": 30.9911
+            }
+          ]
+        },
+        "2_crustal_conduits": {
+          "total_shap": -0.5142,
+          "mean_abs_shap": 0.7439,
+          "n_features": 3,
+          "top_features": [
+            {
+              "feature": "dist_topo_lineaments_km",
+              "shap_value": -0.9544,
+              "feature_value": 1.6765
+            },
+            {
+              "feature": "dist_active_faults_m",
+              "shap_value": 0.8588,
+              "feature_value": 4191.231
+            },
+            {
+              "feature": "active_fault_density",
+              "shap_value": -0.4186,
+              "feature_value": 0.0711
+            }
+          ]
+        },
+        "3_physicochemical_traps": {
+          "total_shap": -2.4385,
+          "mean_abs_shap": 1.2193,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "dilation_tendency_Td",
+              "shap_value": -1.3359,
+              "feature_value": 0.5406
+            },
+            {
+              "feature": "slip_tendency_Ts",
+              "shap_value": -1.1026,
+              "feature_value": 0.168
+            }
+          ]
+        },
+        "4_alteration_and_anomaly": {
+          "total_shap": -4.2695,
+          "mean_abs_shap": 0.3988,
+          "n_features": 14,
+          "top_features": [
+            {
+              "feature": "dist_plate_boundary_km",
+              "shap_value": -2.9303,
+              "feature_value": 293.6669
+            },
+            {
+              "feature": "bouguer_gravity_mgal",
+              "shap_value": -1.264,
+              "feature_value": -14.0327
+            },
+            {
+              "feature": "coastal_shelf_dist_km",
+              "shap_value": 0.4926,
+              "feature_value": 40.8065
+            },
+            {
+              "feature": "terrain_ruggedness_tri",
+              "shap_value": -0.2343,
+              "feature_value": 45.9697
+            },
+            {
+              "feature": "dem_plan_curvature",
+              "shap_value": -0.2012,
+              "feature_value": 0.0
+            }
+          ]
+        }
+      }
+    },
+    "geometry": {
+      "centroid_lat_lon": [
+        -1.1227,
+        116.3398
+      ],
+      "area_sq_km": 90.463,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.09,
+      "elkan_noto_c_hat": 0.1,
+      "calibrated_deposit_prob": 0.811,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.698,
+        "upper_bound_U": 0.855
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 0.29
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.773
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.985,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 51.6,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "EAST_KALIMANTAN_TGT_0013",
+    "rank": 13,
+    "rank_score": 0.833,
+    "conformal_90pct_target_set": [
+      "skarn_fe_cu",
+      "epithermal_au"
+    ],
+    "telescoped_system_flag": true,
+    "outmogc_boundary_gate": {
+      "porphyry_cu": 1.0,
+      "skarn_fe_cu": 1.0,
+      "epithermal_au": 1.0,
+      "laterite_fe_ni": 1.0
+    },
+    "exploration_logistics_propensity": 0.05,
+    "mineral_systems_shap_attribution": {
+      "skarn_fe_cu": {
+        "1_energy_and_metal_sources": {
+          "total_shap": 0.741,
+          "mean_abs_shap": 0.7736,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "moho_gravity_step_mgal_km",
+              "shap_value": 1.1441,
+              "feature_value": 1.0408
+            },
+            {
+              "feature": "crustal_thickness_km",
+              "shap_value": -0.4031,
+              "feature_value": 30.8458
+            }
+          ]
+        },
+        "2_crustal_conduits": {
+          "total_shap": -2.084,
+          "mean_abs_shap": 0.7611,
+          "n_features": 3,
+          "top_features": [
+            {
+              "feature": "active_fault_density",
+              "shap_value": -1.3701,
+              "feature_value": 0.0325
+            },
+            {
+              "feature": "dist_active_faults_m",
+              "shap_value": -0.8135,
+              "feature_value": 6195.8105
+            },
+            {
+              "feature": "dist_topo_lineaments_km",
+              "shap_value": 0.0996,
+              "feature_value": 2.4783
+            }
+          ]
+        },
+        "3_physicochemical_traps": {
+          "total_shap": -0.0243,
+          "mean_abs_shap": 0.3953,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "slip_tendency_Ts",
+              "shap_value": -0.4075,
+              "feature_value": 0.2727
+            },
+            {
+              "feature": "dilation_tendency_Td",
+              "shap_value": 0.3832,
+              "feature_value": 0.4319
+            }
+          ]
+        },
+        "4_alteration_and_anomaly": {
+          "total_shap": -7.2321,
+          "mean_abs_shap": 0.6389,
+          "n_features": 14,
+          "top_features": [
+            {
+              "feature": "coastal_shelf_dist_km",
+              "shap_value": -4.1462,
+              "feature_value": 28.8212
+            },
+            {
+              "feature": "dist_plate_boundary_km",
+              "shap_value": -1.1247,
+              "feature_value": 301.0652
+            },
+            {
+              "feature": "dem_tpi_regional",
+              "shap_value": -1.0528,
+              "feature_value": -64.5713
+            },
+            {
+              "feature": "dem_aspect",
+              "shap_value": -0.577,
+              "feature_value": 172.6051
+            },
+            {
+              "feature": "bouguer_gravity_mgal",
+              "shap_value": -0.4504,
+              "feature_value": -11.7134
+            }
+          ]
+        }
+      },
+      "epithermal_au": {
+        "1_energy_and_metal_sources": {
+          "total_shap": -2.7795,
+          "mean_abs_shap": 1.3897,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "moho_gravity_step_mgal_km",
+              "shap_value": -2.2011,
+              "feature_value": 1.0408
+            },
+            {
+              "feature": "crustal_thickness_km",
+              "shap_value": -0.5784,
+              "feature_value": 30.8458
+            }
+          ]
+        },
+        "2_crustal_conduits": {
+          "total_shap": -3.3036,
+          "mean_abs_shap": 1.1012,
+          "n_features": 3,
+          "top_features": [
+            {
+              "feature": "dist_active_faults_m",
+              "shap_value": -1.7413,
+              "feature_value": 6195.8105
+            },
+            {
+              "feature": "dist_topo_lineaments_km",
+              "shap_value": -1.0734,
+              "feature_value": 2.4783
+            },
+            {
+              "feature": "active_fault_density",
+              "shap_value": -0.4889,
+              "feature_value": 0.0325
+            }
+          ]
+        },
+        "3_physicochemical_traps": {
+          "total_shap": -1.6376,
+          "mean_abs_shap": 0.8188,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "dilation_tendency_Td",
+              "shap_value": -1.1508,
+              "feature_value": 0.4319
+            },
+            {
+              "feature": "slip_tendency_Ts",
+              "shap_value": -0.4868,
+              "feature_value": 0.2727
+            }
+          ]
+        },
+        "4_alteration_and_anomaly": {
+          "total_shap": -5.6364,
+          "mean_abs_shap": 0.4207,
+          "n_features": 14,
+          "top_features": [
+            {
+              "feature": "coastal_shelf_dist_km",
+              "shap_value": -1.5442,
+              "feature_value": 28.8212
+            },
+            {
+              "feature": "bouguer_gravity_mgal",
+              "shap_value": -1.1044,
+              "feature_value": -11.7134
+            },
+            {
+              "feature": "terrain_ruggedness_tri",
+              "shap_value": -1.0099,
+              "feature_value": 24.5369
+            },
+            {
+              "feature": "dist_plate_boundary_km",
+              "shap_value": -0.5148,
+              "feature_value": 301.0652
+            },
+            {
+              "feature": "regolith_cover_m",
+              "shap_value": -0.4573,
+              "feature_value": 67.6101
+            }
+          ]
+        }
+      }
+    },
+    "geometry": {
+      "centroid_lat_lon": [
+        -2.7241,
+        115.8867
+      ],
+      "area_sq_km": 121.366,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.109,
+      "elkan_noto_c_hat": 0.1,
+      "calibrated_deposit_prob": 0.889,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.758,
+        "upper_bound_U": 0.917
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 0.29
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.607
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.922,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 56.2,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "EAST_KALIMANTAN_TGT_0014",
+    "rank": 14,
+    "rank_score": 0.833,
+    "conformal_90pct_target_set": [
+      "skarn_fe_cu",
+      "epithermal_au"
+    ],
+    "telescoped_system_flag": true,
+    "outmogc_boundary_gate": {
+      "porphyry_cu": 1.0,
+      "skarn_fe_cu": 1.0,
+      "epithermal_au": 1.0,
+      "laterite_fe_ni": 1.0
+    },
+    "exploration_logistics_propensity": 0.05,
+    "mineral_systems_shap_attribution": {
+      "skarn_fe_cu": {
+        "1_energy_and_metal_sources": {
+          "total_shap": -1.8977,
+          "mean_abs_shap": 0.9488,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "moho_gravity_step_mgal_km",
+              "shap_value": -1.8756,
+              "feature_value": 1.7743
+            },
+            {
+              "feature": "crustal_thickness_km",
+              "shap_value": -0.0221,
+              "feature_value": 32.617
+            }
+          ]
+        },
+        "2_crustal_conduits": {
+          "total_shap": -1.6118,
+          "mean_abs_shap": 0.5373,
+          "n_features": 3,
+          "top_features": [
+            {
+              "feature": "dist_active_faults_m",
+              "shap_value": -0.7481,
+              "feature_value": 0.0
+            },
+            {
+              "feature": "active_fault_density",
+              "shap_value": -0.7172,
+              "feature_value": 0.2573
+            },
+            {
+              "feature": "dist_topo_lineaments_km",
+              "shap_value": -0.1465,
+              "feature_value": 0.0
+            }
+          ]
+        },
+        "3_physicochemical_traps": {
+          "total_shap": -2.6656,
+          "mean_abs_shap": 1.3328,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "slip_tendency_Ts",
+              "shap_value": -2.159,
+              "feature_value": 0.6979
+            },
+            {
+              "feature": "dilation_tendency_Td",
+              "shap_value": -0.5066,
+              "feature_value": 0.7013
+            }
+          ]
+        },
+        "4_alteration_and_anomaly": {
+          "total_shap": -5.3733,
+          "mean_abs_shap": 0.5111,
+          "n_features": 14,
+          "top_features": [
+            {
+              "feature": "coastal_shelf_dist_km",
+              "shap_value": -3.0698,
+              "feature_value": 111.0096
+            },
+            {
+              "feature": "terrain_ruggedness_tri",
+              "shap_value": -1.0106,
+              "feature_value": 81.2191
+            },
+            {
+              "feature": "dist_plate_boundary_km",
+              "shap_value": -0.8117,
+              "feature_value": 321.8831
+            },
+            {
+              "feature": "dem_tpi_regional",
+              "shap_value": -0.5253,
+              "feature_value": -176.7957
+            },
+            {
+              "feature": "bouguer_gravity_mgal",
+              "shap_value": 0.508,
+              "feature_value": -42.6592
+            }
+          ]
+        }
+      },
+      "epithermal_au": {
+        "1_energy_and_metal_sources": {
+          "total_shap": -3.5132,
+          "mean_abs_shap": 1.7566,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "moho_gravity_step_mgal_km",
+              "shap_value": -1.9018,
+              "feature_value": 1.7743
+            },
+            {
+              "feature": "crustal_thickness_km",
+              "shap_value": -1.6114,
+              "feature_value": 32.617
+            }
+          ]
+        },
+        "2_crustal_conduits": {
+          "total_shap": -0.9146,
+          "mean_abs_shap": 0.3947,
+          "n_features": 3,
+          "top_features": [
+            {
+              "feature": "active_fault_density",
+              "shap_value": -1.0329,
+              "feature_value": 0.2573
+            },
+            {
+              "feature": "dist_active_faults_m",
+              "shap_value": 0.1348,
+              "feature_value": 0.0
+            },
+            {
+              "feature": "dist_topo_lineaments_km",
+              "shap_value": -0.0165,
+              "feature_value": 0.0
+            }
+          ]
+        },
+        "3_physicochemical_traps": {
+          "total_shap": -0.5927,
+          "mean_abs_shap": 0.2964,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "slip_tendency_Ts",
+              "shap_value": -0.5804,
+              "feature_value": 0.6979
+            },
+            {
+              "feature": "dilation_tendency_Td",
+              "shap_value": -0.0123,
+              "feature_value": 0.7013
+            }
+          ]
+        },
+        "4_alteration_and_anomaly": {
+          "total_shap": -7.7138,
+          "mean_abs_shap": 0.7249,
+          "n_features": 14,
+          "top_features": [
+            {
+              "feature": "dist_plate_boundary_km",
+              "shap_value": -3.0741,
+              "feature_value": 321.8831
+            },
+            {
+              "feature": "coastal_shelf_dist_km",
+              "shap_value": -2.8869,
+              "feature_value": 111.0096
+            },
+            {
+              "feature": "dem_tpi_regional",
+              "shap_value": 1.1419,
+              "feature_value": -176.7957
+            },
+            {
+              "feature": "bouguer_gravity_mgal",
+              "shap_value": -1.1219,
+              "feature_value": -42.6592
+            },
+            {
+              "feature": "terrain_ruggedness_tri",
+              "shap_value": -0.8394,
+              "feature_value": 81.2191
+            }
+          ]
+        }
+      }
+    },
+    "geometry": {
+      "centroid_lat_lon": [
+        1.1725,
+        116.3425
+      ],
+      "area_sq_km": 1.239,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.108,
+      "elkan_noto_c_hat": 0.1,
+      "calibrated_deposit_prob": 0.927,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.795,
+        "upper_bound_U": 0.948
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 0.29
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.653
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.653,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 38.1,
+        "aem_conductance_0_300m_S": 15.0,
+        "reductant_trap_inferred": true
+      }
+    }
+  },
+  {
+    "target_id": "EAST_KALIMANTAN_TGT_0015",
+    "rank": 15,
+    "rank_score": 0.832,
+    "conformal_90pct_target_set": [
+      "porphyry_cu",
+      "skarn_fe_cu",
+      "epithermal_au"
+    ],
+    "telescoped_system_flag": true,
+    "outmogc_boundary_gate": {
+      "porphyry_cu": 1.0,
+      "skarn_fe_cu": 1.0,
+      "epithermal_au": 1.0,
+      "laterite_fe_ni": 1.0
+    },
+    "exploration_logistics_propensity": 0.05,
+    "mineral_systems_shap_attribution": {
+      "porphyry_cu": {
+        "1_energy_and_metal_sources": {
+          "total_shap": -4.0688,
+          "mean_abs_shap": 2.0344,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "moho_gravity_step_mgal_km",
+              "shap_value": -3.6901,
+              "feature_value": 0.1953
+            },
+            {
+              "feature": "crustal_thickness_km",
+              "shap_value": -0.3787,
+              "feature_value": 31.9748
+            }
+          ]
+        },
+        "2_crustal_conduits": {
+          "total_shap": -0.5343,
+          "mean_abs_shap": 0.183,
+          "n_features": 3,
+          "top_features": [
+            {
+              "feature": "dist_active_faults_m",
+              "shap_value": -0.5303,
+              "feature_value": 0.0
+            },
+            {
+              "feature": "dist_topo_lineaments_km",
+              "shap_value": -0.0113,
+              "feature_value": 0.0
+            },
+            {
+              "feature": "active_fault_density",
+              "shap_value": 0.0073,
+              "feature_value": 0.2862
+            }
+          ]
+        },
+        "3_physicochemical_traps": {
+          "total_shap": -0.0492,
+          "mean_abs_shap": 0.0843,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "dilation_tendency_Td",
+              "shap_value": -0.1089,
+              "feature_value": 0.9331
+            },
+            {
+              "feature": "slip_tendency_Ts",
+              "shap_value": 0.0597,
+              "feature_value": 0.5893
+            }
+          ]
+        },
+        "4_alteration_and_anomaly": {
+          "total_shap": -5.2858,
+          "mean_abs_shap": 0.3798,
+          "n_features": 16,
+          "top_features": [
+            {
+              "feature": "dist_plate_boundary_km",
+              "shap_value": -2.7045,
+              "feature_value": 342.037
+            },
+            {
+              "feature": "dem_tpi_regional",
+              "shap_value": -0.9683,
+              "feature_value": -40.8953
+            },
+            {
+              "feature": "dist_volcanic_arc_km",
+              "shap_value": -0.5533,
+              "feature_value": 500.0
+            },
+            {
+              "feature": "oof_prob_skarn",
+              "shap_value": -0.5368,
+              "feature_value": 0.1364
+            },
+            {
+              "feature": "bouguer_gravity_mgal",
+              "shap_value": -0.2615,
+              "feature_value": -31.9737
+            }
+          ]
+        }
+      },
+      "skarn_fe_cu": {
+        "1_energy_and_metal_sources": {
+          "total_shap": -0.4705,
+          "mean_abs_shap": 0.7313,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "moho_gravity_step_mgal_km",
+              "shap_value": -0.9666,
+              "feature_value": 0.1953
+            },
+            {
+              "feature": "crustal_thickness_km",
+              "shap_value": 0.4961,
+              "feature_value": 31.9748
+            }
+          ]
+        },
+        "2_crustal_conduits": {
+          "total_shap": -1.4395,
+          "mean_abs_shap": 0.4798,
+          "n_features": 3,
+          "top_features": [
+            {
+              "feature": "dist_active_faults_m",
+              "shap_value": -0.8314,
+              "feature_value": 0.0
+            },
+            {
+              "feature": "active_fault_density",
+              "shap_value": -0.3604,
+              "feature_value": 0.2862
+            },
+            {
+              "feature": "dist_topo_lineaments_km",
+              "shap_value": -0.2477,
+              "feature_value": 0.0
+            }
+          ]
+        },
+        "3_physicochemical_traps": {
+          "total_shap": 2.7004,
+          "mean_abs_shap": 1.395,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "dilation_tendency_Td",
+              "shap_value": 2.7452,
+              "feature_value": 0.9331
+            },
+            {
+              "feature": "slip_tendency_Ts",
+              "shap_value": -0.0448,
+              "feature_value": 0.5893
+            }
+          ]
+        },
+        "4_alteration_and_anomaly": {
+          "total_shap": -0.8988,
+          "mean_abs_shap": 0.5051,
+          "n_features": 14,
+          "top_features": [
+            {
+              "feature": "coastal_shelf_dist_km",
+              "shap_value": 1.7252,
+              "feature_value": 56.0659
+            },
+            {
+              "feature": "dist_plate_boundary_km",
+              "shap_value": -1.5728,
+              "feature_value": 342.037
+            },
+            {
+              "feature": "terrain_ruggedness_tri",
+              "shap_value": -1.0705,
+              "feature_value": 71.4083
+            },
+            {
+              "feature": "bouguer_gravity_mgal",
+              "shap_value": 0.8401,
+              "feature_value": -31.9737
+            },
+            {
+              "feature": "dem_aspect",
+              "shap_value": -0.7175,
+              "feature_value": 203.1312
+            }
+          ]
+        }
+      },
+      "epithermal_au": {
+        "1_energy_and_metal_sources": {
+          "total_shap": -7.8332,
+          "mean_abs_shap": 3.9166,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "moho_gravity_step_mgal_km",
+              "shap_value": -6.0175,
+              "feature_value": 0.1953
+            },
+            {
+              "feature": "crustal_thickness_km",
+              "shap_value": -1.8157,
+              "feature_value": 31.9748
+            }
+          ]
+        },
+        "2_crustal_conduits": {
+          "total_shap": -1.4392,
+          "mean_abs_shap": 0.4797,
+          "n_features": 3,
+          "top_features": [
+            {
+              "feature": "active_fault_density",
+              "shap_value": -1.207,
+              "feature_value": 0.2862
+            },
+            {
+              "feature": "dist_topo_lineaments_km",
+              "shap_value": -0.184,
+              "feature_value": 0.0
+            },
+            {
+              "feature": "dist_active_faults_m",
+              "shap_value": -0.0482,
+              "feature_value": 0.0
+            }
+          ]
+        },
+        "3_physicochemical_traps": {
+          "total_shap": -0.7556,
+          "mean_abs_shap": 0.3778,
+          "n_features": 2,
+          "top_features": [
+            {
+              "feature": "dilation_tendency_Td",
+              "shap_value": -0.6957,
+              "feature_value": 0.9331
+            },
+            {
+              "feature": "slip_tendency_Ts",
+              "shap_value": -0.0599,
+              "feature_value": 0.5893
+            }
+          ]
+        },
+        "4_alteration_and_anomaly": {
+          "total_shap": -6.6326,
+          "mean_abs_shap": 0.5007,
+          "n_features": 14,
+          "top_features": [
+            {
+              "feature": "coastal_shelf_dist_km",
+              "shap_value": -2.4168,
+              "feature_value": 56.0659
+            },
+            {
+              "feature": "dist_plate_boundary_km",
+              "shap_value": -1.7299,
+              "feature_value": 342.037
+            },
+            {
+              "feature": "terrain_ruggedness_tri",
+              "shap_value": -0.9138,
+              "feature_value": 71.4083
+            },
+            {
+              "feature": "dem_elevation",
+              "shap_value": -0.5858,
+              "feature_value": 303.8215
+            },
+            {
+              "feature": "bouguer_gravity_mgal",
+              "shap_value": -0.5039,
+              "feature_value": -31.9737
+            }
+          ]
+        }
+      }
+    },
+    "geometry": {
+      "centroid_lat_lon": [
+        -1.8124,
+        115.6663
+      ],
+      "area_sq_km": 3.795,
+      "window_footprint_km": 3.2
+    },
+    "probabilities": {
+      "fused_raw_score": 0.139,
+      "elkan_noto_c_hat": 0.1,
+      "calibrated_deposit_prob": 0.779,
+      "conformal_90_ci": {
+        "lower_bound_L": 0.725,
+        "upper_bound_U": 0.79
+      },
+      "exploration_propensity_e_x": 0.05,
+      "propensity_weight_w": 0.29
+    },
+    "physics_and_geology_summary": {
+      "alteration": {
+        "sensor_source": "EMIT_SWIR",
+        "al_oh_crystallinity_2200nm": "high",
+        "kaolinite_alunite_doublet": true,
+        "fe_mg_carbonate_shift_nm": 0.0,
+        "fe_oxide_intensity": 0.895
+      },
+      "geomechanics_and_structure": {
+        "slip_tendency_Ts_mean": 0.6,
+        "dilation_tendency_Td_max": 0.922,
+        "sar_cloude_pottier_alpha_deg": 45.0,
+        "moho_gravity_gradient_step_mGal_km": 1.5
+      },
+      "cover_and_conductivity": {
+        "regolith_cover_depth_m": 46.2,
         "aem_conductance_0_300m_S": 15.0,
         "reductant_trap_inferred": true
       }
