@@ -80,7 +80,7 @@ def main():
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GEOSPATIALS // Autonomous Mineral Intelligence Workspace</title>
+  <title>SIFT // Spatial Inference & Fault Targeting</title>
 
   <!-- 4-Tier Non-Cliché Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -93,7 +93,7 @@ def main():
 
   <style>
     /* ==========================================================================
-       ANTIGRAVITY STRICT MONOCHROMATIC DUAL-THEME TOKENS (SWISS MODERN MINIMALISM)
+       SIFT // STRICT MONOCHROMATIC DUAL-THEME TOKENS (SWISS MODERN MINIMALISM)
        ========================================================================== */
     :root {
       /* Typography Tokens */
@@ -102,40 +102,47 @@ def main():
       --font-sans: 'Atkinson Hyperlegible', 'Plus Jakarta Sans', sans-serif;
       --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
 
-      /* Dark Mode ("Deep Obsidian & Abyssal Slate" — Default) */
-      --bg-canvas: #070A10;
-      --bg-surface: #0D131F;
-      --bg-elevated: #141D2E;
-      --bg-glass: rgba(13, 19, 31, 0.85);
-      --border-hairline: #1E293B;
-      --border-subtle: rgba(255, 255, 255, 0.08);
-      --text-primary: #F8FAFC;
+      /* Dark Mode ("Deep Obsidian & Titanium Slate" — Default) */
+      --bg-canvas: #060709;
+      --bg-surface: #0B0E14;
+      --bg-elevated: #11151E;
+      --bg-glass: rgba(11, 14, 20, 0.94);
+      --border-hairline: rgba(255, 255, 255, 0.08);
+      --border-subtle: rgba(255, 255, 255, 0.04);
+      --border-strong: rgba(255, 255, 255, 0.16);
+      
+      --text-primary: #F4F4F6;
       --text-secondary: #94A3B8;
-      --text-muted: #64748B;
-      --accent-primary: #38BDF8;
-      --accent-secondary: #0EA5E9;
-      --accent-amber: #F59E0B;
-      --accent-emerald: #10B981;
-      --accent-purple: #A855F7;
-      --shadow-elevation: 0 8px 32px rgba(0, 0, 0, 0.45);
+      --text-muted: #5A6474;
+
+      /* Strict Monochromatic Accents */
+      --accent-primary: #FFFFFF;
+      --accent-secondary: #E2E8F0;
+      --accent-tertiary: #94A3B8;
+      --accent-zinc: #1E293B;
+      --accent-highlight: rgba(255, 255, 255, 0.10);
+      --shadow-elevation: 0 12px 40px rgba(0, 0, 0, 0.65);
     }
 
     body.light-theme {
       --bg-canvas: #F8FAFC !important;
       --bg-surface: #FFFFFF !important;
       --bg-elevated: #F1F5F9 !important;
-      --bg-glass: rgba(255, 255, 255, 0.88) !important;
+      --bg-glass: rgba(255, 255, 255, 0.94) !important;
       --border-hairline: #E2E8F0 !important;
-      --border-subtle: rgba(0, 0, 0, 0.06) !important;
-      --text-primary: #0F172A !important;
+      --border-subtle: rgba(0, 0, 0, 0.04) !important;
+      --border-strong: #CBD5E1 !important;
+
+      --text-primary: #090A0C !important;
       --text-secondary: #475569 !important;
       --text-muted: #94A3B8 !important;
-      --accent-primary: #0284C7 !important;
-      --accent-secondary: #0369A1 !important;
-      --accent-amber: #D97706 !important;
-      --accent-emerald: #059669 !important;
-      --accent-purple: #7C3AED !important;
-      --shadow-elevation: 0 8px 32px rgba(15, 23, 42, 0.08) !important;
+
+      --accent-primary: #090A0C !important;
+      --accent-secondary: #1E293B !important;
+      --accent-tertiary: #475569 !important;
+      --accent-zinc: #E2E8F0 !important;
+      --accent-highlight: rgba(0, 0, 0, 0.05) !important;
+      --shadow-elevation: 0 12px 36px rgba(0, 0, 0, 0.08) !important;
     }
 
     /* Reset & Viewport Constraints */
@@ -157,8 +164,8 @@ def main():
     }
 
     ::selection {
-      background-color: rgba(56, 189, 248, 0.3);
-      color: #F8FAFC;
+      background-color: rgba(255, 255, 255, 0.25);
+      color: #FFFFFF;
     }
 
     /* Monospace Telemetry Scrollbars */
@@ -174,11 +181,11 @@ def main():
       border-radius: 2px;
     }
     ::-webkit-scrollbar-thumb:hover {
-      background: var(--accent-primary);
+      background: var(--text-muted);
     }
 
     /* Accessible Focus Rings */
-    button:focus-visible, input:focus-visible, select:focus-visible {
+    button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
       outline: 2px solid var(--accent-primary) !important;
       outline-offset: 2px !important;
     }
@@ -213,15 +220,15 @@ def main():
 
     /* Top Telemetry & Command Bar */
     .top-header {
-      height: 52px;
+      height: 54px;
       flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 18px;
+      padding: 0 20px;
       background: var(--bg-surface);
       border-bottom: 1px solid var(--border-hairline);
-      z-index: 40;
+      z-index: 50;
     }
 
     .brand-wrap {
@@ -230,24 +237,17 @@ def main():
       gap: 12px;
     }
 
-    .pulse-node {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--accent-primary);
-      box-shadow: 0 0 10px var(--accent-primary);
-      animation: pulseGlow 2.4s infinite ease-in-out;
-    }
-
-    @keyframes pulseGlow {
-      0%, 100% { opacity: 0.7; transform: scale(0.95); }
-      50% { opacity: 1; transform: scale(1.15); }
+    .sift-logo-mark {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-primary);
     }
 
     .header-telemetry-bar {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
       font-family: var(--font-mono);
       font-size: 11px;
       color: var(--text-secondary);
@@ -267,6 +267,50 @@ def main():
       display: flex;
       align-items: center;
       gap: 10px;
+    }
+
+    /* Primary Navigation Switcher (Mission Control vs Workspace) */
+    .nav-tabs-group {
+      display: flex;
+      align-items: center;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-hairline);
+      border-radius: 6px;
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .nav-tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      padding: 5px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .nav-tab-btn:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .nav-tab-btn.active {
+      background: var(--accent-primary);
+      color: var(--bg-canvas);
+      font-weight: 700;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    body.light-theme .nav-tab-btn.active {
+      background: #090A0C !important;
+      color: #FFFFFF !important;
     }
 
     /* Segmented Layout Mode Switcher */
@@ -302,9 +346,14 @@ def main():
 
     .view-mode-btn.active {
       background: var(--accent-primary);
-      color: #070A10;
+      color: var(--bg-canvas);
       font-weight: 700;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    }
+
+    body.light-theme .view-mode-btn.active {
+      background: #090A0C !important;
+      color: #FFFFFF !important;
     }
 
     .select-dataset {
@@ -318,7 +367,7 @@ def main():
       outline: none;
       cursor: pointer;
       transition: border-color 0.15s ease;
-      max-width: 320px;
+      max-width: 310px;
     }
 
     .select-dataset:focus {
@@ -341,64 +390,48 @@ def main():
     }
 
     .select-ore-category {
-      max-width: 215px;
-      border-color: rgba(249, 115, 22, 0.4);
+      max-width: 200px;
       color: var(--text-primary);
     }
 
     .select-run-history {
-      max-width: 235px;
-      border-color: rgba(56, 189, 248, 0.4);
+      max-width: 220px;
       color: var(--text-primary);
     }
 
+    /* Monochromatic Ore Style Badges */
     .ore-badge {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
       padding: 2px 7px;
       border-radius: 4px;
       font-size: 9.5px;
       font-family: var(--font-mono);
-      font-weight: 700;
-      letter-spacing: 0.03em;
+      font-weight: 600;
+      letter-spacing: 0.04em;
       text-transform: uppercase;
       white-space: nowrap;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+      border: 1px solid var(--border-hairline);
     }
 
-    .ore-badge-porphyry_cu {
-      background: rgba(249, 115, 22, 0.15);
-      color: #F97316;
-      border: 1px solid rgba(249, 115, 22, 0.4);
+    .ore-badge::before {
+      content: "";
+      display: inline-block;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--text-secondary);
     }
 
-    .ore-badge-skarn_fe_cu {
-      background: rgba(168, 85, 247, 0.15);
-      color: #C084FC;
-      border: 1px solid rgba(168, 85, 247, 0.4);
-    }
-
-    .ore-badge-epithermal_au {
-      background: rgba(234, 179, 8, 0.15);
-      color: #FACC15;
-      border: 1px solid rgba(234, 179, 8, 0.4);
-    }
-
-    .ore-badge-laterite_fe_ni {
-      background: rgba(16, 185, 129, 0.15);
-      color: #34D399;
-      border: 1px solid rgba(16, 185, 129, 0.4);
-    }
-
-    .ore-badge-primary_gold {
-      background: rgba(245, 158, 11, 0.15);
-      color: #FBBF24;
-      border: 1px solid rgba(245, 158, 11, 0.4);
-    }
-
-    .ore-badge-telescoped {
-      background: rgba(56, 189, 248, 0.18);
-      color: #38BDF8;
-      border: 1px solid rgba(56, 189, 248, 0.5);
-    }
+    .ore-badge-porphyry_cu::before { background: #FFFFFF; }
+    .ore-badge-skarn_fe_cu::before { background: #E2E8F0; }
+    .ore-badge-epithermal_au::before { background: #CBD5E1; }
+    .ore-badge-laterite_fe_ni::before { background: #94A3B8; }
+    .ore-badge-primary_gold::before { background: #F8FAFC; }
+    .ore-badge-telescoped::before { background: #FFFFFF; box-shadow: 0 0 6px rgba(255, 255, 255, 0.8); }
 
     .btn-icon {
       background: var(--bg-elevated);
@@ -418,12 +451,521 @@ def main():
       border-color: var(--accent-primary);
     }
 
-    /* Main Workspace Container */
+    /* ==========================================================================
+       HOMEPAGE // MISSION CONTROL STYLES
+       ========================================================================== */
+    .view-home-container {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      background: var(--bg-canvas);
+      padding: 36px 32px 72px 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .home-content-wrap {
+      width: 100%;
+      max-width: 1260px;
+      display: flex;
+      flex-direction: column;
+      gap: 56px;
+    }
+
+    /* Hero Section */
+    .hero-section {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding-top: 12px;
+      border-bottom: 1px solid var(--border-hairline);
+      padding-bottom: 48px;
+    }
+
+    .hero-top-badges {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .mono-badge {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-hairline);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .mono-badge.active-dot .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #FFFFFF;
+      box-shadow: 0 0 8px #FFFFFF;
+    }
+
+    body.light-theme .mono-badge.active-dot .dot {
+      background: #090A0C !important;
+      box-shadow: none !important;
+    }
+
+    .hero-main-title {
+      font-family: var(--font-display);
+      font-size: 44px;
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      line-height: 1.1;
+      color: var(--text-primary);
+      max-width: 980px;
+    }
+
+    .hero-lead-text {
+      font-family: var(--font-sans);
+      font-size: 16px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      max-width: 820px;
+    }
+
+    .hero-cta-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    .hero-btn-primary {
+      background: var(--accent-primary);
+      color: var(--bg-canvas);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 10px 22px;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    .hero-btn-primary:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+    }
+
+    body.light-theme .hero-btn-primary {
+      background: #090A0C !important;
+      color: #FFFFFF !important;
+    }
+
+    .hero-btn-secondary {
+      background: transparent;
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 9px 18px;
+      border-radius: 5px;
+      border: 1px solid var(--border-hairline);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .hero-btn-secondary:hover {
+      background: var(--bg-elevated);
+      border-color: var(--border-strong);
+    }
+
+    /* 4-Metric Hero KPI Grid */
+    .hero-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    @media (max-width: 900px) {
+      .hero-kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .hero-kpi-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-hairline);
+      border-radius: 8px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: border-color 0.15s ease;
+    }
+
+    .hero-kpi-card:hover {
+      border-color: var(--border-strong);
+    }
+
+    .kpi-micro-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+    }
+
+    .kpi-hero-num {
+      font-family: var(--font-mono);
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .kpi-unit {
+      font-size: 14px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .kpi-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.45;
+    }
+
+    /* Section Headers */
+    .section-header {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 20px;
+    }
+
+    .section-tag {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+
+    .section-subtitle {
+      font-size: 13.5px;
+      color: var(--text-secondary);
+      max-width: 640px;
+    }
+
+    /* Exploration Theaters Grid */
+    .theaters-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 820px) {
+      .theaters-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .theater-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-hairline);
+      border-radius: 8px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .theater-card:hover {
+      border-color: var(--border-strong);
+    }
+
+    .theater-card.featured {
+      border-color: rgba(255, 255, 255, 0.2);
+      background: linear-gradient(180deg, var(--bg-surface) 0%, var(--bg-elevated) 100%);
+    }
+
+    .theater-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .theater-status-badge {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-hairline);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .theater-status-badge.active {
+      color: var(--text-primary);
+      border-color: var(--border-strong);
+    }
+
+    .theater-status-badge.active .dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #FFFFFF;
+    }
+
+    .theater-crs {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .theater-name {
+      font-family: var(--font-display);
+      font-size: 19px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .theater-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .theater-metrics-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      padding: 12px 0;
+      border-top: 1px solid var(--border-hairline);
+      border-bottom: 1px solid var(--border-hairline);
+    }
+
+    .theater-metrics-row .lbl {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+
+    .theater-metrics-row .val {
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .theater-launch-btn {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-hairline);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      width: 100%;
+    }
+
+    .theater-launch-btn:hover {
+      background: var(--accent-primary);
+      color: var(--bg-canvas);
+      border-color: var(--accent-primary);
+    }
+
+    body.light-theme .theater-launch-btn:hover {
+      background: #090A0C !important;
+      color: #FFFFFF !important;
+    }
+
+    /* 7-Pass Scientific Pipeline Cards */
+    .pipeline-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    @media (max-width: 1050px) {
+      .pipeline-cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .pipeline-cards-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .pipeline-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-hairline);
+      border-radius: 8px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: border-color 0.15s ease;
+    }
+
+    .pipeline-card:hover {
+      border-color: var(--border-strong);
+    }
+
+    .pipeline-step-num {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+    }
+
+    .pipeline-card h4 {
+      font-family: var(--font-display);
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.3;
+    }
+
+    .pipeline-card p {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* 21-Channel Sensor Table */
+    .sensor-matrix-table-wrap {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-hairline);
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+
+    .sensor-matrix-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11.5px;
+      text-align: left;
+    }
+
+    .sensor-matrix-table th {
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-hairline);
+      letter-spacing: 0.04em;
+    }
+
+    .sensor-matrix-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+    }
+
+    .sensor-matrix-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--text-primary);
+    }
+
+    .sensor-matrix-table td:nth-child(1) {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .sensor-matrix-table td:nth-child(2) {
+      font-family: var(--font-mono);
+      color: var(--accent-secondary);
+      font-weight: 600;
+    }
+
+    /* Homepage Footer */
+    .home-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 32px;
+      border-top: 1px solid var(--border-hairline);
+      width: 100%;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .footer-brand {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .footer-copy {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-left: 12px;
+    }
+
+    .footer-tag {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      padding: 3px 8px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-hairline);
+      border-radius: 4px;
+    }
+
+    /* ==========================================================================
+       WORKSPACE VIEW & CENTRAL SPLIT-PANE STYLES
+       ========================================================================== */
     .workspace-body {
       flex: 1;
       display: flex;
       overflow: hidden;
       position: relative;
+      height: calc(100vh - 54px);
     }
 
     /* Collapsible Progressive Disclosure Drawer */
@@ -567,7 +1109,7 @@ def main():
     }
 
     .hairline-panel:hover {
-      border-color: rgba(56, 189, 248, 0.25);
+      border-color: var(--border-strong);
     }
 
     .panel-header {
@@ -583,7 +1125,7 @@ def main():
       font-family: var(--font-mono);
       font-size: 10px;
       font-weight: 700;
-      color: var(--accent-primary);
+      color: var(--text-primary);
       background: var(--bg-elevated);
       padding: 2px 7px;
       border-radius: 4px;
@@ -662,8 +1204,13 @@ def main():
 
     .glass-pill-btn.active {
       background: var(--accent-primary);
-      color: #070A10;
+      color: var(--bg-canvas);
       font-weight: 700;
+    }
+
+    body.light-theme .glass-pill-btn.active {
+      background: #090A0C !important;
+      color: #FFFFFF !important;
     }
 
     /* Floating Telemetry HUD at Bottom of Map */
@@ -748,17 +1295,14 @@ def main():
     .tab-btn {
       background: transparent;
       border: none;
-      font-family: var(--font-sans);
-      font-size: 11px;
+      font-family: var(--font-mono);
+      font-size: 10px;
       font-weight: 600;
       color: var(--text-secondary);
-      padding: 5px 11px;
+      padding: 4px 10px;
       border-radius: 4px;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.15s ease;
+      transition: all 0.12s ease;
     }
 
     .tab-btn:hover {
@@ -767,128 +1311,123 @@ def main():
 
     .tab-btn.active {
       background: var(--accent-primary);
-      color: #070A10;
+      color: var(--bg-canvas);
       font-weight: 700;
     }
 
+    body.light-theme .tab-btn.active {
+      background: #090A0C !important;
+      color: #FFFFFF !important;
+    }
+
+    /* Procedural Subsurface Tomographic ASCII Grid */
     .ascii-canvas-container {
       position: relative;
-      width: 100%;
       background: var(--bg-canvas);
       border: 1px solid var(--border-hairline);
       border-radius: 6px;
       overflow: hidden;
-      cursor: crosshair;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 220px;
     }
 
     #canvas-ascii-tomography {
       display: block;
       width: 100%;
       height: 220px;
+      cursor: crosshair;
     }
 
-    /* Ranked Telemetry Table */
+    /* Telemetry Target Registry Table */
     .telemetry-table-wrap {
-      width: 100%;
       overflow-x: auto;
-      max-height: 230px;
+      max-height: 240px;
+      border: 1px solid var(--border-hairline);
+      border-radius: 6px;
+      background: var(--bg-canvas);
     }
 
     .telemetry-table {
       width: 100%;
       border-collapse: collapse;
       font-family: var(--font-mono);
-      font-size: 11px;
+      font-size: 10.5px;
+      text-align: left;
     }
 
     .telemetry-table th {
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      font-weight: 600;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border-hairline);
       position: sticky;
       top: 0;
-      background: var(--bg-surface);
-      padding: 8px 10px;
-      text-align: left;
-      font-size: 9.5px;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      border-bottom: 1px solid var(--border-hairline);
-      z-index: 5;
+      z-index: 2;
+      user-select: none;
+      cursor: pointer;
     }
 
     .telemetry-table td {
       padding: 8px 10px;
-      border-bottom: 1px solid var(--border-hairline);
+      border-bottom: 1px solid var(--border-subtle);
       color: var(--text-secondary);
-      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
     }
 
     .telemetry-table tr {
       cursor: pointer;
-      transition: background 0.12s ease;
+      transition: background-color 0.1s ease;
     }
 
     .telemetry-table tr:hover {
-      background: var(--bg-elevated);
+      background-color: var(--bg-elevated);
+      color: var(--text-primary);
     }
 
     .telemetry-table tr.active-row {
-      background: var(--bg-elevated);
-      color: var(--accent-primary);
-      font-weight: 600;
+      background-color: rgba(255, 255, 255, 0.08) !important;
+      color: var(--text-primary) !important;
     }
 
-    .badge-pill {
-      display: inline-block;
-      padding: 2px 7px;
-      border-radius: 4px;
-      font-size: 9.5px;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-    }
-
-    /* Custom High-Acuity Target Site Reticle Pins */
-    .custom-target-marker {
-      background: transparent !important;
-      border: none !important;
-    }
-
+    /* Monochromatic Target Pins on Map */
     .target-pin {
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-sizing: border-box;
-      border-radius: 50%;
-      background: #0D131F;
-      border: 2px solid #f59e0b;
-      box-shadow: 0 0 10px rgba(245, 158, 11, 0.65), 0 2px 6px rgba(0,0,0,0.85);
-      color: #F8FAFC;
       font-family: var(--font-mono);
-      font-weight: 800;
+      font-weight: 700;
       cursor: pointer;
-      user-select: none;
-      transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      border: 1.5px solid #FFFFFF;
+      background: var(--bg-surface);
+      color: #FFFFFF;
     }
 
     .target-pin:hover {
-      transform: scale(1.25);
-      box-shadow: 0 0 16px rgba(245, 158, 11, 0.95), 0 0 30px rgba(245, 158, 11, 0.4);
-      border-color: #fbbf24;
-      z-index: 9999 !important;
+      transform: scale(1.2);
+      border-color: #FFFFFF;
+      box-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
     }
 
     .target-pin.selected {
-      background: #38bdf8 !important;
-      border: 2.5px solid #FFFFFF !important;
-      box-shadow: 0 0 20px rgba(56, 189, 248, 0.95), 0 0 40px rgba(56, 189, 248, 0.5) !important;
-      color: #070A10 !important;
-      transform: scale(1.35) !important;
+      border: 2px solid #FFFFFF !important;
+      background: #FFFFFF !important;
+      color: #060709 !important;
+      box-shadow: 0 0 16px rgba(255, 255, 255, 0.8), 0 0 30px rgba(255, 255, 255, 0.4) !important;
+      transform: scale(1.3) !important;
       animation: pulse-target-ring 1.8s infinite;
       z-index: 99999 !important;
     }
 
     @keyframes pulse-target-ring {
-      0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.75), 0 0 20px rgba(56, 189, 248, 0.95); }
-      70% { box-shadow: 0 0 0 14px rgba(56, 189, 248, 0), 0 0 25px rgba(56, 189, 248, 0.95); }
-      100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0), 0 0 20px rgba(56, 189, 248, 0.95); }
+      0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.6), 0 0 16px rgba(255, 255, 255, 0.8); }
+      70% { box-shadow: 0 0 0 12px rgba(255, 255, 255, 0), 0 0 20px rgba(255, 255, 255, 0.8); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0), 0 0 16px rgba(255, 255, 255, 0.8); }
     }
   </style>
 </head>
@@ -897,77 +1436,103 @@ def main():
     <!-- TOP TELEMETRY & COMMAND BAR -->
     <header class="top-header">
       <div class="brand-wrap">
-        <div class="pulse-node"></div>
-        <h1 class="panel-title" style="font-size: 13px; font-weight: 700; letter-spacing: -0.01em;">
-          GEOSPATIALS <span style="color:var(--text-muted); font-weight:400;">//</span> AUTONOMOUS MINERAL INTELLIGENCE
-        </h1>
-        <span id="region-resolution-badge" class="panel-tag" style="margin-left: 4px;">50M ULTRA-HD GRID</span>
+        <div class="sift-logo-mark" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="9" stroke="var(--border-strong)"/>
+            <line x1="12" y1="1" x2="12" y2="23" stroke="var(--accent-primary)"/>
+            <line x1="1" y1="12" x2="23" y2="12" stroke="var(--accent-primary)"/>
+            <circle cx="12" cy="12" r="2.5" fill="var(--accent-primary)"/>
+          </svg>
+        </div>
+        <div style="display:flex; flex-direction:column; justify-content:center;">
+          <h1 class="panel-title" style="font-size: 13.5px; font-weight: 800; letter-spacing: 0.04em; line-height: 1.1; margin:0;">
+            SIFT <span style="font-weight:400; color:var(--text-muted); font-size:11px; margin-left:4px;">// SPATIAL INFERENCE &amp; FAULT TARGETING</span>
+          </h1>
+          <span style="font-family:var(--font-mono); font-size:8.5px; color:var(--text-muted); letter-spacing:0.06em; line-height:1.2;">AUTONOMOUS 7-PASS GEOSPATIAL INTELLIGENCE PLATFORM</span>
+        </div>
+        <span id="region-resolution-badge" class="panel-tag" style="margin-left: 8px;">250M ULTRA-HD</span>
       </div>
+
+      <!-- MAIN NAVIGATION TABS -->
+      <nav class="nav-tabs-group" aria-label="Primary Navigation">
+        <button id="nav-btn-home" class="nav-tab-btn active" onclick="showView('home')" title="Platform Mission Control Overview">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          01 // MISSION CONTROL
+        </button>
+        <button id="nav-btn-workspace" class="nav-tab-btn" onclick="showView('workspace')" title="Interactive Geospatial Exploration Workspace">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+          02 // EXPLORATION WORKSPACE
+        </button>
+      </nav>
 
       <!-- CENTER LIVE STREAM METRICS -->
       <div class="header-telemetry-bar">
         <div style="display:flex; align-items:center; gap:6px; border-right:1px solid var(--border-hairline); padding-right:12px;">
-          <span id="braille-scanner" style="color:var(--accent-primary); font-size:14px; font-weight:700;">⠁</span>
+          <span id="braille-scanner" style="color:var(--text-primary); font-size:14px; font-weight:700;">⠁</span>
           <span style="font-size:9.5px; color:var(--text-muted); letter-spacing:0.04em;">SENSOR INGESTION</span>
         </div>
         <div class="telemetry-chip">
           <span style="color:var(--text-muted); font-size:10px;">XGB 3.1:</span>
-          <span id="chip-xgb" style="color:var(--accent-amber); font-weight:700;">0.847</span>
+          <span id="chip-xgb" style="color:var(--text-primary); font-weight:700;">0.847</span>
         </div>
         <div class="telemetry-chip">
           <span style="color:var(--text-muted); font-size:10px;">nnPU U-NET:</span>
-          <span id="chip-unet" style="color:var(--accent-purple); font-weight:700;">0.803</span>
+          <span id="chip-unet" style="color:var(--text-primary); font-weight:700;">0.803</span>
         </div>
         <div class="telemetry-chip">
           <span style="color:var(--text-muted); font-size:10px;">FUSED PR-AUC:</span>
-          <span id="chip-fused" style="color:var(--accent-emerald); font-weight:700;">0.872</span>
+          <span id="chip-fused" style="color:var(--text-primary); font-weight:700;">0.913</span>
         </div>
         <div class="telemetry-chip">
           <span style="color:var(--text-muted); font-size:10px;">PRIOR ĉ:</span>
-          <span id="chip-chat" style="color:var(--text-primary); font-weight:600;">0.285</span>
+          <span id="chip-chat" style="color:var(--text-secondary); font-weight:600;">0.285</span>
         </div>
       </div>
 
-      <!-- RIGHT COMMANDS & VIEW SWITCHER -->
+      <!-- RIGHT COMMANDS & WORKSPACE TOOLS -->
       <div class="header-actions">
-        <!-- Layout Mode Switcher -->
-        <div class="view-mode-pill">
-          <button id="btn-mode-split" class="view-mode-btn active" onclick="setLayoutMode('split')" title="Split Studio (Map + Analytics)">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
-            SPLIT
-          </button>
-          <button id="btn-mode-map" class="view-mode-btn" onclick="setLayoutMode('map')" title="Expansive Map View">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/></svg>
-            MAP
-          </button>
-          <button id="btn-mode-analytics" class="view-mode-btn" onclick="setLayoutMode('analytics')" title="Analytical Deep-Dive">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-            ANALYTICS
-          </button>
+        <!-- Workspace-Only Tools Group -->
+        <div id="header-workspace-tools" style="display:none; align-items:center; gap:8px;">
+          <!-- Layout Mode Switcher -->
+          <div class="view-mode-pill">
+            <button id="btn-mode-split" class="view-mode-btn active" onclick="setLayoutMode('split')" title="Split Studio (Map + Analytics)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+              SPLIT
+            </button>
+            <button id="btn-mode-map" class="view-mode-btn" onclick="setLayoutMode('map')" title="Expansive Map View">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/></svg>
+              MAP
+            </button>
+            <button id="btn-mode-analytics" class="view-mode-btn" onclick="setLayoutMode('analytics')" title="Analytical Deep-Dive">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              ANALYTICS
+            </button>
+          </div>
+
+          <!-- Regional Selector & Archived Training Runs -->
+          <select class="select-dataset" id="dataset-select" onchange="selectRegion(this.value)" aria-label="Select Target Region">
+            <option value="EAST_KALIMANTAN" selected>EAST KALIMANTAN (PROVINCE-WIDE 250M MODEL)</option>
+            <option value="KALIMANTAN">BORNEO ISLAND-WIDE (500M REGIONAL BASELINE)</option>
+            <optgroup id="optgroup-archived-runs" label="ARCHIVED TRAINING RUNS">
+''' + archived_opts + '''            </optgroup>
+          </select>
+
+          <!-- Deposit Mechanics Ore Category Filter -->
+          <select class="select-dataset select-ore-category" id="ore-category-select" onchange="selectOreCategory(this.value)" aria-label="Filter Ore Mechanics">
+            <option value="ALL" selected>ORE: ALL DEPOSIT STYLES (K=4)</option>
+            <option value="porphyry_cu">PORPHYRY CU-AU (HEAD 0)</option>
+            <option value="skarn_fe_cu">SKARN FE-CU (HEAD 1)</option>
+            <option value="epithermal_au">EPITHERMAL AU-AG (HEAD 2)</option>
+            <option value="laterite_fe_ni">LATERITIC FE-NI (HEAD 3)</option>
+            <option value="primary_gold">OROGENIC GOLD (PILOT)</option>
+            <option value="telescoped">TELESCOPED / POLY-PHASE</option>
+          </select>
+
+          <!-- Independent Training Run Version Selector -->
+          <select class="select-dataset select-run-history" id="run-history-select" onchange="selectTrainingRun(this.value)" aria-label="Select Training Run Version">
+            <option value="ACTIVE" selected>RUN: ACTIVE (LATEST 7-PASS)</option>
+          </select>
         </div>
-
-        <!-- Kalimantan Specialized Regional Selector & Archived Training Runs -->
-        <select class="select-dataset" id="dataset-select" onchange="selectRegion(this.value)" aria-label="Select Target Region">
-          <option value="KALIMANTAN" selected>EAST KALIMANTAN (PROVINCE-WIDE 500M K=4 MODEL)</option>
-          <optgroup id="optgroup-archived-runs" label="ARCHIVED TRAINING RUNS">
-''' + archived_opts + '''          </optgroup>
-        </select>
-
-        <!-- Deposit Mechanics Ore Category Filter -->
-        <select class="select-dataset select-ore-category" id="ore-category-select" onchange="selectOreCategory(this.value)" aria-label="Filter Ore Mechanics">
-          <option value="ALL" selected>ORE: ALL DEPOSIT STYLES (K=4)</option>
-          <option value="porphyry_cu">PORPHYRY CU-AU (HEAD 0)</option>
-          <option value="skarn_fe_cu">SKARN FE-CU (HEAD 1)</option>
-          <option value="epithermal_au">EPITHERMAL AU-AG (HEAD 2)</option>
-          <option value="laterite_fe_ni">LATERITIC FE-NI (HEAD 3)</option>
-          <option value="primary_gold">OROGENIC GOLD (PILOT)</option>
-          <option value="telescoped">TELESCOPED / POLY-PHASE</option>
-        </select>
-
-        <!-- Independent Training Run Version Selector -->
-        <select class="select-dataset select-run-history" id="run-history-select" onchange="selectTrainingRun(this.value)" aria-label="Select Training Run Version">
-          <option value="ACTIVE" selected>RUN: ACTIVE (LATEST 7-PASS)</option>
-        </select>
 
         <!-- Theme Toggle -->
         <button class="btn-icon" onclick="toggleTheme()" title="Toggle Monochromatic Theme (Dark/Light)" aria-label="Toggle Theme">
@@ -986,369 +1551,600 @@ def main():
       </div>
     </header>
 
-    <!-- WORKSPACE BODY: PROGRESSIVE DRAWER + CENTRAL SPLIT WORKSPACE -->
-    <div id="workspace-container" class="workspace-body mode-split">
-      <!-- PROGRESSIVE DISCLOSURE DRAWER (270px / 48px) -->
-      <aside id="sensor-drawer" class="telemetry-drawer">
-        <div class="drawer-header">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent-primary);" aria-hidden="true">
-              <line x1="4" y1="21" x2="4" y2="14"></line>
-              <line x1="4" y1="10" x2="4" y2="3"></line>
-              <line x1="12" y1="21" x2="12" y2="12"></line>
-              <line x1="12" y1="8" x2="12" y2="3"></line>
-              <line x1="20" y1="21" x2="20" y2="16"></line>
-              <line x1="20" y1="12" x2="20" y2="3"></line>
-            </svg>
-            <span class="panel-title" style="font-size:11px; text-transform:uppercase;">PIPELINE PARAMETERS</span>
+    <!-- VIEW 1: HOMEPAGE // MISSION CONTROL -->
+    <div id="view-home" class="view-home-container">
+      <div class="home-content-wrap">
+        <!-- HERO SECTION -->
+        <section class="hero-section">
+          <div class="hero-top-badges">
+            <span class="mono-badge">SIFT GEOSPATIAL INTELLIGENCE</span>
+            <span class="mono-badge">VERSION 4.2.0</span>
+            <span class="mono-badge active-dot"><span class="dot"></span> 250M PRODUCTION GRID SCAN ACTIVE</span>
           </div>
-          <button class="btn-icon" onclick="toggleDrawer()" aria-label="Toggle Parameter Drawer" id="btn-drawer-collapse">
-            <svg id="drawer-chevron-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-          </button>
-        </div>
 
-        <div class="drawer-content">
-          <!-- Parameter: Conformal L(x) -->
-          <div style="display:flex; flex-direction:column; gap:6px;">
-            <div style="display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:11px;">
-              <span style="color:var(--text-primary); font-weight:600;">CONFORMAL L(x) THR</span>
-              <span id="lbl-l-thr" style="color:var(--accent-primary); font-weight:700;">0.50</span>
+          <h1 class="hero-main-title">
+            SPATIAL INFERENCE &amp; FAULT TARGETING
+          </h1>
+          <p class="hero-lead-text">
+            Autonomous multi-physics subsurface intelligence engine for de-risking Greenfield mineral exploration in covered tropical terranes through neural spatial representation, conformal risk bounds, and kinematic fault network modeling.
+          </p>
+
+          <div class="hero-cta-group">
+            <button class="hero-btn-primary" onclick="launchWorkspace('EAST_KALIMANTAN')">
+              LAUNCH EXPLORATION WORKSPACE
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+            <a href="#pipeline-section" class="hero-btn-secondary">
+              VIEW 7-PASS ARCHITECTURE
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </a>
+          </div>
+
+          <!-- 4 HERO KPI CARDS -->
+          <div class="hero-kpi-grid">
+            <div class="hero-kpi-card">
+              <div class="kpi-micro-label">REGIONAL SURVEY FOOTPRINT</div>
+              <div class="kpi-hero-num">182,500 <span class="kpi-unit">km²</span></div>
+              <div class="kpi-desc">Continuous multi-sensor scan spanning East Kalimantan &amp; Borneo basin</div>
             </div>
-            <input type="range" id="ctrl-l-thr" min="0.1" max="0.95" step="0.05" value="0.50" oninput="onLThrChange(this.value)" style="accent-color:var(--accent-primary); cursor:pointer;" />
-            <span class="font-editorial" style="font-size:11.5px; font-style:italic; color:var(--text-muted); line-height:1.4;">
-              Finite-sample coverage bound P(Y=1|X) ≥ L(x) under Elkan-Noto PU-learning.
-            </span>
-          </div>
-
-          <!-- Parameter: Z-Depth -->
-          <div style="display:flex; flex-direction:column; gap:6px; padding-top:10px; border-top:1px solid var(--border-hairline);">
-            <div style="display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:11px;">
-              <span style="color:var(--text-primary); font-weight:600;">Z-DEPTH SLICE</span>
-              <span id="lbl-z-depth" style="color:var(--accent-primary); font-weight:700;">-450 m</span>
+            <div class="hero-kpi-card">
+              <div class="kpi-micro-label">MULTIMODAL TESSELLATION</div>
+              <div class="kpi-hero-num">2.92M <span class="kpi-unit">cells</span></div>
+              <div class="kpi-desc">Uniform 250m resolution grid with 21 decoupled physical sensor layers</div>
             </div>
-            <input type="range" id="ctrl-z-depth" min="100" max="600" step="10" value="450" oninput="onAsciiZChange(this.value)" style="accent-color:var(--accent-primary); cursor:pointer;" />
-          </div>
-
-          <!-- Parameter: Minimum Target Area -->
-          <div style="display:flex; flex-direction:column; gap:6px; padding-top:10px; border-top:1px solid var(--border-hairline);">
-            <div style="display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:11px;">
-              <span style="color:var(--text-primary); font-weight:600;">MIN TARGET AREA</span>
-              <span id="lbl-min-area" style="color:var(--accent-primary); font-weight:700;">5.0 ha</span>
+            <div class="hero-kpi-card">
+              <div class="kpi-micro-label">MODEL FUSION PR-AUC</div>
+              <div class="kpi-hero-num">0.9135</div>
+              <div class="kpi-desc">Dual neural-tree ensemble (XGBoost 3.1 + nnPU DAE U-Net)</div>
             </div>
-            <input type="range" id="ctrl-min-area" min="1" max="250" step="5" value="5" oninput="onMinAreaChange(this.value)" style="accent-color:var(--accent-primary); cursor:pointer;" />
+            <div class="hero-kpi-card">
+              <div class="kpi-micro-label">HIGH-CONFIDENCE RECALL</div>
+              <div class="kpi-hero-num">83.54<span class="kpi-unit">%</span></div>
+              <div class="kpi-desc">Rigorous spatial block cross-validation with zero geographic leakage</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ACTIVE EXPLORATION THEATERS -->
+        <section class="theaters-section">
+          <div class="section-header">
+            <div class="section-tag">01 // OPERATIONAL DEPLOYMENTS</div>
+            <h2 class="section-title">ACTIVE EXPLORATION THEATERS</h2>
+            <p class="section-subtitle">Real-time target portfolios and calibrated prospective horizons across equatorial terranes.</p>
           </div>
 
-          <!-- Layer Controls -->
-          <div style="display:flex; flex-direction:column; gap:6px; padding-top:10px; border-top:1px solid var(--border-hairline);">
-            <span class="panel-title" style="font-size:10.5px; text-transform:uppercase; color:var(--text-muted);">MAP OVERLAYS &amp; SENSORS</span>
-            
-            <label style="display:flex; justify-content:space-between; align-items:center; font-size:11px; padding:6px 8px; background:var(--bg-elevated); border:1px solid var(--border-hairline); border-radius:5px; cursor:pointer;">
-              <span style="display:flex; align-items:center; gap:6px;"><span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:linear-gradient(45deg, #f97316, #e11d48);"></span> Show Prospectivity Heatmap</span>
-              <input type="checkbox" id="chk-heatmap" checked onchange="toggleHeatmapLayer(this.checked)" style="accent-color:var(--accent-primary);" />
-            </label>
-
-            <div style="display:flex; flex-direction:column; gap:4px; padding-top:2px;">
-              <div style="display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:10px; color:var(--text-muted);">
-                <span>HEATMAP OPACITY</span>
-                <span id="lbl-opacity">80%</span>
+          <div class="theaters-grid">
+            <!-- Theater Card 1: East Kalimantan -->
+            <div class="theater-card featured">
+              <div class="theater-card-header">
+                <div class="theater-status-badge active"><span class="dot"></span> ACTIVE PRODUCTION RUN</div>
+                <span class="theater-crs">MGA50 / EPSG:32750</span>
               </div>
-              <input type="range" id="rng-opacity" min="0.1" max="1.0" step="0.05" value="0.80" oninput="setHeatmapOpacity(this.value)" style="accent-color:var(--accent-primary); cursor:pointer;" />
+              <h3 class="theater-name">EAST KALIMANTAN (KALTIM)</h3>
+              <p class="theater-desc">
+                Province-wide 250m ultra-HD exploration scan. Features 10 rounds of continuous incremental retraining weights, GEM active fault density integration, and 397 identified drill targets.
+              </p>
+              <div class="theater-metrics-row">
+                <div><span class="lbl">TARGETS</span><span class="val">397 RECORDED</span></div>
+                <div><span class="lbl">RESOLUTION</span><span class="val">250m CONTINUOUS</span></div>
+                <div><span class="lbl">PR-AUC</span><span class="val">0.9135</span></div>
+                <div><span class="lbl">PRIOR ĉ</span><span class="val">0.285</span></div>
+              </div>
+              <button class="theater-launch-btn" onclick="launchWorkspace('EAST_KALIMANTAN')">
+                ENTER EAST KALIMANTAN WORKSPACE →
+              </button>
             </div>
 
-            <!-- Satellite Physical & Multispectral Sensor Overlay -->
-            <div style="display:flex; flex-direction:column; gap:6px; padding:8px; background:var(--bg-elevated); border:1px solid var(--border-hairline); border-radius:5px; margin-top:2px;">
-              <label style="display:flex; justify-content:space-between; align-items:center; font-size:11px; cursor:pointer;">
-                <span style="display:flex; align-items:center; gap:6px; font-weight:600;">
-                  <span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:linear-gradient(45deg, #10b981, #06b6d4);"></span>
-                  Satellite Sensor Overlay
-                </span>
-                <input type="checkbox" id="chk-satellite-layer" onchange="updateSatelliteLayer()" style="accent-color:var(--accent-primary);" />
+            <!-- Theater Card 2: Borneo Baseline -->
+            <div class="theater-card">
+              <div class="theater-card-header">
+                <div class="theater-status-badge">REGIONAL BASELINE</div>
+                <span class="theater-crs">WGS84 / EPSG:4326</span>
+              </div>
+              <h3 class="theater-name">BORNEO ISLAND-WIDE</h3>
+              <p class="theater-desc">
+                Island-wide 500m regional geodynamic survey. Calibrated against 15 verified ground truth deposits with deep crustal Bouguer gravity slab reduction and Moho depth gradient mapping.
+              </p>
+              <div class="theater-metrics-row">
+                <div><span class="lbl">TARGETS</span><span class="val">15 BENCHMARKS</span></div>
+                <div><span class="lbl">RESOLUTION</span><span class="val">500m REGIONAL</span></div>
+                <div><span class="lbl">PR-AUC</span><span class="val">0.8720</span></div>
+                <div><span class="lbl">PRIOR ĉ</span><span class="val">0.285</span></div>
+              </div>
+              <button class="theater-launch-btn" onclick="launchWorkspace('KALIMANTAN')">
+                ENTER BORNEO BASELINE WORKSPACE →
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 7-PASS SCIENTIFIC PIPELINE ARCHITECTURE -->
+        <section id="pipeline-section" class="pipeline-section">
+          <div class="section-header">
+            <div class="section-tag">02 // ARCHITECTURAL TAXONOMY</div>
+            <h2 class="section-title">THE 7-PASS GEOSPATIAL PIPELINE</h2>
+            <p class="section-subtitle">Rigorous, bias-corrected inference pipeline resolving Greenfield subsurface prospectivity.</p>
+          </div>
+
+          <div class="pipeline-cards-grid">
+            <!-- Pass 1 -->
+            <div class="pipeline-card">
+              <div class="pipeline-step-num">PASS 01</div>
+              <h4>PHYSICAL SENSOR DECOUPLING</h4>
+              <p>
+                Ingests 21 decoupled raster channels spanning SRTM-DEM topography, ASTER SWIR/TIR hydrothermal alteration, Sentinel-2 regolith cover, Bouguer gravity, and GEM tectonic kinematic slip vectors.
+              </p>
+            </div>
+            <!-- Pass 2 -->
+            <div class="pipeline-card">
+              <div class="pipeline-step-num">PASS 02</div>
+              <h4>PROPENSITY DE-BIASING e(x)</h4>
+              <p>
+                Explicitly models observation and human exploration accessibility bias. Disentangles river and road infrastructure proximity from deep geological genesis to eliminate artificial clusters.
+              </p>
+            </div>
+            <!-- Pass 3 -->
+            <div class="pipeline-card">
+              <div class="pipeline-step-num">PASS 03</div>
+              <h4>DUAL NEURAL-TREE ENSEMBLE</h4>
+              <p>
+                Fuses bagged gradient-boosted decision trees (XGBoost 3.1) with a denoising autoencoder U-Net (nnPU DAE U-Net) to synthesize tabular non-linear interactions with multi-scale spatial textures.
+              </p>
+            </div>
+            <!-- Pass 4 -->
+            <div class="pipeline-card">
+              <div class="pipeline-step-num">PASS 04</div>
+              <h4>CLOSED-BOUNDARY PU CALIBRATION</h4>
+              <p>
+                Applies Elkan-Noto Positive-Unlabeled learning theorem. Calculates discovery constant ĉ = P(s=1|y=1) = 0.285 to calibrate unmined background into true posterior P(Y=1|X) = s(x) / ĉ.
+              </p>
+            </div>
+            <!-- Pass 5 -->
+            <div class="pipeline-card">
+              <div class="pipeline-step-num">PASS 05</div>
+              <h4>MULTI-MINERAL CONFORMAL BOUNDS</h4>
+              <p>
+                Non-conformity scoring yields finite-sample coverage guarantees at 90% confidence: L(x) ≤ P(Y=1|X) ≤ U(x). Dynamically slices targets across porphyry, skarn, epithermal, and laterite systems.
+              </p>
+            </div>
+            <!-- Pass 6 -->
+            <div class="pipeline-card">
+              <div class="pipeline-step-num">PASS 06</div>
+              <h4>VECTOR TARGET POLYGONIZATION &amp; SHAP</h4>
+              <p>
+                Contour extraction at optimal thresholds generates discrete exploration polygons. Mineral systems SHAP attributions partition feature contributions into Source, Conduit, and Trap geodynamics.
+              </p>
+            </div>
+            <!-- Pass 7 -->
+            <div class="pipeline-card">
+              <div class="pipeline-step-num">PASS 07</div>
+              <h4>SITE CARDS &amp; DRILL PRIORITIZATION</h4>
+              <p>
+                Generates comprehensive drill dossiers with regolith depth inversion, surface area calculations, structural domain boundaries, and ranked target portfolios with automated CSV export.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 21-CHANNEL PHYSICAL SENSOR MATRIX -->
+        <section class="sensor-matrix-section">
+          <div class="section-header">
+            <div class="section-tag">03 // PHYSICAL TELEMETRY</div>
+            <h2 class="section-title">21-CHANNEL MULTI-SENSOR STACK</h2>
+            <p class="section-subtitle">Multi-scale geoscientific feature tensors feeding the dual neural-tree ensemble.</p>
+          </div>
+
+          <div class="sensor-matrix-table-wrap">
+            <table class="sensor-matrix-table">
+              <thead>
+                <tr>
+                  <th>CH #</th>
+                  <th>CHANNEL CODENAME</th>
+                  <th>PHYSICAL DOMAIN</th>
+                  <th>SENSOR / DATA SOURCE</th>
+                  <th>GEOLOGICAL RELEVANCE</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>01</td><td>dem_elevation</td><td>Topography</td><td>SRTM 30m Radar DEM</td><td>Regional topographic elevation &amp; relief</td></tr>
+                <tr><td>02</td><td>dem_slope</td><td>Geomorphology</td><td>Spatial Gradient Inversion</td><td>Structural scarp &amp; valley delineation</td></tr>
+                <tr><td>03</td><td>terrain_ruggedness_tri</td><td>Geomorphology</td><td>Wilson et al. TRI Index</td><td>Erosional incision &amp; bedrock exposure</td></tr>
+                <tr><td>04</td><td>outcrop_exposure_index</td><td>Multispectral</td><td>Sentinel-2 / ASTER SWIR</td><td>Hydrothermal rock alteration &amp; gossans</td></tr>
+                <tr><td>05</td><td>regolith_cover_m</td><td>Weathering</td><td>AEM / Multispectral Inversion</td><td>Depth of saprolite &amp; cover blanket (m)</td></tr>
+                <tr><td>06</td><td>dilation_tendency_Td</td><td>Geomechanics</td><td>Stress Tensor σ1/σ2/σ3</td><td>Permeable hydrothermal fluid dilation pathways</td></tr>
+                <tr><td>07</td><td>slip_tendency_Ts</td><td>Geomechanics</td><td>Shear-to-Normal Stress Ratio</td><td>Fault reactivation &amp; shear localization</td></tr>
+                <tr><td>08</td><td>active_fault_density</td><td>Fracture Network</td><td>GEM Global Faults Vector</td><td>Regional fracture permeability density</td></tr>
+                <tr><td>09</td><td>bouguer_gravity_mgal</td><td>Deep Geophysics</td><td>GGM05S / TOPEX Bouguer Slab</td><td>Dense plutonic intrusions &amp; basement highs</td></tr>
+                <tr><td>10</td><td>moho_gravity_step_mgal_km</td><td>Deep Geophysics</td><td>Gravity Gradient Inversion</td><td>Moho boundary steps &amp; crustal tears</td></tr>
+                <tr><td>11</td><td>crustal_thickness_km</td><td>Deep Geophysics</td><td>Parker-Oldenburg Inversion</td><td>Crustal thickness (20–42 km)</td></tr>
+                <tr><td>12</td><td>volcanic_arc_halo</td><td>Tectonic Arc</td><td>Subduction Geometry Buffer</td><td>Calc-alkaline volcanic arc hydrothermal halo</td></tr>
+                <tr><td>13</td><td>dae_reconstruction_error</td><td>AI Spatial Representation</td><td>Denoising Autoencoder U-Net</td><td>Unsupervised structural &amp; textural anomalies</td></tr>
+                <tr><td>14</td><td>propensity_e_x</td><td>Observation Model</td><td>Logistic Highway/River Inversion</td><td>Debiasing jungle accessibility bias</td></tr>
+                <tr><td>15–21</td><td>band_ratios_swir_tir</td><td>Spectral Alteration</td><td>ASTER SWIR B4-B9, TIR B10-B14</td><td>Kaolinite, alunite, silica doublet indices</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="home-footer">
+          <div style="display:flex; align-items:center;">
+            <span class="footer-brand">SIFT // SPATIAL INFERENCE &amp; FAULT TARGETING</span>
+            <span class="footer-copy">© 2026 Antigravity Geospatial Intelligence Group. All rights reserved.</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="footer-tag">HIGH-CONCURRENCY FASTAPI DAEMON :8765</span>
+            <span class="footer-tag">10-ROUND BAGGED ENSEMBLE</span>
+          </div>
+        </footer>
+      </div>
+    </div>
+
+    <!-- VIEW 2: EXPLORATION WORKSPACE // INTERACTIVE GIS & ANALYTICS -->
+    <div id="view-workspace" style="display:none; flex:1; overflow:hidden;">
+      <div id="workspace-container" class="workspace-body mode-split" style="width:100%; height:100%;">
+        <!-- PROGRESSIVE DISCLOSURE DRAWER (270px / 48px) -->
+        <aside id="sensor-drawer" class="telemetry-drawer">
+          <div class="drawer-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent-primary);" aria-hidden="true">
+                <line x1="4" y1="21" x2="4" y2="14"></line>
+                <line x1="4" y1="10" x2="4" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12" y2="3"></line>
+                <line x1="20" y1="21" x2="20" y2="16"></line>
+                <line x1="20" y1="12" x2="20" y2="3"></line>
+              </svg>
+              <span class="panel-title" style="font-size:11px; text-transform:uppercase;">PIPELINE PARAMETERS</span>
+            </div>
+            <button class="btn-icon" onclick="toggleDrawer()" aria-label="Toggle Parameter Drawer" id="btn-drawer-collapse">
+              <svg id="drawer-chevron-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+          </div>
+
+          <div class="drawer-content">
+            <!-- Parameter: Conformal L(x) -->
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <div style="display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:11px;">
+                <span style="color:var(--text-primary); font-weight:600;">CONFORMAL L(x) THR</span>
+                <span id="lbl-l-thr" style="color:var(--accent-primary); font-weight:700;">0.50</span>
+              </div>
+              <input type="range" id="ctrl-l-thr" min="0.1" max="0.95" step="0.05" value="0.50" oninput="onLThrChange(this.value)" style="accent-color:var(--accent-primary); cursor:pointer;" />
+              <span class="font-editorial" style="font-size:11.5px; font-style:italic; color:var(--text-muted); line-height:1.4;">
+                Finite-sample coverage bound P(Y=1|X) ≥ L(x) under Elkan-Noto PU-learning.
+              </span>
+            </div>
+
+            <!-- Parameter: Z-Depth -->
+            <div style="display:flex; flex-direction:column; gap:6px; padding-top:10px; border-top:1px solid var(--border-hairline);">
+              <div style="display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:11px;">
+                <span style="color:var(--text-primary); font-weight:600;">Z-DEPTH SLICE</span>
+                <span id="lbl-z-depth" style="color:var(--accent-primary); font-weight:700;">-450 m</span>
+              </div>
+              <input type="range" id="ctrl-z-depth" min="100" max="600" step="10" value="450" oninput="onAsciiZChange(this.value)" style="accent-color:var(--accent-primary); cursor:pointer;" />
+            </div>
+
+            <!-- Parameter: Minimum Target Area -->
+            <div style="display:flex; flex-direction:column; gap:6px; padding-top:10px; border-top:1px solid var(--border-hairline);">
+              <div style="display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:11px;">
+                <span style="color:var(--text-primary); font-weight:600;">MIN TARGET AREA</span>
+                <span id="lbl-min-area" style="color:var(--accent-primary); font-weight:700;">5.0 ha</span>
+              </div>
+              <input type="range" id="ctrl-min-area" min="1" max="250" step="5" value="5" oninput="onMinAreaChange(this.value)" style="accent-color:var(--accent-primary); cursor:pointer;" />
+            </div>
+
+            <!-- Layer Controls -->
+            <div style="display:flex; flex-direction:column; gap:6px; padding-top:10px; border-top:1px solid var(--border-hairline);">
+              <span class="panel-title" style="font-size:10.5px; text-transform:uppercase; color:var(--text-muted);">MAP OVERLAYS &amp; SENSORS</span>
+              
+              <label style="display:flex; justify-content:space-between; align-items:center; font-size:11px; padding:6px 8px; background:var(--bg-elevated); border:1px solid var(--border-hairline); border-radius:5px; cursor:pointer;">
+                <span style="display:flex; align-items:center; gap:6px;"><span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:linear-gradient(45deg, #71717A, #FFFFFF);"></span> Show Prospectivity Heatmap</span>
+                <input type="checkbox" id="chk-heatmap" checked onchange="toggleHeatmapLayer(this.checked)" style="accent-color:var(--accent-primary);" />
               </label>
 
-              <select id="sel-satellite-layer" onchange="updateSatelliteLayer()" style="width:100%; padding:5px 7px; font-family:var(--font-mono); font-size:10px; background:var(--bg-surface); color:var(--text-primary); border:1px solid var(--border-hairline); border-radius:4px; outline:none; cursor:pointer;">
-                <optgroup label="── TOPOGRAPHY & GEOMORPHOLOGY ──">
-                  <option value="dem_elevation" selected>Topography // SRTM-DEM 30m Elevation</option>
-                  <option value="dem_slope">Slope // Topographic Slope Steepness</option>
-                  <option value="terrain_ruggedness_tri">Roughness // Terrain Ruggedness (TRI)</option>
-                </optgroup>
-                <optgroup label="── MULTISPECTRAL & REGOLITH ──">
-                  <option value="outcrop_exposure_index">Outcrop // Multispectral Rock Alteration</option>
-                  <option value="regolith_cover_m">Cover // Weathered Regolith/Saprolite Depth</option>
-                </optgroup>
-                <optgroup label="── STRUCTURAL & 3D GEOMECHANICS ──">
-                  <option value="dilation_tendency_Td">Geomechanics // Fault Dilation Strain (Td)</option>
-                  <option value="slip_tendency_Ts">Geomechanics // Fault Slip Tendency (Ts)</option>
-                  <option value="active_fault_density">Fracture // Active Fault Network Density</option>
-                </optgroup>
-                <optgroup label="── DEEP CRUSTAL GEOPHYSICS ──">
-                  <option value="bouguer_gravity_mgal">Gravity // Bouguer Density Anomaly (Plutons)</option>
-                  <option value="moho_gravity_step_mgal_km">Moho Step // Moho Density Gradient</option>
-                  <option value="crustal_thickness_km">Crustal Thickness // Moho Depth Inversion</option>
-                </optgroup>
-                <optgroup label="── AI NEURAL GEODYNAMICS ──">
-                  <option value="volcanic_arc_halo">Volcanic Arc // Hydrothermal Fluid Halo</option>
-                  <option value="dae_reconstruction_error">DAE-U-Net // Neural Structural Anomaly</option>
-                  <option value="propensity_e_x">Observation // Jungle Exploration Propensity e(x)</option>
-                </optgroup>
-              </select>
-
-              <div style="display:flex; flex-direction:column; gap:2px;">
-                <div style="display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:9.5px; color:var(--text-muted);">
-                  <span>SATELLITE DATA OPACITY</span>
-                  <span id="lbl-sat-opacity">75%</span>
+              <div style="display:flex; flex-direction:column; gap:4px; padding-top:2px;">
+                <div style="display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:10px; color:var(--text-muted);">
+                  <span>HEATMAP OPACITY</span>
+                  <span id="lbl-opacity">80%</span>
                 </div>
-                <input type="range" id="rng-sat-opacity" min="0.1" max="1.0" step="0.05" value="0.75" oninput="setSatelliteOpacity(this.value)" style="accent-color:var(--accent-primary); cursor:pointer;" />
-                <span id="lbl-sat-status" style="font-family:var(--font-mono); font-size:9px; color:var(--accent-primary);"></span>
-              </div>
-            </div>
-
-            <!-- Vector Overlays -->
-            <label style="display:flex; justify-content:space-between; align-items:center; font-size:11px; padding:6px 8px; background:var(--bg-elevated); border:1px solid var(--border-hairline); border-radius:5px; cursor:pointer;">
-              <span style="display:flex; align-items:center; gap:6px;"><span style="display:inline-block; width:8px; height:8px; border-radius:1px; background:#38bdf8;"></span> Tectonic Fault Lines (GEM)</span>
-              <input type="checkbox" id="chk-faults-geo" checked onchange="toggleFaultsLayer(this.checked)" style="accent-color:var(--accent-primary);" />
-            </label>
-            <label style="display:flex; justify-content:space-between; align-items:center; font-size:11px; padding:6px 8px; background:var(--bg-elevated); border:1px solid var(--border-hairline); border-radius:5px; cursor:pointer;">
-              <span style="display:flex; align-items:center; gap:6px;"><span style="display:inline-block; width:8px; height:8px; border-radius:2px; border:1.5px dashed var(--accent-primary);"></span> Provincial Scan Boundary</span>
-              <input type="checkbox" id="chk-scanned-rect" checked onchange="toggleScannedRect(this.checked)" style="accent-color:var(--accent-primary);" />
-            </label>
-
-            <label style="display:flex; justify-content:space-between; align-items:center; font-size:11px; padding:6px 8px; background:var(--bg-elevated); border:1px solid var(--border-hairline); border-radius:5px; cursor:pointer;">
-              <span style="display:flex; align-items:center; gap:6px;"><span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:var(--accent-primary);"></span> Target Vector Polygons</span>
-              <input type="checkbox" id="chk-targets-geo" checked onchange="toggleTargetsLayer(this.checked)" style="accent-color:var(--accent-primary);" />
-            </label>
-
-            <label style="display:flex; justify-content:space-between; align-items:center; font-size:11px; padding:6px 8px; background:var(--bg-elevated); border:1px solid var(--border-hairline); border-radius:5px; cursor:pointer;">
-              <span style="display:flex; align-items:center; gap:6px;"><span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--accent-amber);"></span> Ground Truth Mines</span>
-              <input type="checkbox" id="chk-ground-mines" checked onchange="toggleMinesLayer(this.checked)" style="accent-color:var(--accent-primary);" />
-            </label>
-          </div>
-
-          <button onclick="resetDefaults()" style="margin-top:6px; width:100%; padding:7px; background:var(--bg-elevated); border:1px solid var(--border-hairline); border-radius:5px; font-family:var(--font-mono); font-size:10.5px; color:var(--text-secondary); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;" aria-label="Reset Default Prior">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
-            RESET DEFAULT PRIOR
-          </button>
-
-          <button id="btn-live-rerank" onclick="triggerLiveRerank()" style="margin-top:6px; width:100%; padding:7px; background:var(--accent-primary); color:#070A10; font-weight:700; border:none; border-radius:5px; font-family:var(--font-mono); font-size:10.5px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;" aria-label="Recompute Targets Live">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-            RECOMPUTE TARGETS LIVE
-          </button>
-        </div>
-
-        <!-- Collapsed 48px Icon Rail -->
-        <div class="drawer-collapsed-rail">
-          <button class="btn-icon" onclick="toggleDrawer()" aria-label="Expand Parameter Drawer" title="Expand Drawer">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
-          </button>
-          <button class="btn-icon" onclick="toggleDrawer()" aria-label="Pipeline Sliders" title="Parameters">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line></svg>
-          </button>
-          <button class="btn-icon" onclick="toggleDrawer()" aria-label="Sensor Layers" title="Layers">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
-          </button>
-          <span style="font-family:var(--font-mono); font-size:9.5px; color:var(--text-muted); writing-mode:vertical-rl; transform:rotate(180deg); margin-top:16px;">
-            -380 m
-          </span>
-        </div>
-      </aside>
-
-      <!-- RESIZABLE SPLIT-PANE WORKSPACE -->
-      <main id="split-workspace" class="split-workspace">
-        <!-- LEFT HERO: GEOSPATIAL MAP CANVAS -->
-        <div id="pane-left" class="split-pane-left" style="width: 54%;">
-          <!-- Floating Frosted Glass Control Bars -->
-          <div class="floating-map-bar-top">
-            <!-- Basemap Switcher -->
-            <div class="glass-pill-group">
-              <span style="font-family:var(--font-mono); font-size:9.5px; color:var(--text-muted); padding:0 6px;">BASEMAP:</span>
-              <button id="btn-base-dark" class="glass-pill-btn active" onclick="switchBasemap('dark')">Dark Obsidian</button>
-              <button id="btn-base-satellite" class="glass-pill-btn" onclick="switchBasemap('satellite')">Satellite</button>
-              <button id="btn-base-topo" class="glass-pill-btn" onclick="switchBasemap('topo')">Terrain</button>
-            </div>
-
-            <!-- Target Quick Filter Chips -->
-            <div class="glass-pill-group">
-              <button class="glass-pill-btn active" id="btn-flt-all" onclick="filterTargets('ALL')">ALL TARGETS</button>
-              <button class="glass-pill-btn" id="btn-flt-top" onclick="filterTargets('TOP_RANKED')">TOP RANKED</button>
-              <button class="glass-pill-btn" id="btn-flt-highconf" onclick="filterTargets('HIGH_CONF')">HIGH CONF</button>
-            </div>
-          </div>
-
-          <!-- Leaflet Interactive Map -->
-          <div id="map-viewport"></div>
-
-          <!-- Floating Precision Telemetry HUD at Bottom -->
-          <div class="floating-map-hud">
-            <div><span style="color:var(--text-muted); margin-right:4px;">CURSOR:</span><span id="hud-coords" style="color:var(--text-primary); font-weight:700;">-0.5000°, 114.5000°</span></div>
-            <div style="border-left:1px solid var(--border-hairline); padding-left:12px;"><span style="color:var(--text-muted); margin-right:4px;">SCANNED EXTENT:</span><span id="hud-extent" style="color:var(--accent-primary); font-weight:700;">ACTIVE BOUNDS</span></div>
-            <div style="border-left:1px solid var(--border-hairline); padding-left:12px;"><span style="color:var(--text-muted); margin-right:4px;">ZOOM:</span><span id="hud-zoom" style="color:var(--accent-primary); font-weight:700;">7x</span></div>
-            <div style="border-left:1px solid var(--border-hairline); padding-left:12px;"><span style="color:var(--text-muted); margin-right:4px;">TARGETS:</span><span id="hud-targets-count" style="color:var(--text-primary); font-weight:600;">—</span></div>
-          </div>
-        </div>
-
-        <!-- 1px HAIRLINE DRAG HANDLE -->
-        <div id="split-drag-handle" class="split-drag-handle" title="Drag to resize split panes">
-          <div class="split-drag-line"></div>
-        </div>
-
-        <!-- RIGHT PANE: ANALYTICAL STUDIO CONSOLE -->
-        <div id="pane-right" class="split-pane-right" style="width: 46%;">
-          <!-- 1. ACTIVE TARGET RECORD DOSSIER CARD -->
-          <div class="hairline-panel" id="target-detail-card">
-            <div class="panel-header">
-              <span class="panel-tag" id="target-card-tag">SELECTED TARGET RECORD</span>
-              <span id="target-card-id" style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted);">—</span>
-            </div>
-
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
-              <div>
-                <h2 id="target-card-name" class="panel-title" style="font-size:15.5px;">Loading target record...</h2>
-                <p id="target-card-domain" class="font-editorial" style="font-size:12.5px; font-style:italic; color:var(--text-secondary); margin-top:2px;">
-                  Regional Target Discovery — Ingestion Active
-                </p>
-              </div>
-              <div style="display:flex; gap:6px; align-items:center;">
-                <span id="target-card-ore-badge" class="badge-pill ore-badge ore-badge-porphyry_cu">
-                  PORPHYRY CU-AU
-                </span>
-                <span id="target-card-class" class="badge-pill" style="background:rgba(56, 189, 248, 0.15); color:var(--accent-primary); border:1px solid var(--accent-primary);">
-                  RANK #1
-                </span>
-              </div>
-            </div>
-
-            <div class="kpi-grid">
-              <div class="kpi-cell">
-                <div class="kpi-cell-label">PROSPECTIVITY P(Y=1)</div>
-                <div id="kpi-score" class="kpi-cell-val" style="color:var(--accent-primary);">0.950</div>
-              </div>
-              <div class="kpi-cell">
-                <div class="kpi-cell-label">REGOLITH / DEPTH</div>
-                <div id="kpi-depth" class="kpi-cell-val">-64 m</div>
-              </div>
-              <div class="kpi-cell">
-                <div class="kpi-cell-label">CONFIDENCE LOWER L(x)</div>
-                <div id="kpi-uncert" class="kpi-cell-val" style="color:var(--accent-emerald);">0.562</div>
-              </div>
-              <div class="kpi-cell">
-                <div class="kpi-cell-label">90% CONFORMAL CI</div>
-                <div id="kpi-ci" class="kpi-cell-val" style="font-size:12px; color:var(--text-secondary);">[0.562 - 1.000]</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 2. TABBED ANALYTICAL VIEWPORTS -->
-          <div class="hairline-panel" style="flex: 1; display:flex; flex-direction:column;">
-            <div class="analytics-tab-header">
-              <div class="tab-nav">
-                <button id="btn-subtab-tomography" class="tab-btn active" onclick="switchAnalyticsSubTab('tomography')">
-                  01 // Subsurface Tomography
-                </button>
-                <button id="btn-subtab-conformal" class="tab-btn" onclick="switchAnalyticsSubTab('conformal')">
-                  02 // Conformal 90% CI
-                </button>
-                <button id="btn-subtab-prauc" class="tab-btn" onclick="switchAnalyticsSubTab('prauc')">
-                  03 // Model Fusion PR-AUC
-                </button>
+                <input type="range" id="rng-opacity" min="0.1" max="1.0" step="0.05" value="0.80" oninput="setHeatmapOpacity(this.value)" style="accent-color:var(--accent-primary); cursor:pointer;" />
               </div>
 
-              <!-- Depth Slice Control when on Tomography tab -->
-              <div id="tomography-controls" style="display:flex; align-items:center; gap:8px;">
-                <span class="font-editorial" style="font-size:12px; font-style:italic; color:var(--text-secondary);">
-                  Z-Slice: <span id="ascii-z-readout" class="font-mono" style="color:var(--accent-primary); font-style:normal; font-weight:700;">-380 m</span>
-                </span>
-                <input type="range" id="ascii-z-slider" min="50" max="1000" step="10" value="380" oninput="onAsciiZChange(this.value)" style="width:90px; accent-color:var(--accent-primary); cursor:pointer;" />
-              </div>
-            </div>
+              <!-- Satellite Physical & Multispectral Sensor Overlay -->
+              <div style="display:flex; flex-direction:column; gap:6px; padding:8px; background:var(--bg-elevated); border:1px solid var(--border-hairline); border-radius:5px; margin-top:2px;">
+                <label style="display:flex; justify-content:space-between; align-items:center; font-size:11px; cursor:pointer;">
+                  <span style="display:flex; align-items:center; gap:6px; font-weight:600;">
+                    <span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:linear-gradient(45deg, #94A3B8, #E2E8F0);"></span>
+                    Satellite Sensor Overlay
+                  </span>
+                  <input type="checkbox" id="chk-satellite-layer" onchange="updateSatelliteLayer()" style="accent-color:var(--accent-primary);" />
+                </label>
 
-            <!-- Tab View 1: 3D Subsurface Tomographic ASCII Scanner -->
-            <div id="view-tab-tomography" style="display:block; flex:1;">
-              <div class="ascii-canvas-container">
-                <canvas id="canvas-ascii-tomography" width="728" height="220"></canvas>
-                <div style="position:absolute; top:8px; left:12px; font-family:var(--font-mono); font-size:9px; color:var(--text-muted); pointer-events:none;">
-                  TOMOGRAPHY HARMONICS // 3D GAUSSIAN FALLOFF
-                </div>
-                <div id="ascii-hover-tag" style="position:absolute; bottom:8px; right:12px; font-family:var(--font-mono); font-size:9.5px; font-weight:700; color:var(--accent-primary); background:rgba(13, 19, 31, 0.9); border:1px solid var(--border-hairline); border-radius:4px; padding:2px 8px; pointer-events:none;">
-                  CURSOR LENS: STANDBY
+                <select id="sel-satellite-layer" onchange="updateSatelliteLayer()" style="width:100%; padding:5px 7px; font-family:var(--font-mono); font-size:10px; background:var(--bg-surface); color:var(--text-primary); border:1px solid var(--border-hairline); border-radius:4px; outline:none; cursor:pointer;">
+                  <optgroup label="── TOPOGRAPHY &amp; GEOMORPHOLOGY ──">
+                    <option value="dem_elevation" selected>Topography // SRTM-DEM 30m Elevation</option>
+                    <option value="dem_slope">Slope // Topographic Slope Steepness</option>
+                    <option value="terrain_ruggedness_tri">Roughness // Terrain Ruggedness (TRI)</option>
+                  </optgroup>
+                  <optgroup label="── MULTISPECTRAL &amp; REGOLITH ──">
+                    <option value="outcrop_exposure_index">Outcrop // Multispectral Rock Alteration</option>
+                    <option value="regolith_cover_m">Cover // Weathered Regolith/Saprolite Depth</option>
+                  </optgroup>
+                  <optgroup label="── STRUCTURAL &amp; 3D GEOMECHANICS ──">
+                    <option value="dilation_tendency_Td">Geomechanics // Fault Dilation Strain (Td)</option>
+                    <option value="slip_tendency_Ts">Geomechanics // Fault Slip Tendency (Ts)</option>
+                    <option value="active_fault_density">Fracture // Active Fault Network Density</option>
+                  </optgroup>
+                  <optgroup label="── DEEP CRUSTAL GEOPHYSICS ──">
+                    <option value="bouguer_gravity_mgal">Gravity // Bouguer Density Anomaly (Plutons)</option>
+                    <option value="moho_gravity_step_mgal_km">Moho Step // Moho Density Gradient</option>
+                    <option value="crustal_thickness_km">Crustal Thickness // Moho Depth Inversion</option>
+                  </optgroup>
+                  <optgroup label="── AI NEURAL GEODYNAMICS ──">
+                    <option value="volcanic_arc_halo">Volcanic Arc // Hydrothermal Fluid Halo</option>
+                    <option value="dae_reconstruction_error">DAE-U-Net // Neural Structural Anomaly</option>
+                    <option value="propensity_e_x">Observation // Jungle Exploration Propensity e(x)</option>
+                  </optgroup>
+                </select>
+
+                <div style="display:flex; flex-direction:column; gap:2px;">
+                  <div style="display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:9.5px; color:var(--text-muted);">
+                    <span>SATELLITE DATA OPACITY</span>
+                    <span id="lbl-sat-opacity">75%</span>
+                  </div>
+                  <input type="range" id="rng-sat-opacity" min="0.1" max="1.0" step="0.05" value="0.75" oninput="setSatelliteOpacity(this.value)" style="accent-color:var(--accent-primary); cursor:pointer;" />
+                  <span id="lbl-sat-status" style="font-family:var(--font-mono); font-size:9px; color:var(--accent-primary);"></span>
                 </div>
               </div>
 
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:8px; border-top:1px solid var(--border-hairline); font-family:var(--font-mono); font-size:10px; color:var(--text-secondary);">
-                <div>RAMP: <span style="color:var(--text-primary); font-weight:700; letter-spacing:2px;">· : - = + * # % @ ◈</span></div>
-                <div style="display:flex; gap:12px;">
-                  <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--accent-primary);"></span> Peak Anomaly</span>
-                  <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--accent-amber);"></span> Focus Sync</span>
+              <!-- Vector Overlays -->
+              <label style="display:flex; justify-content:space-between; align-items:center; font-size:11px; padding:6px 8px; background:var(--bg-elevated); border:1px solid var(--border-hairline); border-radius:5px; cursor:pointer;">
+                <span style="display:flex; align-items:center; gap:6px;"><span style="display:inline-block; width:8px; height:8px; border-radius:1px; background:#FFFFFF;"></span> Tectonic Fault Lines (GEM)</span>
+                <input type="checkbox" id="chk-faults-geo" checked onchange="toggleFaultsLayer(this.checked)" style="accent-color:var(--accent-primary);" />
+              </label>
+              <label style="display:flex; justify-content:space-between; align-items:center; font-size:11px; padding:6px 8px; background:var(--bg-elevated); border:1px solid var(--border-hairline); border-radius:5px; cursor:pointer;">
+                <span style="display:flex; align-items:center; gap:6px;"><span style="display:inline-block; width:8px; height:8px; border-radius:2px; border:1.5px dashed var(--accent-primary);"></span> Provincial Scan Boundary</span>
+                <input type="checkbox" id="chk-scanned-rect" checked onchange="toggleScannedRect(this.checked)" style="accent-color:var(--accent-primary);" />
+              </label>
+
+              <label style="display:flex; justify-content:space-between; align-items:center; font-size:11px; padding:6px 8px; background:var(--bg-elevated); border:1px solid var(--border-hairline); border-radius:5px; cursor:pointer;">
+                <span style="display:flex; align-items:center; gap:6px;"><span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:var(--accent-primary);"></span> Target Vector Polygons</span>
+                <input type="checkbox" id="chk-targets-geo" checked onchange="toggleTargetsLayer(this.checked)" style="accent-color:var(--accent-primary);" />
+              </label>
+
+              <label style="display:flex; justify-content:space-between; align-items:center; font-size:11px; padding:6px 8px; background:var(--bg-elevated); border:1px solid var(--border-hairline); border-radius:5px; cursor:pointer;">
+                <span style="display:flex; align-items:center; gap:6px;"><span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#E2E8F0;"></span> Ground Truth Mines</span>
+                <input type="checkbox" id="chk-ground-mines" checked onchange="toggleMinesLayer(this.checked)" style="accent-color:var(--accent-primary);" />
+              </label>
+            </div>
+
+            <button onclick="resetDefaults()" style="margin-top:6px; width:100%; padding:7px; background:var(--bg-elevated); border:1px solid var(--border-hairline); border-radius:5px; font-family:var(--font-mono); font-size:10.5px; color:var(--text-secondary); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;" aria-label="Reset Default Prior">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+              RESET DEFAULT PRIOR
+            </button>
+
+            <button id="btn-live-rerank" onclick="triggerLiveRerank()" style="margin-top:6px; width:100%; padding:7px; background:var(--accent-primary); color:var(--bg-canvas); font-weight:700; border:none; border-radius:5px; font-family:var(--font-mono); font-size:10.5px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;" aria-label="Recompute Targets Live">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              RECOMPUTE TARGETS LIVE
+            </button>
+          </div>
+
+          <!-- Collapsed 48px Icon Rail -->
+          <div class="drawer-collapsed-rail">
+            <button class="btn-icon" onclick="toggleDrawer()" aria-label="Expand Parameter Drawer" title="Expand Drawer">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+            <button class="btn-icon" onclick="toggleDrawer()" aria-label="Pipeline Sliders" title="Parameters">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line></svg>
+            </button>
+            <button class="btn-icon" onclick="toggleDrawer()" aria-label="Sensor Layers" title="Layers">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+            </button>
+            <span style="font-family:var(--font-mono); font-size:9.5px; color:var(--text-muted); writing-mode:vertical-rl; transform:rotate(180deg); margin-top:16px;">
+              -380 m
+            </span>
+          </div>
+        </aside>
+
+        <!-- RESIZABLE SPLIT-PANE WORKSPACE -->
+        <main id="split-workspace" class="split-workspace">
+          <!-- LEFT HERO: GEOSPATIAL MAP CANVAS -->
+          <div id="pane-left" class="split-pane-left" style="width: 54%;">
+            <!-- Floating Frosted Glass Control Bars -->
+            <div class="floating-map-bar-top">
+              <!-- Basemap Switcher -->
+              <div class="glass-pill-group">
+                <span style="font-family:var(--font-mono); font-size:9.5px; color:var(--text-muted); padding:0 6px;">BASEMAP:</span>
+                <button id="btn-base-dark" class="glass-pill-btn active" onclick="switchBasemap('dark')">Dark Obsidian</button>
+                <button id="btn-base-satellite" class="glass-pill-btn" onclick="switchBasemap('satellite')">Satellite</button>
+                <button id="btn-base-topo" class="glass-pill-btn" onclick="switchBasemap('topo')">Terrain</button>
+              </div>
+
+              <!-- Target Quick Filter Chips -->
+              <div class="glass-pill-group">
+                <button class="glass-pill-btn active" id="btn-flt-all" onclick="filterTargets('ALL')">ALL TARGETS</button>
+                <button class="glass-pill-btn" id="btn-flt-top" onclick="filterTargets('TOP_RANKED')">TOP RANKED</button>
+                <button class="glass-pill-btn" id="btn-flt-highconf" onclick="filterTargets('HIGH_CONF')">HIGH CONF</button>
+              </div>
+            </div>
+
+            <!-- Leaflet Interactive Map -->
+            <div id="map-viewport"></div>
+
+            <!-- Floating Precision Telemetry HUD at Bottom -->
+            <div class="floating-map-hud">
+              <div><span style="color:var(--text-muted); margin-right:4px;">CURSOR:</span><span id="hud-coords" style="color:var(--text-primary); font-weight:700;">-0.5000°, 114.5000°</span></div>
+              <div style="border-left:1px solid var(--border-hairline); padding-left:12px;"><span style="color:var(--text-muted); margin-right:4px;">SCANNED EXTENT:</span><span id="hud-extent" style="color:var(--accent-primary); font-weight:700;">ACTIVE BOUNDS</span></div>
+              <div style="border-left:1px solid var(--border-hairline); padding-left:12px;"><span style="color:var(--text-muted); margin-right:4px;">ZOOM:</span><span id="hud-zoom" style="color:var(--accent-primary); font-weight:700;">7x</span></div>
+              <div style="border-left:1px solid var(--border-hairline); padding-left:12px;"><span style="color:var(--text-muted); margin-right:4px;">TARGETS:</span><span id="hud-targets-count" style="color:var(--text-primary); font-weight:600;">—</span></div>
+            </div>
+          </div>
+
+          <!-- 1px HAIRLINE DRAG HANDLE -->
+          <div id="split-drag-handle" class="split-drag-handle" title="Drag to resize split panes">
+            <div class="split-drag-line"></div>
+          </div>
+
+          <!-- RIGHT PANE: ANALYTICAL STUDIO CONSOLE -->
+          <div id="pane-right" class="split-pane-right" style="width: 46%;">
+            <!-- 1. ACTIVE TARGET RECORD DOSSIER CARD -->
+            <div class="hairline-panel" id="target-detail-card">
+              <div class="panel-header">
+                <span class="panel-tag" id="target-card-tag">SELECTED TARGET RECORD</span>
+                <span id="target-card-id" style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted);">—</span>
+              </div>
+
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                <div>
+                  <h2 id="target-card-name" class="panel-title" style="font-size:15.5px;">Loading target record...</h2>
+                  <p id="target-card-domain" class="font-editorial" style="font-size:12.5px; font-style:italic; color:var(--text-secondary); margin-top:2px;">
+                    Regional Target Discovery — Ingestion Active
+                  </p>
+                </div>
+                <div style="display:flex; gap:6px; align-items:center;">
+                  <span id="target-card-ore-badge" class="badge-pill ore-badge ore-badge-porphyry_cu">
+                    PORPHYRY CU-AU
+                  </span>
+                  <span id="target-card-class" class="badge-pill" style="background:rgba(255, 255, 255, 0.08); color:var(--text-primary); border:1px solid var(--border-hairline); padding:2px 7px; border-radius:4px; font-family:var(--font-mono); font-size:9.5px; font-weight:700;">
+                    RANK #1
+                  </span>
+                </div>
+              </div>
+
+              <div class="kpi-grid">
+                <div class="kpi-cell">
+                  <div class="kpi-cell-label">PROSPECTIVITY P(Y=1)</div>
+                  <div id="kpi-score" class="kpi-cell-val" style="color:var(--accent-primary);">0.950</div>
+                </div>
+                <div class="kpi-cell">
+                  <div class="kpi-cell-label">REGOLITH / DEPTH</div>
+                  <div id="kpi-depth" class="kpi-cell-val">-64 m</div>
+                </div>
+                <div class="kpi-cell">
+                  <div class="kpi-cell-label">CONFIDENCE LOWER L(x)</div>
+                  <div id="kpi-uncert" class="kpi-cell-val" style="color:var(--text-primary);">0.562</div>
+                </div>
+                <div class="kpi-cell">
+                  <div class="kpi-cell-label">90% CONFORMAL CI</div>
+                  <div id="kpi-ci" class="kpi-cell-val" style="font-size:12px; color:var(--text-secondary);">[0.562 - 1.000]</div>
                 </div>
               </div>
             </div>
 
-            <!-- Tab View 2: Conformal Risk Calibration Chart -->
-            <div id="view-tab-conformal" style="display:none; flex:1;">
-              <div style="background:var(--bg-canvas); border:1px solid var(--border-hairline); border-radius:6px; padding:10px;">
-                <svg id="svg-analytics-chart" viewBox="0 0 600 210" style="width:100%; height:auto; display:block;"></svg>
+            <!-- 2. TABBED ANALYTICAL VIEWPORTS -->
+            <div class="hairline-panel" style="flex: 1; display:flex; flex-direction:column;">
+              <div class="analytics-tab-header">
+                <div class="tab-nav">
+                  <button id="btn-subtab-tomography" class="tab-btn active" onclick="switchAnalyticsSubTab('tomography')">
+                    01 // Subsurface Tomography
+                  </button>
+                  <button id="btn-subtab-conformal" class="tab-btn" onclick="switchAnalyticsSubTab('conformal')">
+                    02 // Conformal 90% CI
+                  </button>
+                  <button id="btn-subtab-prauc" class="tab-btn" onclick="switchAnalyticsSubTab('prauc')">
+                    03 // Model Fusion PR-AUC
+                  </button>
+                </div>
+
+                <!-- Depth Slice Control when on Tomography tab -->
+                <div id="tomography-controls" style="display:flex; align-items:center; gap:8px;">
+                  <span class="font-editorial" style="font-size:12px; font-style:italic; color:var(--text-secondary);">
+                    Z-Slice: <span id="ascii-z-readout" class="font-mono" style="color:var(--accent-primary); font-style:normal; font-weight:700;">-380 m</span>
+                  </span>
+                  <input type="range" id="ascii-z-slider" min="50" max="1000" step="10" value="380" oninput="onAsciiZChange(this.value)" style="width:90px; accent-color:var(--accent-primary); cursor:pointer;" />
+                </div>
               </div>
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:8px; border-top:1px solid var(--border-hairline); font-size:11px;">
-                <span class="font-editorial" style="font-size:12px; font-style:italic; color:var(--text-secondary);">
-                  Coverage Guarantee: <span class="font-mono" style="font-style:normal; font-weight:700; color:var(--accent-primary);">P(Y ∈ C(X)) ≥ 1 - α (α = 0.10)</span>.
-                </span>
-                <span id="lbl-conformal-count" class="font-mono" style="font-size:10.5px; color:var(--accent-primary);">— Targets Evaluated</span>
+
+              <!-- Tab View 1: 3D Subsurface Tomographic ASCII Scanner -->
+              <div id="view-tab-tomography" style="display:block; flex:1;">
+                <div class="ascii-canvas-container">
+                  <canvas id="canvas-ascii-tomography" width="728" height="220"></canvas>
+                  <div style="position:absolute; top:8px; left:12px; font-family:var(--font-mono); font-size:9px; color:var(--text-muted); pointer-events:none;">
+                    TOMOGRAPHY HARMONICS // 3D GAUSSIAN FALLOFF
+                  </div>
+                  <div id="ascii-hover-tag" style="position:absolute; bottom:8px; right:12px; font-family:var(--font-mono); font-size:9.5px; font-weight:700; color:var(--text-primary); background:rgba(11, 14, 20, 0.9); border:1px solid var(--border-hairline); border-radius:4px; padding:2px 8px; pointer-events:none;">
+                    CURSOR LENS: STANDBY
+                  </div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:8px; border-top:1px solid var(--border-hairline); font-family:var(--font-mono); font-size:10px; color:var(--text-secondary);">
+                  <div>RAMP: <span style="color:var(--text-primary); font-weight:700; letter-spacing:2px;">· : - = + * # % @ ◈</span></div>
+                  <div style="display:flex; gap:12px;">
+                    <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#FFFFFF;"></span> Peak Anomaly</span>
+                    <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#CBD5E1;"></span> Focus Sync</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tab View 2: Conformal Risk Calibration Chart -->
+              <div id="view-tab-conformal" style="display:none; flex:1;">
+                <div style="background:var(--bg-canvas); border:1px solid var(--border-hairline); border-radius:6px; padding:10px;">
+                  <svg id="svg-analytics-chart" viewBox="0 0 600 210" style="width:100%; height:auto; display:block;"></svg>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:8px; border-top:1px solid var(--border-hairline); font-size:11px;">
+                  <span class="font-editorial" style="font-size:12px; font-style:italic; color:var(--text-secondary);">
+                    Coverage Guarantee: <span class="font-mono" style="font-style:normal; font-weight:700; color:var(--text-primary);">P(Y ∈ C(X)) ≥ 1 - α (α = 0.10)</span>.
+                  </span>
+                  <span id="lbl-conformal-count" class="font-mono" style="font-size:10.5px; color:var(--text-primary);">— Targets Evaluated</span>
+                </div>
+              </div>
+
+              <!-- Tab View 3: Model Fusion PR-AUC Curve -->
+              <div id="view-tab-prauc" style="display:none; flex:1;">
+                <div style="background:var(--bg-canvas); border:1px solid var(--border-hairline); border-radius:6px; padding:10px;">
+                  <svg id="svg-prauc-chart" viewBox="0 0 600 210" style="width:100%; height:auto; display:block;"></svg>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:8px; border-top:1px solid var(--border-hairline); font-family:var(--font-mono); font-size:10.5px;">
+                  <span id="legend-xgb" style="color:var(--text-muted);">■ XGB 3.1: 0.847</span>
+                  <span id="legend-unet" style="color:var(--text-secondary);">■ U-Net: 0.803</span>
+                  <span id="legend-fused" style="color:#FFFFFF; font-weight:700;">■ Fused: 0.913</span>
+                  <span id="legend-chat" style="color:var(--text-muted);">Prior ĉ = 0.285</span>
+                </div>
               </div>
             </div>
 
-            <!-- Tab View 3: Model Fusion PR-AUC Curve -->
-            <div id="view-tab-prauc" style="display:none; flex:1;">
-              <div style="background:var(--bg-canvas); border:1px solid var(--border-hairline); border-radius:6px; padding:10px;">
-                <svg id="svg-prauc-chart" viewBox="0 0 600 210" style="width:100%; height:auto; display:block;"></svg>
+            <!-- 3. RANKED TARGET PORTFOLIO REGISTER (TABLE) -->
+            <div class="hairline-panel">
+              <div class="panel-header">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span class="panel-tag">04</span>
+                  <span class="panel-title">RANKED DRILL TARGET PORTFOLIO</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <input type="text" id="target-search-input" placeholder="Search targets..." oninput="onTargetSearch(this.value)" style="background:var(--bg-elevated); border:1px solid var(--border-hairline); border-radius:4px; font-family:var(--font-mono); font-size:10.5px; padding:3px 8px; color:var(--text-primary); outline:none; width:130px;" />
+                  <button onclick="exportTargetsCSV()" class="btn-icon" title="Export CSV" style="font-size:10px; font-family:var(--font-mono); gap:4px; padding:4px 8px;">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    CSV
+                  </button>
+                </div>
               </div>
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:8px; border-top:1px solid var(--border-hairline); font-family:var(--font-mono); font-size:10.5px;">
-                <span id="legend-xgb" style="color:#F97316;">■ XGB 3.1: 0.847</span>
-                <span id="legend-unet" style="color:var(--accent-purple);">■ U-Net: 0.803</span>
-                <span id="legend-fused" style="color:var(--accent-primary); font-weight:700;">■ Fused: 0.872</span>
-                <span id="legend-chat" style="color:var(--text-muted);">Prior ĉ = 0.285</span>
+
+              <div class="telemetry-table-wrap">
+                <table class="telemetry-table">
+                  <thead>
+                    <tr>
+                      <th onclick="sortTable('id')">ID ↕</th>
+                      <th onclick="sortTable('ore')">ORE STYLE ↕</th>
+                      <th onclick="sortTable('name')">NAME &amp; DOMAIN / CLASSIFICATION ↕</th>
+                      <th>COORDINATES (LAT / LON)</th>
+                      <th onclick="sortTable('depth')">REGOLITH / DEPTH ↕</th>
+                      <th onclick="sortTable('score')">SCORE ↕</th>
+                      <th onclick="sortTable('uncertainty')">L(x) BOUND ↕</th>
+                      <th>90% CI</th>
+                      <th>RANK</th>
+                    </tr>
+                  </thead>
+                  <tbody id="telemetry-table-body">
+                    <!-- Dynamically populated -->
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
-
-          <!-- 3. RANKED TARGET PORTFOLIO REGISTER (TABLE) -->
-          <div class="hairline-panel">
-            <div class="panel-header">
-              <div style="display:flex; align-items:center; gap:8px;">
-                <span class="panel-tag">04</span>
-                <span class="panel-title">RANKED DRILL TARGET PORTFOLIO</span>
-              </div>
-              <div style="display:flex; align-items:center; gap:8px;">
-                <input type="text" id="target-search-input" placeholder="Search targets..." oninput="onTargetSearch(this.value)" style="background:var(--bg-elevated); border:1px solid var(--border-hairline); border-radius:4px; font-family:var(--font-mono); font-size:10.5px; padding:3px 8px; color:var(--text-primary); outline:none; width:130px;" />
-                <button onclick="exportTargetsCSV()" class="btn-icon" title="Export CSV" style="font-size:10px; font-family:var(--font-mono); gap:4px; padding:4px 8px;">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  CSV
-                </button>
-              </div>
-            </div>
-
-            <div class="telemetry-table-wrap">
-              <table class="telemetry-table">
-                <thead>
-                  <tr>
-                    <th onclick="sortTable('id')">ID ↕</th>
-                    <th onclick="sortTable('ore')">ORE STYLE ↕</th>
-                    <th onclick="sortTable('name')">NAME &amp; DOMAIN / CLASSIFICATION ↕</th>
-                    <th>COORDINATES (LAT / LON)</th>
-                    <th onclick="sortTable('depth')">REGOLITH / DEPTH ↕</th>
-                    <th onclick="sortTable('score')">SCORE ↕</th>
-                    <th onclick="sortTable('uncertainty')">L(x) BOUND ↕</th>
-                    <th>90% CI</th>
-                    <th>RANK</th>
-                  </tr>
-                </thead>
-                <tbody id="telemetry-table-body">
-                  <!-- Dynamically populated -->
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   </div>
 
@@ -1359,7 +2155,51 @@ def main():
     # Upgraded JavaScript runtime logic:
     html_script = '''
     // ==================== STATE & DATA MODELS ====================
-    let currentRegion = "KALIMANTAN";
+
+    // ==================== VIEW CONTROLLER & NAVIGATION ====================
+    let currentView = "home";
+
+    function showView(viewName) {
+      currentView = viewName;
+      const homeEl = document.getElementById("view-home");
+      const wsEl = document.getElementById("view-workspace");
+      const btnHome = document.getElementById("nav-btn-home");
+      const btnWs = document.getElementById("nav-btn-workspace");
+      const wsTools = document.getElementById("header-workspace-tools");
+
+      if (viewName === "home") {
+        if (homeEl) homeEl.style.display = "flex";
+        if (wsEl) wsEl.style.display = "none";
+        if (btnHome) btnHome.classList.add("active");
+        if (btnWs) btnWs.classList.remove("active");
+        if (wsTools) wsTools.style.display = "none";
+        try { history.replaceState(null, "", "#home"); } catch(e) {}
+      } else {
+        if (homeEl) homeEl.style.display = "none";
+        if (wsEl) wsEl.style.display = "flex";
+        if (btnHome) btnHome.classList.remove("active");
+        if (btnWs) btnWs.classList.add("active");
+        if (wsTools) wsTools.style.display = "flex";
+        try { history.replaceState(null, "", "#workspace"); } catch(e) {}
+        if (map) {
+          setTimeout(() => {
+            map.invalidateSize();
+            if (activeRegionBundle && activeRegionBundle.bounds) {
+              map.fitBounds(activeRegionBundle.bounds, { padding: [35, 35], maxZoom: 14, duration: 0.8 });
+            }
+          }, 60);
+        }
+      }
+    }
+
+    function launchWorkspace(regionCode) {
+      if (regionCode) {
+        selectRegion(regionCode);
+      }
+      showView("workspace");
+    }
+
+    let currentRegion = "EAST_KALIMANTAN";
     let activeRegionBundle = null;
     let activeTargetsList = [];
     let activeTarget = null;
@@ -1384,12 +2224,12 @@ def main():
     };
 
     const ORE_COLORS = {
-      porphyry_cu: { stroke: "#f97316", fill: "#ea580c" },
-      skarn_fe_cu: { stroke: "#a855f7", fill: "#9333ea" },
-      epithermal_au: { stroke: "#eab308", fill: "#ca8a04" },
-      laterite_fe_ni: { stroke: "#10b981", fill: "#059669" },
-      primary_gold: { stroke: "#f59e0b", fill: "#d97706" },
-      telescoped: { stroke: "#38bdf8", fill: "#0284c7" }
+      porphyry_cu: { stroke: "#FFFFFF", fill: "#FFFFFF" },
+      skarn_fe_cu: { stroke: "#E2E8F0", fill: "#E2E8F0" },
+      epithermal_au: { stroke: "#CBD5E1", fill: "#CBD5E1" },
+      laterite_fe_ni: { stroke: "#94A3B8", fill: "#94A3B8" },
+      primary_gold: { stroke: "#F8FAFC", fill: "#F8FAFC" },
+      telescoped: { stroke: "#FFFFFF", fill: "#FFFFFF" }
     };
 
     let map = null;
@@ -1825,11 +2665,11 @@ def main():
         scannedAreaRect = L.geoJSON(boundaryGeo, {
           pane: "scannedTilesPane",
           style: {
-            color: "#38bdf8",
-            weight: 2.2,
+            color: "#FFFFFF",
+            weight: 2.0,
             dashArray: "6, 5",
-            fillColor: "#0284c7",
-            fillOpacity: 0.04
+            fillColor: "#FFFFFF",
+            fillOpacity: 0.03
           },
           onEachFeature: (feat, layer) => {
             const p = feat.properties || {};
@@ -2060,7 +2900,7 @@ def main():
         faultsGeoLayer = L.geoJSON(fg, {
           pane: "faultsPane",
           style: {
-            color: "#0ea5e9",
+            color: "#94A3B8",
             weight: 1.8,
             dashArray: "5 4",
             opacity: 0.85
@@ -2076,10 +2916,10 @@ def main():
               { direction: 'top', sticky: true }
             );
             layer.on('mouseover', () => {
-              layer.setStyle({ color: "#f43f5e", weight: 3.5, opacity: 1.0 });
+              layer.setStyle({ color: "#FFFFFF", weight: 3.0, opacity: 1.0 });
             });
             layer.on('mouseout', () => {
-              layer.setStyle({ color: "#0ea5e9", weight: 1.8, opacity: 0.85 });
+              layer.setStyle({ color: "#94A3B8", weight: 1.8, opacity: 0.85 });
             });
           }
         });
@@ -2187,9 +3027,9 @@ def main():
       if (isSelected) {
         return {
           opacity: 1,
-          color: oreTheme.stroke,
+          color: "#FFFFFF",
           weight: 3.5,
-          fillColor: oreTheme.fill,
+          fillColor: "#FFFFFF",
           fillOpacity: 0.65,
           dashArray: null
         };
@@ -2197,19 +3037,19 @@ def main():
       if (isTopRank) {
         return {
           opacity: 1,
-          color: oreTheme.stroke,
+          color: "#FFFFFF",
           weight: 2.2,
-          fillColor: oreTheme.fill,
-          fillOpacity: 0.40,
+          fillColor: "#FFFFFF",
+          fillOpacity: 0.38,
           dashArray: null
         };
       }
       return {
         opacity: 0.9,
-        color: oreTheme.stroke,
+        color: "#CBD5E1",
         weight: 1.5,
-        fillColor: oreTheme.fill,
-        fillOpacity: 0.22,
+        fillColor: "#CBD5E1",
+        fillOpacity: 0.20,
         dashArray: "4 3"
       };
     }
@@ -2841,9 +3681,9 @@ def main():
 
       const makePath = (pts) => pts.map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${pad.left + p[0] * pw} ${pad.top + (1 - p[1]) * ph}`).join(' ');
 
-      inner += `<path d="${makePath(ptsXgb)}" fill="none" stroke="#F97316" stroke-width="1.5" stroke-dasharray="4 2"/>`;
-      inner += `<path d="${makePath(ptsUnet)}" fill="none" stroke="var(--accent-purple)" stroke-width="1.5" stroke-dasharray="3 3"/>`;
-      inner += `<path d="${makePath(ptsFused)}" fill="none" stroke="var(--accent-primary)" stroke-width="2.5"/>`;
+      inner += `<path d="${makePath(ptsXgb)}" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="4 2"/>`;
+      inner += `<path d="${makePath(ptsUnet)}" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" stroke-dasharray="3 3"/>`;
+      inner += `<path d="${makePath(ptsFused)}" fill="none" stroke="#FFFFFF" stroke-width="2.5"/>`;
 
       svg.innerHTML = inner;
     }
@@ -3002,6 +3842,11 @@ def main():
       initAsciiTomography();
       initSplitHandle();
       fetchRunHistory(currentRegion);
+      if (window.location.hash === "#workspace") {
+        showView("workspace");
+      } else {
+        showView("home");
+      }
     });
   </script>
 </body>
