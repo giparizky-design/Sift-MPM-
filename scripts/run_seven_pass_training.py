@@ -106,6 +106,7 @@ def run_region_seven_pass(
     dae_epochs: Optional[int] = None,
     round_idx: Optional[int] = None,
     total_rounds: Optional[int] = None,
+    run_label: Optional[str] = None,
 ) -> dict:
     """Execute the complete 7-Pass pipeline strictly specialized on Kalimantan."""
     reg_clean = region_name.upper().strip()
@@ -713,7 +714,7 @@ def run_region_seven_pass(
     }
     (out_dir / "seven_pass_summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     try:
-        register_completed_run(out_dir, region_name, summary)
+        register_completed_run(out_dir, region_name, summary, run_label=run_label)
     except Exception as e:
         logger.warning("Could not register completed run in catalog: %s", e)
     return summary
@@ -745,11 +746,48 @@ def main() -> None:
         default=False,
         help="Run 10x compute training run (500 estimators x 10 bags XGBoost, 15 epochs DAE-U-Net)",
     )
+    parser.add_argument(
+        "--rounds",
+        type=int,
+        default=1,
+        help="Number of sequential incremental training rounds (default: 1)",
+    )
+    parser.add_argument(
+        "--trees-per-round",
+        type=int,
+        default=50,
+        help="Number of incremental XGBoost trees per round (default: 50)",
+    )
+    parser.add_argument(
+        "--bags",
+        type=int,
+        default=3,
+        help="Number of bagging ensembles per round (default: 3)",
+    )
+    parser.add_argument(
+        "--dae-epochs",
+        type=int,
+        default=2,
+        help="Number of DAE U-Net spatial epochs per round (default: 2)",
+    )
+    parser.add_argument(
+        "--run-label",
+        type=str,
+        default=None,
+        help="Custom model run name or descriptive tag",
+    )
+    parser.add_argument(
+        "--notes",
+        type=str,
+        default=None,
+        help="Optional training hypothesis notes",
+    )
     args = parser.parse_args()
 
     # If --reset-from-zero is passed, disable incremental warm-start
     reset_from_zero = args.reset_from_zero
     incremental = args.incremental and not reset_from_zero
+    total_rounds = max(1, args.rounds)
 
     reg_up = args.region.upper().strip()
     VALID_KALIMANTAN_REGIONS = {
@@ -769,51 +807,81 @@ def main() -> None:
     if reg_up in ("EAST_KALIMANTAN", "KALTIM", "KALIMANTAN_TIMUR", "ALL_KALIMANTAN"):
         ek_data = Path("data/east_kalimantan/processed")
         if (ek_data / "dataset.parquet").exists():
-            summaries.append(
-                run_region_seven_pass(
+            for r in range(1, total_rounds + 1):
+                is_reset = reset_from_zero and (r == 1)
+                is_inc = incremental or (r > 1)
+                print(f"\n>>> [EAST KALIMANTAN // ROUND {r}/{total_rounds}] Initiating 7-Pass Training...")
+                s = run_region_seven_pass(
                     region_name="EAST_KALIMANTAN",
                     data_dir=ek_data,
                     out_dir=Path("outputs/seven_pass_east_kalimantan"),
                     block_size_m=25_000.0,
                     l_threshold=0.50,
                     min_area_ha=5.0,
-                    reset_from_zero=reset_from_zero,
+                    reset_from_zero=is_reset,
                     train_10x=args.train_10x,
-                    incremental=incremental,
+                    incremental=is_inc,
+                    n_estimators=args.trees_per_round,
+                    n_bag=args.bags,
+                    dae_epochs=args.dae_epochs,
+                    round_idx=r,
+                    total_rounds=total_rounds,
+                    run_label=args.run_label,
                 )
-            )
+                if r == total_rounds:
+                    summaries.append(s)
 
     if reg_up in ("BORNEO", "ALL_KALIMANTAN"):
         borneo_data = Path("data/borneo/processed")
         if (borneo_data / "dataset.parquet").exists():
-            summaries.append(
-                run_region_seven_pass(
+            for r in range(1, total_rounds + 1):
+                is_reset = reset_from_zero and (r == 1)
+                is_inc = incremental or (r > 1)
+                print(f"\n>>> [BORNEO // ROUND {r}/{total_rounds}] Initiating 7-Pass Training...")
+                s = run_region_seven_pass(
                     region_name="BORNEO",
                     data_dir=borneo_data,
                     out_dir=Path("outputs/seven_pass_borneo"),
                     block_size_m=2_000.0,
                     l_threshold=0.50,
                     min_area_ha=5.0,
-                    reset_from_zero=reset_from_zero,
-                    incremental=incremental,
+                    reset_from_zero=is_reset,
+                    incremental=is_inc,
+                    n_estimators=args.trees_per_round,
+                    n_bag=args.bags,
+                    dae_epochs=args.dae_epochs,
+                    round_idx=r,
+                    total_rounds=total_rounds,
+                    run_label=args.run_label,
                 )
-            )
+                if r == total_rounds:
+                    summaries.append(s)
 
     if reg_up in ("KALIMANTAN", "KALIMANTAN_50M", "ALL_KALIMANTAN"):
         kal_data = Path("data/kalimantan/processed")
         if (kal_data / "dataset.parquet").exists():
-            summaries.append(
-                run_region_seven_pass(
+            for r in range(1, total_rounds + 1):
+                is_reset = reset_from_zero and (r == 1)
+                is_inc = incremental or (r > 1)
+                print(f"\n>>> [KALIMANTAN 50M // ROUND {r}/{total_rounds}] Initiating 7-Pass Training...")
+                s = run_region_seven_pass(
                     region_name="KALIMANTAN",
                     data_dir=kal_data,
                     out_dir=Path("outputs/seven_pass_kalimantan_50m"),
                     block_size_m=5_000.0,
                     l_threshold=0.50,
                     min_area_ha=5.0,
-                    reset_from_zero=reset_from_zero,
-                    incremental=incremental,
+                    reset_from_zero=is_reset,
+                    incremental=is_inc,
+                    n_estimators=args.trees_per_round,
+                    n_bag=args.bags,
+                    dae_epochs=args.dae_epochs,
+                    round_idx=r,
+                    total_rounds=total_rounds,
+                    run_label=args.run_label,
                 )
-            )
+                if r == total_rounds:
+                    summaries.append(s)
 
     print("\n================ KALIMANTAN 7-PASS TRAINING SUMMARY ================")
     print(json.dumps(summaries, indent=2))

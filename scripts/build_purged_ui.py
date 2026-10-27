@@ -1411,23 +1411,119 @@ def main():
     }
 
     /* Procedural Subsurface Tomographic ASCII Grid */
-    .ascii-canvas-container {
-      position: relative;
-      background: var(--bg-canvas);
+    /* Training Control Dashboard Styles */
+    .training-grid-3col {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      width: 100%;
+    }
+    @media (max-width: 1100px) {
+      .training-grid-3col {
+        grid-template-columns: 1fr;
+      }
+    }
+    .train-card {
+      background: var(--bg-surface);
       border: 1px solid var(--border-hairline);
       border-radius: 6px;
-      overflow: hidden;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .train-card-title {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--text-primary);
+      text-transform: uppercase;
       display: flex;
       align-items: center;
-      justify-content: center;
-      min-height: 220px;
+      gap: 8px;
+      border-bottom: 1px solid var(--border-hairline);
+      padding-bottom: 10px;
     }
-
-    #canvas-ascii-tomography {
+    .train-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 5px;
       display: block;
+    }
+    .train-input, .train-select, .train-textarea {
       width: 100%;
-      height: 220px;
-      cursor: crosshair;
+      background: var(--bg-canvas);
+      border: 1px solid var(--border-hairline);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 8px 10px;
+      border-radius: 4px;
+      box-sizing: border-box;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+    .train-input:focus, .train-select:focus, .train-textarea:focus {
+      border-color: var(--text-primary);
+    }
+    .train-checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+    .train-checkbox-label input[type="checkbox"] {
+      accent-color: var(--text-primary);
+      cursor: pointer;
+    }
+    .terminal-box {
+      background: #040507;
+      border: 1px solid var(--border-hairline);
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 14px;
+      color: #E2E8F0;
+      max-height: 280px;
+      min-height: 180px;
+      overflow-y: auto;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      line-height: 1.5;
+    }
+    .run-history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      text-align: left;
+    }
+    .run-history-table th {
+      padding: 8px 12px;
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-hairline);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .run-history-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-hairline);
+      color: var(--text-primary);
+      vertical-align: middle;
+    }
+    .run-history-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
     }
 
     /* Telemetry Target Registry Table */
@@ -1552,6 +1648,10 @@ def main():
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
           02 // EXPLORATION WORKSPACE
         </button>
+        <button id="nav-btn-training" class="nav-tab-btn" onclick="showView('training')" title="Neural Training Control, Model Lab & Version History">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          03 // TRAINING CONTROL
+        </button>
       </nav>
 
       <!-- RIGHT STATUS & THEME TOGGLE -->
@@ -1648,6 +1748,19 @@ def main():
             LAUNCH 250M WORKSPACE →
           </button>
         </div>
+
+        <!-- Training View Shortcut / Tools on Bar 2 -->
+        <div id="header-training-tools" class="sub-bar-right" style="display:none; align-items:center; gap:8px;">
+          <button onclick="startTrainingRunFromUI()" id="bar-btn-start-train" class="hero-btn-primary" style="padding: 4px 12px; font-size:10.5px; border-radius:4px;">
+            ▶ DISPATCH TRAINING
+          </button>
+          <button onclick="stopTrainingRunFromUI()" id="bar-btn-stop-train" class="hero-btn-secondary" style="padding: 4px 10px; font-size:10.5px; border-radius:4px; display:none; border-color:#EF4444; color:#EF4444;">
+            ⏹ ABORT
+          </button>
+          <button onclick="launchWorkspace('EAST_KALIMANTAN')" class="hero-btn-secondary" style="padding: 4px 10px; font-size:10.5px; border-radius:4px;">
+            OPEN WORKSPACE →
+          </button>
+        </div>
       </div>
 
     <!-- VIEW 1: HOMEPAGE // MISSION CONTROL -->
@@ -1672,6 +1785,10 @@ def main():
             <button class="hero-btn-primary" onclick="launchWorkspace('EAST_KALIMANTAN')">
               LAUNCH EXPLORATION WORKSPACE
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+            <button class="hero-btn-secondary" onclick="showView('training')" style="display:flex; align-items:center; gap:8px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              TRAINING CONTROL &amp; MODEL LAB
             </button>
             <a href="#pipeline-section" class="hero-btn-secondary">
               VIEW 7-PASS ARCHITECTURE
@@ -2136,49 +2253,17 @@ def main():
             <div class="hairline-panel" style="flex: 1; display:flex; flex-direction:column;">
               <div class="analytics-tab-header">
                 <div class="tab-nav">
-                  <button id="btn-subtab-tomography" class="tab-btn active" onclick="switchAnalyticsSubTab('tomography')">
-                    01 // Subsurface Tomography
-                  </button>
-                  <button id="btn-subtab-conformal" class="tab-btn" onclick="switchAnalyticsSubTab('conformal')">
-                    02 // Conformal 90% CI
+                  <button id="btn-subtab-conformal" class="tab-btn active" onclick="switchAnalyticsSubTab('conformal')">
+                    01 // Conformal 90% CI Bounds
                   </button>
                   <button id="btn-subtab-prauc" class="tab-btn" onclick="switchAnalyticsSubTab('prauc')">
-                    03 // Model Fusion PR-AUC
+                    02 // Model Fusion PR-AUC
                   </button>
                 </div>
-
-                <!-- Depth Slice Control when on Tomography tab -->
-                <div id="tomography-controls" style="display:flex; align-items:center; gap:8px;">
-                  <span class="font-editorial" style="font-size:12px; font-style:italic; color:var(--text-secondary);">
-                    Z-Slice: <span id="ascii-z-readout" class="font-mono" style="color:var(--accent-primary); font-style:normal; font-weight:700;">-380 m</span>
-                  </span>
-                  <input type="range" id="ascii-z-slider" min="50" max="1000" step="10" value="380" oninput="onAsciiZChange(this.value)" style="width:90px; accent-color:var(--accent-primary); cursor:pointer;" />
-                </div>
               </div>
 
-              <!-- Tab View 1: 3D Subsurface Tomographic ASCII Scanner -->
-              <div id="view-tab-tomography" style="display:block; flex:1;">
-                <div class="ascii-canvas-container">
-                  <canvas id="canvas-ascii-tomography" width="728" height="220"></canvas>
-                  <div style="position:absolute; top:8px; left:12px; font-family:var(--font-mono); font-size:9px; color:var(--text-muted); pointer-events:none;">
-                    TOMOGRAPHY HARMONICS // 3D GAUSSIAN FALLOFF
-                  </div>
-                  <div id="ascii-hover-tag" style="position:absolute; bottom:8px; right:12px; font-family:var(--font-mono); font-size:9.5px; font-weight:700; color:var(--text-primary); background:rgba(11, 14, 20, 0.9); border:1px solid var(--border-hairline); border-radius:4px; padding:2px 8px; pointer-events:none;">
-                    CURSOR LENS: STANDBY
-                  </div>
-                </div>
-
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:8px; border-top:1px solid var(--border-hairline); font-family:var(--font-mono); font-size:10px; color:var(--text-secondary);">
-                  <div>RAMP: <span style="color:var(--text-primary); font-weight:700; letter-spacing:2px;">· : - = + * # % @ ◈</span></div>
-                  <div style="display:flex; gap:12px;">
-                    <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#FFFFFF;"></span> Peak Anomaly</span>
-                    <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#CBD5E1;"></span> Focus Sync</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Tab View 2: Conformal Risk Calibration Chart -->
-              <div id="view-tab-conformal" style="display:none; flex:1;">
+              <!-- Tab View 1: Conformal Risk Calibration Chart -->
+              <div id="view-tab-conformal" style="display:block; flex:1;">
                 <div style="background:var(--bg-canvas); border:1px solid var(--border-hairline); border-radius:6px; padding:10px;">
                   <svg id="svg-analytics-chart" viewBox="0 0 600 210" style="width:100%; height:auto; display:block;"></svg>
                 </div>
@@ -2245,6 +2330,319 @@ def main():
         </main>
       </div>
     </div>
+
+    <!-- VIEW 3: TRAINING CONTROL // MODEL LAB & VERSION HISTORY -->
+    <div id="view-training" class="view-home-container" style="display:none; flex:1; min-height:0; overflow-y:auto; overflow-x:hidden;">
+      <div class="home-content-wrap">
+        <!-- HEADER / HERO -->
+        <section class="hero-section" style="gap:16px;">
+          <div class="hero-top-badges">
+            <span class="mono-badge">SIFT // MODEL LAB</span>
+            <span class="mono-badge">7-PASS DISCOVERY PIPELINE</span>
+            <span id="train-status-pill" class="mono-badge active-dot"><span class="dot"></span> READY // STANDBY</span>
+          </div>
+          <h1 class="hero-main-title" style="font-size:32px; letter-spacing:-0.5px;">
+            NEURAL TRAINING CONTROL &amp; MODEL ARCHIVE
+          </h1>
+          <p class="hero-lead-text" style="font-size:13.5px; max-width:960px;">
+            Autonomous multi-physics model training suite: configure sequential bagging rounds, select specialized deposit-mechanics neural architectures, assign model lineage identifiers, monitor real-time convergence logs, and manage version history.
+          </p>
+        </section>
+
+        <!-- SECTION 1: 3-COLUMN TRAINING LAUNCHPAD -->
+        <section style="display:flex; flex-direction:column; gap:16px; width:100%;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="section-num">01</span>
+              <h2 class="section-title">TRAINING CONFIGURATION &amp; DISPATCH</h2>
+            </div>
+            <span class="footer-tag">AUTONOMOUS MULTI-PASS COMPUTE</span>
+          </div>
+
+          <div class="training-grid-3col">
+            <!-- COLUMN A: MODEL SELECTION & GEOLOGY -->
+            <div class="train-card">
+              <div class="train-card-title">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+                A // Model &amp; Architecture
+              </div>
+
+              <div>
+                <label class="train-label">Target Exploration Theater</label>
+                <select id="train-select-region" class="train-select" onchange="onTrainRegionChange(this.value)">
+                  <option value="EAST_KALIMANTAN" selected>EAST KALIMANTAN (250m Production Grid - 2.92M cells)</option>
+                  <option value="BORNEO">BORNEO ISLAND-WIDE (500m Regional Baseline)</option>
+                  <option value="KALIMANTAN">KALIMANTAN 50M (High-Density Structural Grid)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="train-label">Neural &amp; Tabular Architectures</label>
+                <div style="display:flex; flex-direction:column; gap:8px; background:var(--bg-canvas); padding:10px; border:1px solid var(--border-hairline); border-radius:4px;">
+                  <label class="train-checkbox-label">
+                    <input type="checkbox" id="chk-train-xgb" checked disabled />
+                    <span>XGBoost Multi-Head Trees (K=4 Deposit Mechanics)</span>
+                  </label>
+                  <label class="train-checkbox-label">
+                    <input type="checkbox" id="chk-train-unet" checked />
+                    <span>nnPU District DAE U-Net (Spatial Attention)</span>
+                  </label>
+                  <label class="train-checkbox-label">
+                    <input type="checkbox" id="chk-train-conformal" checked />
+                    <span>Spatial Conformal Risk Bounds (90% CI)</span>
+                  </label>
+                  <label class="train-checkbox-label">
+                    <input type="checkbox" id="chk-train-ranking" checked />
+                    <span>Pass 6-7 Ranking &amp; Site Cards Emission</span>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label class="train-label">Deposit Mechanics Heads (K=4)</label>
+                <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                  <span class="mono-badge" style="font-size:9.5px;">HEAD 0: Porphyry Cu-Au</span>
+                  <span class="mono-badge" style="font-size:9.5px;">HEAD 1: Skarn Fe-Cu</span>
+                  <span class="mono-badge" style="font-size:9.5px;">HEAD 2: Epithermal Au-Ag</span>
+                  <span class="mono-badge" style="font-size:9.5px;">HEAD 3: Lateritic Fe-Ni</span>
+                </div>
+              </div>
+
+              <div>
+                <label class="train-label">Weight Inheritance Policy</label>
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                  <label class="train-checkbox-label" style="font-size:10.5px;">
+                    <input type="radio" name="train-mode-radio" id="radio-mode-incremental" value="incremental" checked />
+                    <span>Continuous Incremental Warm-Start (Refine weights)</span>
+                  </label>
+                  <label class="train-checkbox-label" style="font-size:10.5px;">
+                    <input type="radio" name="train-mode-radio" id="radio-mode-fresh" value="fresh" />
+                    <span>Fresh Re-train (Learn from zero-base)</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- COLUMN B: SCHEDULE & HYPERPARAMETERS -->
+            <div class="train-card">
+              <div class="train-card-title">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                B // Execution Schedule
+              </div>
+
+              <div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                  <label class="train-label" style="margin:0;">Number of Training Rounds</label>
+                  <span id="lbl-train-rounds-val" class="font-mono" style="font-size:11px; font-weight:700; color:var(--text-primary);">3 Rounds</span>
+                </div>
+                <input type="range" id="train-slider-rounds" min="1" max="10" step="1" value="3" oninput="onTrainRoundsInput(this.value)" style="width:100%; accent-color:var(--text-primary); cursor:pointer;" />
+                <div style="display:flex; gap:6px; margin-top:8px;">
+                  <button type="button" class="btn-icon" onclick="setQuickRounds(1)" style="flex:1; font-size:10px; font-family:var(--font-mono);">1 Round</button>
+                  <button type="button" class="btn-icon" onclick="setQuickRounds(3)" style="flex:1; font-size:10px; font-family:var(--font-mono); border-color:var(--accent-primary);">3 Rounds</button>
+                  <button type="button" class="btn-icon" onclick="setQuickRounds(5)" style="flex:1; font-size:10px; font-family:var(--font-mono);">5 Rounds</button>
+                  <button type="button" class="btn-icon" onclick="setQuickRounds(10)" style="flex:1; font-size:10px; font-family:var(--font-mono);">10 Rounds</button>
+                </div>
+              </div>
+
+              <div>
+                <label class="train-label">Incremental Trees Per Round</label>
+                <select id="train-select-trees" class="train-select">
+                  <option value="25">+25 trees / round (Fast exploration)</option>
+                  <option value="50" selected>+50 trees / round (Standard recommended)</option>
+                  <option value="100">+100 trees / round (Deep refinement)</option>
+                  <option value="200">+200 trees / round (Production scale)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="train-label">Bagging Subsampling Ensembles</label>
+                <select id="train-select-bags" class="train-select">
+                  <option value="1">1 Bag (Fast pilot)</option>
+                  <option value="3" selected>3 Bags (Balanced variance reduction)</option>
+                  <option value="5">5 Bags (High-precision ensemble)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="train-label">nnPU DAE U-Net Epochs Per Round</label>
+                <select id="train-select-epochs" class="train-select">
+                  <option value="1">1 Epoch (Fast spatial context)</option>
+                  <option value="2" selected>2 Epochs (Recommended convergence)</option>
+                  <option value="5">5 Epochs (Deep structural attention)</option>
+                </select>
+              </div>
+
+              <div style="background:var(--bg-canvas); border:1px solid var(--border-hairline); border-radius:4px; padding:10px; font-family:var(--font-mono); font-size:10.5px; color:var(--text-secondary); display:flex; flex-direction:column; gap:4px;">
+                <div style="display:flex; justify-content:space-between;">
+                  <span>ESTIMATED TIME:</span>
+                  <span id="train-est-time" style="color:var(--text-primary); font-weight:700;">~1.5 - 2.0 min</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                  <span>CONVENTIONAL THREADS:</span>
+                  <span style="color:var(--text-primary);">OpenMP=1 / MKL=1</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- COLUMN C: MODEL IDENTITY & LAUNCH -->
+            <div class="train-card">
+              <div class="train-card-title">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                C // Model Lineage &amp; Dispatch
+              </div>
+
+              <div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                  <label class="train-label" style="margin:0;">Model Version Identifier / Name</label>
+                  <button type="button" onclick="generateAutoRunName()" class="btn-icon" style="font-size:9.5px; padding:2px 6px;">AUTO-GEN</button>
+                </div>
+                <input type="text" id="train-input-run-name" class="train-input" value="EXP_EK_250M_SANGATTA_CORRIDOR_V1" placeholder="e.g. EXP_EAST_KALIMANTAN_V2" />
+              </div>
+
+              <div>
+                <label class="train-label">Geological Hypothesis &amp; Notes</label>
+                <textarea id="train-input-notes" class="train-textarea" rows="3" placeholder="Enter notes (e.g. testing fault corridor alignment without road proximity bias)..."></textarea>
+              </div>
+
+              <div style="margin-top:auto; display:flex; flex-direction:column; gap:10px;">
+                <label class="train-checkbox-label" style="font-size:10.5px;">
+                  <input type="checkbox" id="chk-auto-deploy" checked />
+                  <span>Auto-deploy model outputs to workspace on completion</span>
+                </label>
+
+                <button id="btn-main-start-train" onclick="startTrainingRunFromUI()" class="hero-btn-primary" style="width:100%; justify-content:center; padding:12px 18px; font-size:11.5px; border-radius:4px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  START 7-PASS TRAINING RUN
+                </button>
+                <button id="btn-main-stop-train" onclick="stopTrainingRunFromUI()" class="hero-btn-secondary" style="width:100%; justify-content:center; padding:9px 16px; font-size:11px; display:none; border-color:#EF4444; color:#EF4444;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                  ABORT ACTIVE RUN
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 2: LIVE TELEMETRY & TERMINAL CONSOLE -->
+        <section style="display:flex; flex-direction:column; gap:14px; width:100%;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="section-num">02</span>
+              <h2 class="section-title">REAL-TIME CONVERGENCE &amp; PROCESS TELEMETRY</h2>
+            </div>
+            <div id="live-train-indicator" class="mono-badge" style="font-size:10.5px;">
+              STATUS: <span id="telemetry-status-text" style="color:var(--text-primary); font-weight:700;">IDLE</span>
+            </div>
+          </div>
+
+          <!-- Stepper & Progress Bar -->
+          <div style="background:var(--bg-surface); border:1px solid var(--border-hairline); border-radius:6px; padding:16px; display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; font-family:var(--font-mono); font-size:11px;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span id="train-phase-text" style="font-weight:700; color:var(--text-primary);">PASS 1-7 PIPELINE STANDBY</span>
+                <span id="train-round-text" class="panel-tag">ROUND 0/0</span>
+              </div>
+              <span id="train-pct-text" style="color:var(--text-secondary); font-weight:700;">0.0%</span>
+            </div>
+
+            <!-- Progress Bar -->
+            <div style="width:100%; height:6px; background:var(--bg-canvas); border-radius:3px; overflow:hidden; border:1px solid var(--border-hairline);">
+              <div id="train-progress-bar" style="width:0%; height:100%; background:var(--text-primary); transition:width 0.3s ease;"></div>
+            </div>
+
+            <!-- Pipeline 7-Pass Micro Stepper -->
+            <div style="display:grid; grid-template-columns:repeat(6, 1fr); gap:6px; margin-top:4px;">
+              <div id="step-pass-1" class="mono-badge" style="text-align:center; padding:4px 2px; font-size:9px;">1 // SENSORS</div>
+              <div id="step-pass-2" class="mono-badge" style="text-align:center; padding:4px 2px; font-size:9px;">2 // IPW BIAS</div>
+              <div id="step-pass-3" class="mono-badge" style="text-align:center; padding:4px 2px; font-size:9px;">3 // nnPU DAE</div>
+              <div id="step-pass-4" class="mono-badge" style="text-align:center; padding:4px 2px; font-size:9px;">4 // PRIOR ĉ</div>
+              <div id="step-pass-5" class="mono-badge" style="text-align:center; padding:4px 2px; font-size:9px;">5 // CONFORMAL</div>
+              <div id="step-pass-6" class="mono-badge" style="text-align:center; padding:4px 2px; font-size:9px;">6-7 // RANKING</div>
+            </div>
+          </div>
+
+          <!-- Live Metrics 5-Card HUD -->
+          <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:12px;">
+            <div class="kpi-cell" style="background:var(--bg-surface); padding:12px; border-radius:6px; border:1px solid var(--border-hairline);">
+              <div class="kpi-cell-label">FUSED PR-AUC</div>
+              <div id="live-pr-fused" class="kpi-cell-val" style="font-size:18px; color:var(--text-primary);">—</div>
+            </div>
+            <div class="kpi-cell" style="background:var(--bg-surface); padding:12px; border-radius:6px; border:1px solid var(--border-hairline);">
+              <div class="kpi-cell-label">XGB 3.1 PR-AUC</div>
+              <div id="live-pr-xgb" class="kpi-cell-val" style="font-size:18px; color:var(--text-secondary);">—</div>
+            </div>
+            <div class="kpi-cell" style="background:var(--bg-surface); padding:12px; border-radius:6px; border:1px solid var(--border-hairline);">
+              <div class="kpi-cell-label">DAE U-NET PR-AUC</div>
+              <div id="live-pr-unet" class="kpi-cell-val" style="font-size:18px; color:var(--text-secondary);">—</div>
+            </div>
+            <div class="kpi-cell" style="background:var(--bg-surface); padding:12px; border-radius:6px; border:1px solid var(--border-hairline);">
+              <div class="kpi-cell-label">DISCOVERY PRIOR ĉ</div>
+              <div id="live-chat" class="kpi-cell-val" style="font-size:18px; color:var(--text-secondary);">—</div>
+            </div>
+            <div class="kpi-cell" style="background:var(--bg-surface); padding:12px; border-radius:6px; border:1px solid var(--border-hairline);">
+              <div class="kpi-cell-label">RANKED TARGETS</div>
+              <div id="live-targets" class="kpi-cell-val" style="font-size:18px; color:var(--text-primary);">—</div>
+            </div>
+          </div>
+
+          <!-- Terminal Stream Window -->
+          <div style="background:var(--bg-surface); border:1px solid var(--border-hairline); border-radius:6px; overflow:hidden;">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 14px; background:var(--bg-elevated); border-bottom:1px solid var(--border-hairline);">
+              <div style="display:flex; align-items:center; gap:8px; font-family:var(--font-mono); font-size:10.5px; color:var(--text-secondary);">
+                <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--text-primary);"></span>
+                STDOUT / STDERR STREAM CONSOLE
+              </div>
+              <div style="display:flex; gap:6px;">
+                <button type="button" onclick="clearTerminalLogs()" class="btn-icon" style="font-size:9.5px; padding:2px 8px;">CLEAR</button>
+                <button type="button" id="btn-toggle-autoscroll" onclick="toggleAutoScroll()" class="btn-icon active" style="font-size:9.5px; padding:2px 8px;">AUTOSCROLL [ON]</button>
+              </div>
+            </div>
+            <div id="train-terminal-logs" class="terminal-box"></div>
+          </div>
+        </section>
+
+        <!-- SECTION 3: MODEL VERSION HISTORY & ARCHIVE REPOSITORY -->
+        <section style="display:flex; flex-direction:column; gap:16px; width:100%;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="section-num">03</span>
+              <h2 class="section-title">MODEL VERSION HISTORY &amp; REPOSITORY</h2>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <select id="history-region-filter" class="select-dataset" onchange="fetchTrainingRunsList(this.value)" style="padding:4px 8px; font-size:10.5px;">
+                <option value="">ALL THEATERS</option>
+                <option value="EAST_KALIMANTAN" selected>EAST KALIMANTAN</option>
+                <option value="BORNEO">BORNEO ISLAND</option>
+                <option value="KALIMANTAN">KALIMANTAN 50M</option>
+              </select>
+              <input type="text" id="history-search-input" placeholder="Search model runs..." oninput="filterHistoryTable(this.value)" class="train-input" style="width:170px; padding:4px 8px; font-size:10.5px;" />
+              <button onclick="fetchTrainingRunsList()" class="btn-icon" style="font-size:10.5px; padding:4px 8px;">REFRESH</button>
+            </div>
+          </div>
+
+          <div class="telemetry-table-wrap" style="max-height:420px;">
+            <table class="run-history-table">
+              <thead>
+                <tr>
+                  <th>MODEL IDENTIFIER / NAME</th>
+                  <th>TIMESTAMP (UTC)</th>
+                  <th>THEATER &amp; RESOLUTION</th>
+                  <th>TRAINING MODE</th>
+                  <th>FUSED PR-AUC</th>
+                  <th>XGB / U-NET</th>
+                  <th>PRIOR ĉ</th>
+                  <th>TARGETS</th>
+                  <th style="text-align:right;">ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody id="model-history-table-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
   </div>
 
   <!-- SCRIPT LOGIC -->
@@ -2262,26 +2660,34 @@ def main():
       currentView = viewName;
       const homeEl = document.getElementById("view-home");
       const wsEl = document.getElementById("view-workspace");
+      const trainEl = document.getElementById("view-training");
+
       const btnHome = document.getElementById("nav-btn-home");
       const btnWs = document.getElementById("nav-btn-workspace");
+      const btnTrain = document.getElementById("nav-btn-training");
+
       const wsTools = document.getElementById("header-workspace-tools");
       const homeTools = document.getElementById("header-home-tools");
+      const trainTools = document.getElementById("header-training-tools");
+
+      [btnHome, btnWs, btnTrain].forEach(b => { if (b) b.classList.remove("active"); });
+      if (wsTools) wsTools.style.display = "none";
+      if (homeTools) homeTools.style.display = "none";
+      if (trainTools) trainTools.style.display = "none";
 
       if (viewName === "home") {
         if (homeEl) homeEl.style.display = "flex";
         if (wsEl) wsEl.style.display = "none";
+        if (trainEl) trainEl.style.display = "none";
         if (btnHome) btnHome.classList.add("active");
-        if (btnWs) btnWs.classList.remove("active");
-        if (wsTools) wsTools.style.display = "none";
         if (homeTools) homeTools.style.display = "flex";
         try { history.replaceState(null, "", "#home"); } catch(e) {}
-      } else {
+      } else if (viewName === "workspace") {
         if (homeEl) homeEl.style.display = "none";
         if (wsEl) wsEl.style.display = "flex";
-        if (btnHome) btnHome.classList.remove("active");
+        if (trainEl) trainEl.style.display = "none";
         if (btnWs) btnWs.classList.add("active");
         if (wsTools) wsTools.style.display = "flex";
-        if (homeTools) homeTools.style.display = "none";
         try { history.replaceState(null, "", "#workspace"); } catch(e) {}
         if (map) {
           setTimeout(() => {
@@ -2291,6 +2697,15 @@ def main():
             }
           }, 60);
         }
+      } else if (viewName === "training") {
+        if (homeEl) homeEl.style.display = "none";
+        if (wsEl) wsEl.style.display = "none";
+        if (trainEl) trainEl.style.display = "flex";
+        if (btnTrain) btnTrain.classList.add("active");
+        if (trainTools) trainTools.style.display = "flex";
+        try { history.replaceState(null, "", "#training"); } catch(e) {}
+        fetchTrainingRunsList();
+        pollTrainingStatus();
       }
     }
 
@@ -2314,7 +2729,7 @@ def main():
     let searchQuery = "";
     let sortColumn = "score";
     let sortAsc = false;
-    let activeAnalyticsSubTab = "tomography";
+    let activeAnalyticsSubTab = "conformal";
 
     const ORE_LABEL_MAP = {
       "porphyry_cu": "Porphyry Cu-Au",
@@ -3407,7 +3822,7 @@ def main():
 
       renderTable();
       if (activeAnalyticsSubTab === "conformal") renderConformalChart();
-      if (activeAnalyticsSubTab === "tomography") renderAsciiTomography();
+      else if (activeAnalyticsSubTab === "prauc") renderPraucChart();
 
       if (flyTo) {
         highlightTargetOnMap(target);
@@ -3541,7 +3956,7 @@ def main():
     function hoverTarget(id) {
       hoveredTargetId = id;
       if (activeAnalyticsSubTab === "conformal") renderConformalChart();
-      if (activeAnalyticsSubTab === "tomography") renderAsciiTomography();
+      else if (activeAnalyticsSubTab === "prauc") renderPraucChart();
     }
 
     function exportTargetsCSV() {
@@ -3559,143 +3974,10 @@ def main():
       document.body.removeChild(link);
     }
 
-    // ==================== PROCEDURAL ASCII TOMOGRAPHY ====================
-    let asciiZ = 380;
-    let asciiMouse = null;
-    const ASCII_CHARS = "·:-=+*#%@◈";
-
-    function onAsciiZChange(val) {
-      asciiZ = parseInt(val, 10);
-      glyphScramble("ascii-z-readout", `-${asciiZ} m`, 140);
-      const lbl = document.getElementById("lbl-z-depth");
-      if (lbl) lbl.innerText = `-${asciiZ} m`;
-      const ctrl = document.getElementById("ctrl-z-depth");
-      if (ctrl && ctrl.value != val) ctrl.value = val;
-      const slider = document.getElementById("ascii-z-slider");
-      if (slider && slider.value != val) slider.value = val;
-      renderAsciiTomography();
-      renderTable();
-      updateMapTargetMarkers();
-    }
-
-    function renderAsciiTomography() {
-      const cvs = document.getElementById("canvas-ascii-tomography");
-      if (!cvs) return;
-      const ctx = cvs.getContext("2d");
-      const cols = 52;
-      const rows = 18;
-      const cw = cvs.width / cols;
-      const ch = cvs.height / rows;
-
-      ctx.fillStyle = isLightTheme ? "#F8FAFC" : "#070A10";
-      ctx.fillRect(0, 0, cvs.width, cvs.height);
-
-      ctx.font = '500 11.5px "IBM Plex Mono", ui-monospace, monospace';
-      ctx.textBaseline = 'middle';
-      ctx.textAlign = 'center';
-
-      const normZ = asciiZ / 1000.0;
-      const displayTargets = activeTargetsList.slice(0, 5);
-
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          const px = c * cw + cw / 2;
-          const py = r * ch + ch / 2;
-
-          let val = 0.12 * Math.sin(c * 0.28 + normZ * 3.8) +
-                    0.10 * Math.cos(r * 0.38 - normZ * 2.6) +
-                    0.06 * Math.sin((c + r) * 0.18);
-
-          let isPeak = false;
-          let isHovered = false;
-          let isSelected = false;
-
-          displayTargets.forEach((t, idx) => {
-            const gx = Math.round(8 + idx * 9);
-            const gy = Math.round(5 + (idx % 3) * 4);
-            const dx = c - gx;
-            const dy = r - gy;
-            const distSq = dx * dx + dy * dy;
-            const dz = Math.abs(normZ - t.depthMeters / 1000.0);
-            const inf = Math.exp(-distSq / 14.0) * Math.max(0, 1 - dz * 2.4);
-            val += inf * t.prospectivityScore;
-
-            if (distSq < 1.8 && dz < 0.22) {
-              isPeak = true;
-              if (activeTarget && activeTarget.id === t.id) isSelected = true;
-              if (hoveredTargetId === t.id) isHovered = true;
-            }
-          });
-
-          let lensDist = 999;
-          if (asciiMouse) {
-            const mdx = px - asciiMouse.x;
-            const mdy = py - asciiMouse.y;
-            lensDist = Math.hypot(mdx, mdy);
-            if (lensDist < 64) {
-              val += (1 - lensDist / 64) * 0.36;
-            }
-          }
-
-          val = Math.max(0, Math.min(val, 0.999));
-          const charIdx = Math.floor(val * (ASCII_CHARS.length - 1));
-          const glyph = ASCII_CHARS[charIdx];
-
-          if (isSelected) {
-            ctx.fillStyle = isLightTheme ? "#0284C7" : "#38BDF8";
-            ctx.fillText("◈", px, py);
-          } else if (isHovered) {
-            ctx.fillStyle = "#F59E0B";
-            ctx.fillText("◈", px, py);
-          } else if (isPeak) {
-            ctx.fillStyle = isLightTheme ? "#0369A1" : "#38BDF8";
-            ctx.fillText("◈", px, py);
-          } else if (lensDist < 64) {
-            ctx.fillStyle = isLightTheme ? "#0F172A" : "#F8FAFC";
-            ctx.fillText(glyph, px, py);
-          } else if (val > 0.52) {
-            ctx.fillStyle = isLightTheme ? "#334155" : "#94A3B8";
-            ctx.fillText(glyph, px, py);
-          } else {
-            ctx.fillStyle = isLightTheme ? "#94A3B8" : "#334155";
-            ctx.fillText(glyph, px, py);
-          }
-        }
-      }
-    }
-
-    function initAsciiTomography() {
-      const cvs = document.getElementById("canvas-ascii-tomography");
-      if (!cvs) return;
-
-      cvs.addEventListener("mousemove", (e) => {
-        const rect = cvs.getBoundingClientRect();
-        asciiMouse = {
-          x: (e.clientX - rect.left) * (cvs.width / rect.width),
-          y: (e.clientY - rect.top) * (cvs.height / rect.height)
-        };
-
-        const tag = document.getElementById("ascii-hover-tag");
-        if (tag) {
-          tag.innerText = `CURSOR LENS: RESOLVED (${Math.round(asciiMouse.x)}, ${Math.round(asciiMouse.y)})`;
-        }
-        renderAsciiTomography();
-      });
-
-      cvs.addEventListener("mouseleave", () => {
-        asciiMouse = null;
-        const tag = document.getElementById("ascii-hover-tag");
-        if (tag) tag.innerText = "CURSOR LENS: STANDBY";
-        renderAsciiTomography();
-      });
-
-      renderAsciiTomography();
-    }
-
     // ==================== ANALYTICS TABS & CHARTS ====================
     function switchAnalyticsSubTab(tab) {
       activeAnalyticsSubTab = tab;
-      ["tomography", "conformal", "prauc"].forEach(t => {
+      ["conformal", "prauc"].forEach(t => {
         const btn = document.getElementById("btn-subtab-" + t);
         const view = document.getElementById("view-tab-" + t);
         if (btn && view) {
@@ -3709,14 +3991,382 @@ def main():
         }
       });
 
-      const tomCtrl = document.getElementById("tomography-controls");
-      if (tomCtrl) {
-        tomCtrl.style.display = tab === "tomography" ? "flex" : "none";
+      if (tab === "conformal") renderConformalChart();
+      else if (tab === "prauc") renderPraucChart();
+    }
+
+    // ==================== TRAINING CONTROL & MODEL LAB LOGIC ====================
+    let isTrainingActive = false;
+    let trainPollInterval = null;
+    let autoScrollLogs = true;
+    let cachedModelRuns = [];
+
+    function onTrainRegionChange(val) {
+      const nameInput = document.getElementById("train-input-run-name");
+      if (nameInput) {
+        const ts = new Date().toISOString().replace(/[-:T.]/g, "").slice(0, 15);
+        nameInput.value = `EXP_${val}_${ts}`;
+      }
+    }
+
+    function onTrainRoundsInput(val) {
+      const lbl = document.getElementById("lbl-train-rounds-val");
+      if (lbl) lbl.innerText = `${val} Round${val > 1 ? 's' : ''}`;
+      const est = document.getElementById("train-est-time");
+      if (est) {
+        const minTime = (val * 0.5).toFixed(1);
+        const maxTime = (val * 0.8).toFixed(1);
+        est.innerText = `~${minTime} - ${maxTime} min`;
+      }
+    }
+
+    function setQuickRounds(n) {
+      const slider = document.getElementById("train-slider-rounds");
+      if (slider) {
+        slider.value = n;
+        onTrainRoundsInput(n);
+      }
+    }
+
+    function generateAutoRunName() {
+      const reg = document.getElementById("train-select-region") ? document.getElementById("train-select-region").value : "EAST_KALIMANTAN";
+      const ts = new Date().toISOString().replace(/[-:T.]/g, "").slice(0, 15);
+      const nameInput = document.getElementById("train-input-run-name");
+      if (nameInput) {
+        nameInput.value = `EXP_${reg}_${ts}`;
+      }
+    }
+
+    function toggleAutoScroll() {
+      autoScrollLogs = !autoScrollLogs;
+      const btn = document.getElementById("btn-toggle-autoscroll");
+      if (btn) {
+        btn.innerText = `AUTOSCROLL [${autoScrollLogs ? "ON" : "OFF"}]`;
+        btn.classList.toggle("active", autoScrollLogs);
+      }
+    }
+
+    function clearTerminalLogs() {
+      const box = document.getElementById("train-terminal-logs");
+      if (box) box.innerText = "";
+    }
+
+    function startTrainingRunFromUI() {
+      if (isTrainingActive) return;
+
+      const reg = document.getElementById("train-select-region") ? document.getElementById("train-select-region").value : "EAST_KALIMANTAN";
+      const rounds = document.getElementById("train-slider-rounds") ? parseInt(document.getElementById("train-slider-rounds").value, 10) : 3;
+      const trees = document.getElementById("train-select-trees") ? parseInt(document.getElementById("train-select-trees").value, 10) : 50;
+      const bags = document.getElementById("train-select-bags") ? parseInt(document.getElementById("train-select-bags").value, 10) : 3;
+      const epochs = document.getElementById("train-select-epochs") ? parseInt(document.getElementById("train-select-epochs").value, 10) : 2;
+      const runName = document.getElementById("train-input-run-name") ? document.getElementById("train-input-run-name").value.trim() : "";
+      const notes = document.getElementById("train-input-notes") ? document.getElementById("train-input-notes").value.trim() : "";
+      const resetZero = document.getElementById("radio-mode-fresh") ? document.getElementById("radio-mode-fresh").checked : false;
+
+      const payload = {
+        region: reg,
+        run_name: runName || undefined,
+        rounds: rounds,
+        trees_per_round: trees,
+        bags_per_round: bags,
+        dae_epochs: epochs,
+        reset_from_zero: resetZero,
+        incremental: !resetZero,
+        notes: notes
+      };
+
+      setTrainingUIState(true);
+
+      fetch("/api/train", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+      .then(res => res.json())
+      .then(data => {
+        appendTerminalLine(`[CLIENT] Training job dispatched: ${JSON.stringify(payload)}`);
+        pollTrainingStatus();
+      })
+      .catch(err => {
+        appendTerminalLine(`[CLIENT ERROR] Failed to dispatch training: ${err}`);
+        setTrainingUIState(false);
+      });
+    }
+
+    function stopTrainingRunFromUI() {
+      fetch("/api/train/stop", { method: "POST" })
+        .then(res => res.json())
+        .then(data => {
+          appendTerminalLine("[CLIENT] Abort signal delivered to backend server.");
+          pollTrainingStatus();
+        })
+        .catch(err => {
+          appendTerminalLine(`[CLIENT ERROR] Abort failed: ${err}`);
+        });
+    }
+
+    function setTrainingUIState(running) {
+      isTrainingActive = running;
+      const startBtn = document.getElementById("btn-main-start-train");
+      const stopBtn = document.getElementById("btn-main-stop-train");
+      const barStartBtn = document.getElementById("bar-btn-start-train");
+      const barStopBtn = document.getElementById("bar-btn-stop-train");
+      const statusPill = document.getElementById("train-status-pill");
+      const statusText = document.getElementById("telemetry-status-text");
+
+      if (startBtn) {
+        startBtn.disabled = running;
+        startBtn.style.opacity = running ? "0.5" : "1";
+        startBtn.innerHTML = running
+          ? '<span class="loading-spinner" style="width:12px; height:12px; border:2px solid #FFF; border-top-color:transparent; border-radius:50%; display:inline-block; animation:spin 1s linear infinite;"></span> TRAINING IN PROGRESS...'
+          : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg> START 7-PASS TRAINING RUN';
+      }
+      if (stopBtn) stopBtn.style.display = running ? "flex" : "none";
+      if (barStartBtn) {
+        barStartBtn.disabled = running;
+        barStartBtn.style.opacity = running ? "0.5" : "1";
+      }
+      if (barStopBtn) barStopBtn.style.display = running ? "flex" : "none";
+
+      if (statusPill) {
+        statusPill.innerHTML = running
+          ? '<span class="dot" style="background:#F59E0B;"></span> RUNNING // 7-PASS ACTIVE'
+          : '<span class="dot" style="background:#10B981;"></span> READY // STANDBY';
+      }
+      if (statusText) {
+        statusText.innerText = running ? "ACTIVE TRAINING" : "STANDBY";
+        statusText.style.color = running ? "#F59E0B" : "var(--text-primary)";
       }
 
-      if (tab === "tomography") renderAsciiTomography();
-      else if (tab === "conformal") renderConformalChart();
-      else if (tab === "prauc") renderPraucChart();
+      if (running) {
+        if (!trainPollInterval) trainPollInterval = setInterval(pollTrainingStatus, 1500);
+      } else {
+        if (trainPollInterval) {
+          clearInterval(trainPollInterval);
+          trainPollInterval = null;
+        }
+      }
+    }
+
+    function appendTerminalLine(text) {
+      const box = document.getElementById("train-terminal-logs");
+      if (!box) return;
+      box.innerText += (box.innerText ? "\n" : "") + text;
+      if (autoScrollLogs) {
+        box.scrollTop = box.scrollHeight;
+      }
+    }
+
+    function pollTrainingStatus() {
+      if (!window.location.protocol.startsWith("http")) return;
+
+      fetch("/api/status")
+        .then(res => res.json())
+        .then(state => {
+          if (!state) return;
+
+          // 1. Logs
+          const box = document.getElementById("train-terminal-logs");
+          if (box && state.logs && Array.isArray(state.logs)) {
+            const joined = state.logs.join("\n");
+            if (box.innerText !== joined) {
+              box.innerText = joined;
+              if (autoScrollLogs) box.scrollTop = box.scrollHeight;
+            }
+          }
+
+          // 2. Running state
+          if (state.running !== isTrainingActive) {
+            setTrainingUIState(state.running);
+            if (!state.running) {
+              fetchTrainingRunsList();
+              const autoDeploy = document.getElementById("chk-auto-deploy");
+              if (autoDeploy && autoDeploy.checked && state.last_exit_code === 0) {
+                setTimeout(() => {
+                  fetchRunHistory(currentRegion);
+                  showView("workspace");
+                }, 1200);
+              }
+            }
+          }
+
+          // 3. Progress & Stepper
+          const pct = state.progress_pct !== undefined ? state.progress_pct : 0;
+          const pBar = document.getElementById("train-progress-bar");
+          if (pBar) pBar.style.width = `${pct}%`;
+          const pTxt = document.getElementById("train-pct-text");
+          if (pTxt) pTxt.innerText = `${pct.toFixed(1)}%`;
+
+          const phaseEl = document.getElementById("train-phase-text");
+          if (phaseEl && state.phase) phaseEl.innerText = state.phase.toUpperCase();
+
+          const roundEl = document.getElementById("train-round-text");
+          if (roundEl) {
+            roundEl.innerText = state.total_rounds > 0
+              ? `ROUND ${state.current_round || 1}/${state.total_rounds}`
+              : "ROUND 0/0";
+          }
+
+          // Highlight micro stepper passes based on phase text
+          const ph = (state.phase || "").toUpperCase();
+          for (let i = 1; i <= 6; i++) {
+            const stepEl = document.getElementById("step-pass-" + i);
+            if (stepEl) {
+              const isActive = (i === 1 && ph.includes("PASS 1")) ||
+                               (i === 2 && ph.includes("PASS 2")) ||
+                               (i === 3 && ph.includes("PASS 3")) ||
+                               (i === 4 && ph.includes("PASS 4")) ||
+                               (i === 5 && ph.includes("PASS 5")) ||
+                               (i === 6 && (ph.includes("PASS 6") || ph.includes("RANKING")));
+              stepEl.style.borderColor = isActive ? "var(--text-primary)" : "var(--border-hairline)";
+              stepEl.style.color = isActive ? "var(--text-primary)" : "var(--text-muted)";
+              stepEl.style.background = isActive ? "var(--bg-elevated)" : "transparent";
+            }
+          }
+
+          // 4. Live Metrics HUD
+          if (state.metrics) {
+            const m = state.metrics;
+            if (m.pr_auc_fused !== undefined) document.getElementById("live-pr-fused").innerText = Number(m.pr_auc_fused).toFixed(4);
+            if (m.pr_auc_xgb !== undefined) document.getElementById("live-pr-xgb").innerText = Number(m.pr_auc_xgb).toFixed(4);
+            if (m.pr_auc_unet !== undefined) document.getElementById("live-pr-unet").innerText = Number(m.pr_auc_unet).toFixed(4);
+            if (m.elkan_noto_c_hat !== undefined) document.getElementById("live-chat").innerText = Number(m.elkan_noto_c_hat).toFixed(4);
+            if (m.n_ranked_targets !== undefined) document.getElementById("live-targets").innerText = `${m.n_ranked_targets} TARGETS`;
+          }
+        })
+        .catch(err => {
+          // silently tolerate network disconnect
+        });
+    }
+
+    function fetchTrainingRunsList(regionFilter) {
+      if (!window.location.protocol.startsWith("http")) return;
+      const reg = regionFilter !== undefined ? regionFilter : (document.getElementById("history-region-filter") ? document.getElementById("history-region-filter").value : "");
+      const url = `/api/runs${reg ? "?region=" + encodeURIComponent(reg) : ""}`;
+
+      fetch(url)
+        .then(res => res.json())
+        .then(data => {
+          if (!data || !data.runs) return;
+          cachedModelRuns = data.runs;
+          renderTrainingRunsTable(cachedModelRuns);
+        })
+        .catch(err => {
+          console.error("Failed to fetch training runs catalog:", err);
+        });
+    }
+
+    function filterHistoryTable(query) {
+      if (!cachedModelRuns) return;
+      const q = (query || "").toLowerCase().trim();
+      if (!q) {
+        renderTrainingRunsTable(cachedModelRuns);
+        return;
+      }
+      const filtered = cachedModelRuns.filter(r => {
+        const id = (r.run_id || "").toLowerCase();
+        const lbl = (r.label || "").toLowerCase();
+        const reg = (r.region || "").toLowerCase();
+        return id.includes(q) || lbl.includes(q) || reg.includes(q);
+      });
+      renderTrainingRunsTable(filtered);
+    }
+
+    function renderTrainingRunsTable(runs) {
+      const tbody = document.getElementById("model-history-table-body");
+      if (!tbody) return;
+
+      if (!runs || runs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:24px; color:var(--text-muted);">No training runs found in catalog.</td></tr>';
+        return;
+      }
+
+      let html = "";
+      runs.forEach(r => {
+        const isActive = r.is_active || r.run_id.endsWith("_ACTIVE");
+        const fused = (r.metrics && r.metrics.pr_auc_fused !== undefined && r.metrics.pr_auc_fused !== null) ? Number(r.metrics.pr_auc_fused).toFixed(4) : "—";
+        const xgb = (r.metrics && r.metrics.pr_auc_xgb !== undefined && r.metrics.pr_auc_xgb !== null) ? Number(r.metrics.pr_auc_xgb).toFixed(3) : "—";
+        const unet = (r.metrics && r.metrics.pr_auc_unet !== undefined && r.metrics.pr_auc_unet !== null) ? Number(r.metrics.pr_auc_unet).toFixed(3) : "—";
+        const chat = (r.metrics && r.metrics.elkan_noto_c_hat !== undefined && r.metrics.elkan_noto_c_hat !== null) ? Number(r.metrics.elkan_noto_c_hat).toFixed(4) : "—";
+        const tgCount = r.n_ranked_targets || (r.site_cards ? r.site_cards.length : 0);
+        const timeStr = r.archived_at ? r.archived_at.slice(0, 16).replace("T", " ") : (r.created_at ? r.created_at.slice(0, 16).replace("T", " ") : "—");
+        const labelText = r.label || r.run_id;
+
+        html += `
+          <tr>
+            <td>
+              <div style="display:flex; align-items:center; gap:8px;">
+                ${isActive ? '<span class="mono-badge active-dot" style="font-size:9px; padding:2px 6px;"><span class="dot"></span> ACTIVE</span>' : '<span class="mono-badge" style="font-size:9px; padding:2px 6px; color:var(--text-muted);">ARCHIVED</span>'}
+                <div>
+                  <div style="font-weight:700; color:var(--text-primary);">${labelText}</div>
+                  <div style="font-size:9.5px; color:var(--text-muted);">${r.run_id}</div>
+                </div>
+              </div>
+            </td>
+            <td style="color:var(--text-secondary);">${timeStr}</td>
+            <td><span class="panel-tag" style="font-size:9.5px;">${r.region || 'KALIMANTAN'}</span></td>
+            <td><span style="font-size:10px; color:${r.is_warm_started ? '#CBD5E1' : 'var(--text-muted)'};">${r.is_warm_started ? 'Incremental (+Trees)' : 'Fresh Run'}</span></td>
+            <td><span style="font-weight:700; color:${fused !== '—' && Number(fused) > 0.90 ? '#FFFFFF' : 'var(--text-secondary)'}; font-size:12px;">${fused}</span></td>
+            <td style="font-size:10.5px; color:var(--text-muted);">XGB ${xgb} / UNet ${unet}</td>
+            <td style="font-family:var(--font-mono); font-size:11px; color:var(--text-secondary);">${chat}</td>
+            <td><span style="font-weight:700; color:var(--text-primary); font-size:11px;">${tgCount}</span></td>
+            <td style="text-align:right;">
+              <div style="display:flex; justify-content:flex-end; gap:6px;">
+                <button type="button" class="btn-icon" onclick="loadArchivedRunIntoWorkspace('${r.run_id}')" style="font-size:9.5px; padding:3px 8px;" title="Load run into Exploration Workspace">WORKSPACE →</button>
+                <button type="button" class="btn-icon" onclick="renameRunInCatalog('${r.run_id}', '${labelText.replace(/'/g, "\\'")}')" style="font-size:9.5px; padding:3px 6px;" title="Rename model">RENAME</button>
+                ${!isActive ? `<button type="button" class="btn-icon" onclick="deleteRunFromCatalog('${r.run_id}')" style="font-size:9.5px; padding:3px 6px; color:#EF4444;" title="Delete archived run">✕</button>` : ''}
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    function loadArchivedRunIntoWorkspace(runId) {
+      selectTrainingRun(runId);
+      showView("workspace");
+    }
+
+    function renameRunInCatalog(runId, currentLabel) {
+      const newName = prompt("Enter new name/label for model run " + runId + ":", currentLabel || "");
+      if (!newName || newName.trim() === currentLabel) return;
+
+      fetch("/api/runs/rename", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ run_id: runId, new_name: newName.trim() })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === "ok") {
+          fetchTrainingRunsList();
+          fetchRunHistory(currentRegion);
+        } else {
+          alert("Error renaming run: " + (data.error || "Unknown error"));
+        }
+      })
+      .catch(err => alert("Failed to rename: " + err));
+    }
+
+    function deleteRunFromCatalog(runId) {
+      if (!confirm("Are you sure you want to permanently delete archived run: " + runId + "?")) return;
+
+      fetch("/api/runs/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ run_id: runId })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === "ok") {
+          fetchTrainingRunsList();
+          fetchRunHistory(currentRegion);
+        } else {
+          alert("Error deleting run: " + (data.error || "Unknown error"));
+        }
+      })
+      .catch(err => alert("Failed to delete: " + err));
     }
 
     function renderConformalChart() {
@@ -3933,7 +4583,6 @@ def main():
           ? '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>'
           : '<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>';
       }
-      renderAsciiTomography();
       if (activeAnalyticsSubTab === "conformal") renderConformalChart();
       if (activeAnalyticsSubTab === "prauc") renderPraucChart();
     }
@@ -3941,11 +4590,12 @@ def main():
     // ==================== INITIALIZATION ON DOM READY ====================
     window.addEventListener("DOMContentLoaded", () => {
       initMap();
-      initAsciiTomography();
       initSplitHandle();
       fetchRunHistory(currentRegion);
       if (window.location.hash === "#workspace") {
         showView("workspace");
+      } else if (window.location.hash === "#training") {
+        showView("training");
       } else {
         showView("home");
       }

@@ -56,6 +56,7 @@ from src.models.training_run_manager import (
     compare_training_runs,
     list_training_runs,
     load_runs_catalog,
+    save_runs_catalog,
 )
 from src.outputs.prospectivity_map import (
     emit_site_cards_json,
@@ -93,12 +94,20 @@ _load_env_file()
 
 # Global state for background training job
 _TRAIN_LOCK = threading.Lock()
+_ACTIVE_TRAIN_PROC: Optional[subprocess.Popen] = None
 _TRAIN_STATE: dict = {
     "running": False,
     "started_at": None,
     "finished_at": None,
     "last_exit_code": 0,
-    "logs": ["[READY] 7-Pass Mineral Prospectivity Pipeline Control Center initialised."],
+    "region": "EAST_KALIMANTAN",
+    "run_name": "EXP_ACTIVE",
+    "current_round": 0,
+    "total_rounds": 1,
+    "progress_pct": 0,
+    "phase": "IDLE",
+    "metrics": {},
+    "logs": ["[READY] SIFT 7-Pass Mineral Prospectivity Training Engine initialized."],
 }
 
 
@@ -1521,48 +1530,67 @@ def _recompute_targets_live(
     return _load_region_bundle(region_up, force_reload=True)
 
 
-def _trigger_background_training(viewport_params: dict | None = None) -> dict:
+def _trigger_background_training(params: dict | None = None) -> dict:
     """Spawn 7-pass training/inference in a background thread strictly specialized on Kalimantan."""
+    global _ACTIVE_TRAIN_PROC
+    params = params or {}
     with _TRAIN_LOCK:
         if _TRAIN_STATE["running"]:
-            return {"status": "already_running", "state": _TRAIN_STATE}
+            return {"status": "already_running", "state": dict(_TRAIN_STATE)}
 
-        # Check viewport parameters to enforce strict Kalimantan policy
-        if viewport_params and "min_lon" in viewport_params:
-            min_lon = float(viewport_params["min_lon"])
-            max_lon = float(viewport_params["max_lon"])
-            min_lat = float(viewport_params["min_lat"])
-            max_lat = float(viewport_params["max_lat"])
-            # Kalimantan bounding box guard: approx 108°E-120°E, -5°S-5°N
-            if max_lon < 108.0 or min_lon > 120.0 or max_lat < -5.0 or min_lat > 5.0:
-                return {
-                    "status": "error",
-                    "message": "Training outside Kalimantan is prohibited. Models are strictly specialized for Kalimantan.",
-                }
-            target_desc = f"Kalimantan Camp View [{min_lon:.4f}, {min_lat:.4f}] -> [{max_lon:.4f}, {max_lat:.4f}]"
-            latest_region = "KALIMANTAN_CAMP"
-        else:
-            target_desc = "Kalimantan Mineral Systems Baseline"
-            latest_region = "BORNEO"
+        region = str(params.get("region", "EAST_KALIMANTAN")).upper().strip()
+        VALID_KALIMANTAN_REGIONS = {
+            "KALIMANTAN", "BORNEO", "KALIMANTAN_50M", "KALIMANTAN_500M",
+            "EAST_KALIMANTAN", "KALTIM", "KALIMANTAN_TIMUR",
+        }
+        if region not in VALID_KALIMANTAN_REGIONS:
+            region = "EAST_KALIMANTAN"
+
+        timestamp_str = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        run_name = str(params.get("run_name", "")).strip() or f"EXP_{region}_{timestamp_str}"
+        rounds = max(1, min(20, int(params.get("rounds", 1))))
+        trees_per_round = max(10, min(500, int(params.get("trees_per_round", 50))))
+        bags_per_round = max(1, min(10, int(params.get("bags_per_round", 3))))
+        dae_epochs = max(1, min(30, int(params.get("dae_epochs", 2))))
+        reset_from_zero = bool(params.get("reset_from_zero", False))
+        incremental = bool(params.get("incremental", True)) and not reset_from_zero
+        notes = str(params.get("notes", "")).strip()
 
         _TRAIN_STATE["running"] = True
         _TRAIN_STATE["started_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
         _TRAIN_STATE["finished_at"] = None
-        _TRAIN_STATE["latest_region"] = latest_region
+        _TRAIN_STATE["region"] = region
+        _TRAIN_STATE["run_name"] = run_name
+        _TRAIN_STATE["current_round"] = 1
+        _TRAIN_STATE["total_rounds"] = rounds
+        _TRAIN_STATE["progress_pct"] = 0.0
+        _TRAIN_STATE["phase"] = f"Initializing 7-Pass Training (Round 1/{rounds})..."
+        _TRAIN_STATE["metrics"] = {}
         _TRAIN_STATE["logs"].append(
-            f"[{_TRAIN_STATE['started_at']}] Starting Kalimantan 7-Pass Training (Learning from zero) for {target_desc}..."
+            f"[{_TRAIN_STATE['started_at']}] Initiating SIFT Training Run: '{run_name}' on {region} ({rounds} rounds, +{trees_per_round} trees/rnd, {bags_per_round} bags, {dae_epochs} DAE epochs)..."
         )
 
     def _worker():
+        global _ACTIVE_TRAIN_PROC
         env = os.environ.copy()
         env["OMP_NUM_THREADS"] = "1"
         env["MKL_NUM_THREADS"] = "1"
         cmd = [
             sys.executable,
             str(ROOT_DIR / "scripts" / "run_seven_pass_training.py"),
-            "--region", "BORNEO",
-            "--reset-from-zero",
+            "--region", region,
+            "--rounds", str(rounds),
+            "--trees-per-round", str(trees_per_round),
+            "--bags", str(bags_per_round),
+            "--dae-epochs", str(dae_epochs),
+            "--run-label", run_name,
         ]
+        if reset_from_zero:
+            cmd.append("--reset-from-zero")
+        elif incremental:
+            cmd.append("--incremental")
+        if notes:
+            cmd.extend(["--notes", notes])
 
         proc = subprocess.Popen(
             cmd,
@@ -1573,14 +1601,74 @@ def _trigger_background_training(viewport_params: dict | None = None) -> dict:
             bufsize=1,
             env=env,
         )
+        with _TRAIN_LOCK:
+            _ACTIVE_TRAIN_PROC = proc
+
         assert proc.stdout is not None
         for line in proc.stdout:
             clean = line.rstrip()
             if clean:
                 with _TRAIN_LOCK:
                     _TRAIN_STATE["logs"].append(clean)
-                    if len(_TRAIN_STATE["logs"]) > 250:
-                        _TRAIN_STATE["logs"] = _TRAIN_STATE["logs"][-250:]
+                    if len(_TRAIN_STATE["logs"]) > 500:
+                        _TRAIN_STATE["logs"] = _TRAIN_STATE["logs"][-500:]
+
+                    # Dynamic metric & progress parsing
+                    if "ROUND " in clean and "/" in clean and "]" in clean:
+                        try:
+                            part = clean.split("ROUND ")[1].split("]")[0]
+                            curr, tot = part.split("/")
+                            c_num, t_num = int(curr), int(tot)
+                            _TRAIN_STATE["current_round"] = c_num
+                            _TRAIN_STATE["total_rounds"] = t_num
+                            _TRAIN_STATE["phase"] = f"Round {c_num}/{t_num}"
+                            _TRAIN_STATE["progress_pct"] = round(((c_num - 1) / max(1, t_num)) * 100.0, 1)
+                        except Exception:
+                            pass
+                    if "[PASS 1" in clean:
+                        _TRAIN_STATE["phase"] = f"Pass 1: Multi-Sensor & Hyperspectral Features (Round {_TRAIN_STATE['current_round']}/{_TRAIN_STATE['total_rounds']})"
+                    elif "[PASS 2" in clean:
+                        _TRAIN_STATE["phase"] = f"Pass 2: IPW Propensity & Structural De-weighting (Round {_TRAIN_STATE['current_round']}/{_TRAIN_STATE['total_rounds']})"
+                    elif "[PASS 3" in clean:
+                        _TRAIN_STATE["phase"] = f"Pass 3: nnPU DAE U-Net & Bagged XGBoost (Round {_TRAIN_STATE['current_round']}/{_TRAIN_STATE['total_rounds']})"
+                    elif "[PASS 4" in clean:
+                        _TRAIN_STATE["phase"] = f"Pass 4: Closed-Boundary Elkan-Noto Calibration (Round {_TRAIN_STATE['current_round']}/{_TRAIN_STATE['total_rounds']})"
+                    elif "[PASS 5" in clean:
+                        _TRAIN_STATE["phase"] = f"Pass 5: Conformal Risk Bounding & Uncertainty (Round {_TRAIN_STATE['current_round']}/{_TRAIN_STATE['total_rounds']})"
+                    elif "[PASS 6-7" in clean or "Pass 6" in clean:
+                        _TRAIN_STATE["phase"] = f"Pass 6-7: Target Polygonization & Ranking (Round {_TRAIN_STATE['current_round']}/{_TRAIN_STATE['total_rounds']})"
+
+                    if "PR-AUC Fused:" in clean:
+                        try:
+                            val = float(clean.split("PR-AUC Fused:")[1].strip().split()[0].rstrip(","))
+                            _TRAIN_STATE["metrics"]["pr_auc_fused"] = val
+                        except Exception:
+                            pass
+                    if "XGB:" in clean:
+                        try:
+                            val = float(clean.split("XGB:")[1].strip().split()[0].rstrip(","))
+                            _TRAIN_STATE["metrics"]["pr_auc_xgb"] = val
+                        except Exception:
+                            pass
+                    if "UNet:" in clean:
+                        try:
+                            val = float(clean.split("UNet:")[1].strip().split()[0].rstrip(")"))
+                            _TRAIN_STATE["metrics"]["pr_auc_unet"] = val
+                        except Exception:
+                            pass
+                    if "Discovery Prior (c_hat):" in clean:
+                        try:
+                            val = float(clean.split("Discovery Prior (c_hat):")[1].strip().split()[0])
+                            _TRAIN_STATE["metrics"]["elkan_noto_c_hat"] = val
+                        except Exception:
+                            pass
+                    if "Targets Found:" in clean:
+                        try:
+                            val = int(clean.split("Targets Found:")[1].strip().split()[0].replace("|",""))
+                            _TRAIN_STATE["metrics"]["n_ranked_targets"] = val
+                        except Exception:
+                            pass
+
         rc = proc.wait()
         if rc == 0:
             try:
@@ -1590,15 +1678,18 @@ def _trigger_background_training(viewport_params: dict | None = None) -> dict:
                 logger.warning("Could not auto-rebuild UI: %s", e)
         _BUNDLE_CACHE.clear()
         with _TRAIN_LOCK:
+            _ACTIVE_TRAIN_PROC = None
             _TRAIN_STATE["running"] = False
             _TRAIN_STATE["finished_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
             _TRAIN_STATE["last_exit_code"] = rc
+            _TRAIN_STATE["progress_pct"] = 100.0 if rc == 0 else _TRAIN_STATE.get("progress_pct", 0)
+            _TRAIN_STATE["phase"] = "COMPLETED" if rc == 0 else f"FAILED (Exit Code {rc})"
             _TRAIN_STATE["logs"].append(
-                f"[{_TRAIN_STATE['finished_at']}] 7-Pass Run finished with exit code {rc}. UI refreshed."
+                f"[{_TRAIN_STATE['finished_at']}] 7-Pass Training Run completed with exit code {rc}. UI refreshed."
             )
 
     threading.Thread(target=_worker, daemon=True).start()
-    return {"status": "started", "state": _TRAIN_STATE}
+    return {"status": "started", "state": dict(_TRAIN_STATE)}
 
 
 def _get_system_performance() -> dict:
@@ -1910,8 +2001,75 @@ class DashboardHandler(BaseHTTPRequestHandler):
             return
 
         if parsed.path == "/api/train":
-            res = _trigger_background_training(viewport_params=body if body.get("min_lon") is not None else None)
+            res = _trigger_background_training(params=body)
             self._send_json(res)
+            return
+
+        if parsed.path == "/api/train/stop":
+            global _ACTIVE_TRAIN_PROC
+            with _TRAIN_LOCK:
+                if _ACTIVE_TRAIN_PROC and _ACTIVE_TRAIN_PROC.poll() is None:
+                    try:
+                        _ACTIVE_TRAIN_PROC.terminate()
+                    except Exception as e:
+                        logger.warning("Could not terminate train proc: %s", e)
+                    _TRAIN_STATE["running"] = False
+                    _TRAIN_STATE["phase"] = "ABORTED BY USER"
+                    _TRAIN_STATE["logs"].append(
+                        f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] [USER ABORT] Training execution terminated by user."
+                    )
+                    self._send_json({"status": "aborted", "state": dict(_TRAIN_STATE)})
+                    return
+                else:
+                    _TRAIN_STATE["running"] = False
+                    self._send_json({"status": "not_running", "state": dict(_TRAIN_STATE)})
+                    return
+
+        if parsed.path == "/api/runs/rename":
+            run_id = str(body.get("run_id", "")).strip()
+            new_name = str(body.get("new_name", "")).strip()
+            if not run_id or not new_name:
+                self._send_json({"status": "error", "error": "Missing run_id or new_name"}, status=400)
+                return
+            catalog = load_runs_catalog()
+            updated = False
+            for r in catalog.get("runs", []):
+                if r.get("run_id") == run_id:
+                    r["label"] = new_name
+                    updated = True
+                    break
+            if updated:
+                save_runs_catalog(catalog)
+                self._send_json({"status": "ok", "run_id": run_id, "label": new_name})
+            else:
+                self._send_json({"status": "error", "error": f"Run '{run_id}' not found in catalog."}, status=404)
+            return
+
+        if parsed.path == "/api/runs/delete":
+            run_id = str(body.get("run_id", "")).strip()
+            if not run_id:
+                self._send_json({"status": "error", "error": "Missing run_id"}, status=400)
+                return
+            catalog = load_runs_catalog()
+            target_run = None
+            for r in catalog.get("runs", []):
+                if r.get("run_id") == run_id:
+                    target_run = r
+                    break
+            if not target_run:
+                self._send_json({"status": "error", "error": f"Run '{run_id}' not found in catalog."}, status=404)
+                return
+            if target_run.get("is_active"):
+                self._send_json({"status": "error", "error": "Cannot delete active production model."}, status=400)
+                return
+            catalog["runs"] = [r for r in catalog["runs"] if r.get("run_id") != run_id]
+            save_runs_catalog(catalog)
+            run_dir_str = target_run.get("run_dir")
+            if run_dir_str and "run_history" in run_dir_str:
+                p = Path(run_dir_str)
+                if p.exists() and p.is_dir():
+                    shutil.rmtree(p, ignore_errors=True)
+            self._send_json({"status": "ok", "deleted_run_id": run_id})
             return
 
         if parsed.path == "/api/clean_old_training":
