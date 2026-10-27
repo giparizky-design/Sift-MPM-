@@ -1,0 +1,191 @@
+{
+  "version": "1.0",
+  "updated_at": "2026-10-26T15:58:23.795156+00:00",
+  "runs": [
+    {
+      "run_id": "RUN_BORNEO_20261026_111533_576293",
+      "region": "BORNEO",
+      "archived_at": "2026-10-26T11:15:33.594094+00:00",
+      "label": "Archived prior run of BORNEO",
+      "relative_path": "outputs/run_history/borneo/run_20261026_111533_576293",
+      "is_active": false,
+      "metrics": {
+        "pr_auc_xgb": 0.1632,
+        "pr_auc_unet": 0.1961,
+        "pr_auc_fused": 0.1652,
+        "elkan_noto_c_hat": 0.2468,
+        "conformal_q_hat_90": 5.0319
+      },
+      "n_ranked_targets": 15,
+      "ore_categories": [],
+      "run_dir": "/Users/gip/Geospatials/outputs/run_history/borneo/run_20261026_111533_576293"
+    },
+    {
+      "run_id": "RUN_BORNEO_20261026_111724_480115_ACTIVE",
+      "region": "BORNEO",
+      "created_at": "2026-10-26T11:17:24.480312+00:00",
+      "label": "Active run BORNEO",
+      "relative_path": "outputs/seven_pass_borneo",
+      "is_active": false,
+      "metrics": {
+        "pr_auc_xgb": 0.1632,
+        "pr_auc_unet": 0.1383,
+        "pr_auc_fused": 0.1562,
+        "elkan_noto_c_hat": 0.2951,
+        "conformal_q_hat_90": 4.7639
+      },
+      "n_ranked_targets": 9,
+      "ore_categories": [
+        "porphyry_cu"
+      ],
+      "run_dir": "/Users/gip/Geospatials/outputs/seven_pass_borneo"
+    },
+    {
+      "run_id": "RUN_BORNEO_20261026_115003_967025",
+      "region": "BORNEO",
+      "archived_at": "2026-10-26T11:50:03.973463+00:00",
+      "label": "Archived prior run of BORNEO",
+      "relative_path": "outputs/run_history/borneo/run_20261026_115003_967025",
+      "is_active": false,
+      "metrics": {
+        "pr_auc_xgb": 0.1632,
+        "pr_auc_unet": 0.1383,
+        "pr_auc_fused": 0.1562,
+        "elkan_noto_c_hat": 0.2951,
+        "conformal_q_hat_90": 4.7639
+      },
+      "n_ranked_targets": 9,
+      "ore_categories": [
+        "porphyry_cu"
+      ],
+      "run_dir": "/Users/gip/Geospatials/outputs/run_history/borneo/run_20261026_115003_967025"
+    },
+    {
+      "run_id": "RUN_BORNEO_20261026_115156_765047_ACTIVE",
+      "region": "BORNEO",
+      "created_at": "2026-10-26T11:51:56.765295+00:00",
+      "label": "Active run BORNEO",
+      "relative_path": "outputs/seven_pass_borneo",
+      "is_active": false,
+      "metrics": {
+        "pr_auc_xgb": 0.1632,
+        "pr_auc_unet": 0.2189,
+        "pr_auc_fused": 0.1659,
+        "elkan_noto_c_hat": 0.2301,
+        "conformal_q_hat_90": 5.1825
+      },
+      "n_ranked_targets": 15,
+      "ore_categories": [
+        "porphyry_cu"
+      ],
+      "run_dir": "/Users/gip/Geospatials/outputs/seven_pass_borneo"
+    },
+    {
+      "run_id": "RUN_BORNEO_20261026_121637_413869",
+      "region": "BORNEO",
+      "archived_at": "2026-10-26T12:16:37.420833+00:00",
+      "label": "Archived prior run of BORNEO",
+      "relative_path": "outputs/run_history/borneo/run_20261026_121637_413869",
+      "is_active": false,
+      "metrics": {
+        "pr_auc_xgb": 0.1632,
+        "pr_auc_unet": 0.2189,
+        "pr_auc_fused": 0.1659,
+        "elkan_noto_c_hat": 0.2301,
+        "conformal_q_hat_90": 5.1825
+      },
+      "n_ranked_targets": 15,
+      "ore_categories": [
+        "porphyry_cu"
+      ],
+      "run_dir": "/Users/gip/Geospatials/outputs/run_history/borneo/run_20261026_121637_413869"
+    },
+    {
+      "run_id": "RUN_BORNEO_20261026_123846_054970_ACTIVE",
+      "region": "BORNEO",
+      "created_at": "2026-10-26T12:38:46.055223+00:00",
+      "label": "Active run BORNEO",
+      "relative_path": "outputs/seven_pass_borneo",
+      "is_active": false,
+      "metrics": {
+        "pr_auc_xgb": 0.3796,
+        "pr_auc_unet": 0.4545,
+        "pr_auc_fused": 0.4955,
+        "elkan_noto_c_hat": 0.152,
+        "conformal_q_hat_90": 0.2455
+      },
+      "n_ranked_targets": 3,
+      "ore_categories": [
+        "epithermal_au",
+        "laterite_fe_ni",
+        "porphyry_cu",
+        "skarn_fe_cu"
+      ],
+      "run_dir": "/Users/gip/Geospatials/outputs/seven_pass_borneo"
+    },
+    {
+      "run_id": "RUN_EAST_KALIMANTAN_20261026_131425_649087_ACTIVE",
+      "region": "EAST_KALIMANTAN",
+      "created_at": "2026-10-26T13:14:25.649487+00:00",
+      "label": "Active run EAST_KALIMANTAN",
+      "relative_path": "outputs/seven_pass_east_kalimantan",
+      "run_dir": "/Users/gip/Geospatials/outputs/seven_pass_east_kalimantan",
+      "is_active": false,
+      "metrics": {
+        "pr_auc_xgb": 0.2138,
+        "pr_auc_unet": 0.1258,
+        "pr_auc_fused": 0.2138,
+        "elkan_noto_c_hat": 0.2616,
+        "conformal_q_hat_90": 0.5507
+      },
+      "n_ranked_targets": 15,
+      "ore_categories": [
+        "epithermal_au",
+        "skarn_fe_cu"
+      ]
+    },
+    {
+      "run_id": "RUN_EAST_KALIMANTAN_20261026_144448_372709",
+      "region": "EAST_KALIMANTAN",
+      "archived_at": "2026-10-26T14:44:48.386367+00:00",
+      "label": "Archived prior run of EAST_KALIMANTAN",
+      "relative_path": "outputs/run_history/east_kalimantan/run_20261026_144448_372709",
+      "run_dir": "/Users/gip/Geospatials/outputs/run_history/east_kalimantan/run_20261026_144448_372709",
+      "is_active": false,
+      "metrics": {
+        "pr_auc_xgb": 0.2138,
+        "pr_auc_unet": 0.1258,
+        "pr_auc_fused": 0.2138,
+        "elkan_noto_c_hat": 0.2616,
+        "conformal_q_hat_90": 0.5507
+      },
+      "n_ranked_targets": 15,
+      "ore_categories": [
+        "epithermal_au",
+        "skarn_fe_cu"
+      ]
+    },
+    {
+      "run_id": "RUN_EAST_KALIMANTAN_20261026_155823_791253_ACTIVE",
+      "region": "EAST_KALIMANTAN",
+      "created_at": "2026-10-26T15:58:23.793786+00:00",
+      "label": "Active run EAST_KALIMANTAN",
+      "relative_path": "outputs/seven_pass_east_kalimantan",
+      "run_dir": "/Users/gip/Geospatials/outputs/seven_pass_east_kalimantan",
+      "is_active": true,
+      "metrics": {
+        "pr_auc_xgb": 0.1266,
+        "pr_auc_unet": 0.1273,
+        "pr_auc_fused": 0.1274,
+        "elkan_noto_c_hat": 0.1089,
+        "conformal_q_hat_90": 0.1249
+      },
+      "n_ranked_targets": 15,
+      "ore_categories": [
+        "epithermal_au",
+        "porphyry_cu",
+        "skarn_fe_cu"
+      ]
+    }
+  ]
+}

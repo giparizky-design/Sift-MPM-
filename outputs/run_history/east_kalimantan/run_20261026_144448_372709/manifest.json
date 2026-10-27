@@ -1,0 +1,21 @@
+{
+  "run_id": "RUN_EAST_KALIMANTAN_20261026_144448_372709",
+  "region": "EAST_KALIMANTAN",
+  "archived_at": "2026-10-26T14:44:48.386367+00:00",
+  "label": "Archived prior run of EAST_KALIMANTAN",
+  "relative_path": "outputs/run_history/east_kalimantan/run_20261026_144448_372709",
+  "run_dir": "/Users/gip/Geospatials/outputs/run_history/east_kalimantan/run_20261026_144448_372709",
+  "is_active": false,
+  "metrics": {
+    "pr_auc_xgb": 0.2138,
+    "pr_auc_unet": 0.1258,
+    "pr_auc_fused": 0.2138,
+    "elkan_noto_c_hat": 0.2616,
+    "conformal_q_hat_90": 0.5507
+  },
+  "n_ranked_targets": 15,
+  "ore_categories": [
+    "epithermal_au",
+    "skarn_fe_cu"
+  ]
+}

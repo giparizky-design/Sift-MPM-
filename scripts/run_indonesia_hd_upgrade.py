@@ -297,16 +297,14 @@ def build_clean_region_cube(
     f_dist_volcano_km = min_v_dist_km.astype(np.float32)
     f_volcanic_arc_halo = np.exp(-(f_dist_volcano_km ** 2) / (2.0 * (35.0 ** 2))).astype(np.float32)
 
-    # 5. Airy-Heiskanen Isostatic Crustal Thickness & Bouguer Gravity Anomaly
-    f_crustal_thickness_km = np.clip(
-        30.0 + np.where(dem >= 0, dem * 0.0065, dem * 0.0028),
-        12.0,
-        52.0,
-    ).astype(np.float32)
+    # 5. Bouguer Gravity Anomaly & Subsurface 30 km Bouguer Moho Inversion
+    # Replaces synthetic Airy-Heiskanen DEM formula (30 + dem * 0.0065) with 30 km low-pass Bouguer slab inversion
     f_bouguer_mgal = (
         np.where(dem >= 0, -0.1119 * dem, -0.068 * dem)
         + 35.0 * np.exp(-f_dist_plate_km / 120.0)
     ).astype(np.float32)
+    bouguer_30km = gaussian_filter(f_bouguer_mgal, sigma=30000.0 / res_m)
+    f_crustal_thickness_km = np.clip(32.0 - (bouguer_30km / 16.76), 18.0, 45.0).astype(np.float32)
     f_moho_gravity_step = gravity_gradient_step(f_bouguer_mgal, resolution_m=res_m).astype(np.float32)
 
     # 6. Regolith Cover & Bedrock Outcrop Exposure

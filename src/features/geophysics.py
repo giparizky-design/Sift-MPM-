@@ -31,8 +31,11 @@ References:
 
 from __future__ import annotations
 
+from typing import Union
+
 import numpy as np
 from numpy.fft import fft2, ifft2, fftfreq
+from scipy.ndimage import gaussian_filter, percentile_filter, uniform_filter
 
 
 # ---------------------------------------------------------------------------
@@ -586,4 +589,222 @@ def invert_regolith_thickness_from_aem(
 
     all_nan = np.all(np.isnan(sigma), axis=0)
     return np.where(all_nan, np.nan, regolith_depth)
+
+
+# ---------------------------------------------------------------------------
+# Pass 1 Physics: Bouguer Reduction, Moho Inversion, Worms & Host Gates
+# ---------------------------------------------------------------------------
+
+
+def bouguer_slab_reduction(
+    free_air_mgal: np.ndarray,
+    dem_m: np.ndarray,
+) -> np.ndarray:
+    """Convert Free-Air gravity (Sandwell & Smith v33.1) to Complete Bouguer anomaly.
+
+    Enforces Reconciled Engineering Rule 6 (Bouguer Slab Guard):
+    Applies standard Bouguer slab reduction before any derivative or worm filtering:
+        Delta g_B = Delta g_FA - (0.1119 * max(0.0, h_DEM))
+
+    Args:
+        free_air_mgal: 2-D array of Free-Air gravity anomaly (mGal).
+        dem_m: 2-D array of topographic DEM elevation (metres).
+
+    Returns:
+        2-D array of Complete Bouguer gravity anomaly (mGal).
+    """
+    fa = np.asarray(free_air_mgal, dtype=np.float64)
+    h = np.asarray(dem_m, dtype=np.float64)
+    if fa.shape != h.shape:
+        raise ValueError(f"free_air_mgal shape {fa.shape} != dem_m shape {h.shape}")
+    return fa - (0.1119 * np.maximum(0.0, h))
+
+
+def moho_depth_from_bouguer(
+    bouguer_mgal: np.ndarray,
+    pixel_size_m: float,
+) -> np.ndarray:
+    """Compute Moho crustal depth from 30 km low-pass Bouguer slab gravity inversion.
+
+    Enforces Reconciled Engineering Rule 6:
+    Replaces synthetic Airy-Heiskanen DEM formulas (30 + dem * 0.0065) with
+    direct 30 km low-pass Bouguer gravity inversion:
+        bouguer_30km = gaussian_filter(bouguer_mgal, sigma=30000.0 / pixel_size_m)
+        moho_depth_km = np.clip(32.0 - (bouguer_30km / 16.76), 18.0, 45.0)
+
+    Args:
+        bouguer_mgal: 2-D array of Complete Bouguer gravity (mGal).
+        pixel_size_m: Grid resolution in metres.
+
+    Returns:
+        2-D array of Moho crustal thickness/depth (km), clipped to [18.0, 45.0].
+    """
+    if pixel_size_m <= 0:
+        raise ValueError(f"pixel_size_m must be positive, got {pixel_size_m}")
+    bg = np.asarray(bouguer_mgal, dtype=np.float64)
+    sigma = 30000.0 / float(pixel_size_m)
+    bg_30km = gaussian_filter(bg, sigma=sigma)
+    return np.clip(32.0 - (bg_30km / 16.76), 18.0, 45.0)
+
+
+def multiscale_crustal_worms(
+    field_grid: np.ndarray,
+    dx: float,
+    dy: float,
+    depths_m: Union[list[float], tuple[float, ...]] = (5000.0, 15000.0, 30000.0),
+    prefix: str = "bouguer",
+) -> dict[str, np.ndarray]:
+    """Compute upward-continued horizontal gradient magnitude worms at multiple crustal depths.
+
+    For each upward continuation height h (e.g. 5 km, 15 km, 30 km):
+        1. Upward-continues the potential-field grid by h metres.
+        2. Computes the horizontal gradient magnitude (HGM).
+
+    Args:
+        field_grid: 2-D potential-field grid (Bouguer gravity mGal or RTP nT).
+        dx: Cell spacing along easting in metres.
+        dy: Cell spacing along northing in metres.
+        depths_m: Sequence of continuation heights in metres.
+        prefix: Name prefix for dictionary keys (e.g. 'bouguer' or 'rtp').
+
+    Returns:
+        Dictionary with keys f'{prefix}_worm_{depth_km}km'.
+    """
+    grid = np.asarray(field_grid, dtype=np.float64)
+    worms: dict[str, np.ndarray] = {}
+    for d in depths_m:
+        d_val = float(d)
+        d_km = int(round(d_val / 1000.0))
+        uc = upward_continue(grid, height_m=d_val, dx=dx, dy=dy)
+        hgm = horizontal_gradient_magnitude(uc, dx=dx, dy=dy)
+        worms[f"{prefix}_worm_{d_km}km"] = hgm
+    return worms
+
+
+def compute_merdith_contrasts(
+    field_grid: np.ndarray,
+    pixel_size_m: float,
+    prefix: str = "mag",
+) -> dict[str, np.ndarray]:
+    """Compute Merdith multi-scale contrasts: 1 km local mean and 4 km 80th/20th percentile contrast.
+
+    Merdith et al. multi-scale potential-field architecture captures regional
+    geophysical gradients:
+      - 1 km local mean: geophys_mean_1km_*
+      - 4 km 80th/20th percentile contrast ratio: geophys_contrast_4km_*
+
+    Args:
+        field_grid: 2-D potential-field grid.
+        pixel_size_m: Grid resolution in metres.
+        prefix: Name suffix/indicator (e.g. 'mag' or 'bouguer').
+
+    Returns:
+        Dictionary with keys:
+          - f'geophys_mean_1km_{prefix}'
+          - f'geophys_contrast_4km_{prefix}'
+    """
+    grid = np.asarray(field_grid, dtype=np.float64)
+    win_1km = max(3, int(round(1000.0 / float(pixel_size_m))))
+    win_4km = max(5, int(round(4000.0 / float(pixel_size_m))))
+
+    # 1 km local mean
+    mean_1km = uniform_filter(grid, size=win_1km)
+
+    # 4 km 80th and 20th percentiles
+    p80 = percentile_filter(grid, percentile=80, size=win_4km)
+    p20 = percentile_filter(grid, percentile=20, size=win_4km)
+
+    # Safe contrast ratio
+    denom = np.maximum(np.abs(p20), 1e-6)
+    contrast_4km = np.where(
+        p20 > 0,
+        p80 / denom,
+        (p80 - p20) / (np.abs(p20) + 1.0)
+    )
+
+    return {
+        f"geophys_mean_1km_{prefix}": mean_1km,
+        f"geophys_contrast_4km_{prefix}": contrast_4km,
+    }
+
+
+def compute_intrusive_host_gate(
+    analytic_signal_grid: np.ndarray,
+    geophys_contrast_4km_mag: np.ndarray,
+    window_size: int = 5,
+) -> np.ndarray:
+    """Compute intrusive/arc host prior for Heads k=0, 1, 2.
+
+    Computes mag_analytic_signal_texture * geophys_contrast_4km_mag.
+    Texture is measured via local standard deviation of analytic signal.
+
+    Args:
+        analytic_signal_grid: 2-D Total Analytic Signal amplitude grid.
+        geophys_contrast_4km_mag: 4 km 80th/20th percentile magnetic contrast ratio.
+        window_size: Filter window size for texture estimation.
+
+    Returns:
+        2-D array of intrusive host gate prior.
+    """
+    as_arr = np.asarray(analytic_signal_grid, dtype=np.float64)
+    mean = uniform_filter(as_arr, size=window_size)
+    mean_sq = uniform_filter(as_arr ** 2, size=window_size)
+    as_texture = np.sqrt(np.maximum(0.0, mean_sq - mean ** 2))
+
+    contrast = np.asarray(geophys_contrast_4km_mag, dtype=np.float64)
+    return as_texture * contrast
+
+
+def compute_ultramafic_plateau_gate(
+    slope_deg: np.ndarray,
+    bouguer_15km: np.ndarray,
+    max_slope_deg: float = 12.0,
+) -> np.ndarray:
+    """Compute ultramafic plateau prior for Head k=3 (Lateritic Fe-Ni).
+
+    Computes plateau_low_slope_gate * bouguer_15km_high.
+    Plateau low slope penalizes steep valleys and favors flat lateritic carapaces.
+    Bouguer 15 km high captures dense ultramafic/ophiolite basement.
+
+    Args:
+        slope_deg: 2-D array of surface slope in degrees.
+        bouguer_15km: 2-D array of 15 km upward continued Bouguer gravity (or 15 km worm).
+        max_slope_deg: Maximum slope threshold for plateau gate.
+
+    Returns:
+        2-D array of ultramafic plateau gate prior in [0, 1].
+    """
+    sl = np.asarray(slope_deg, dtype=np.float64)
+    low_slope_gate = np.clip(1.0 - (sl / max_slope_deg), 0.0, 1.0)
+
+    b15 = np.asarray(bouguer_15km, dtype=np.float64)
+    p10, p90 = np.percentile(b15, [10, 90])
+    denom = max(1e-6, p90 - p10)
+    bouguer_high = np.clip((b15 - p10) / denom, 0.0, 1.0)
+
+    return low_slope_gate * bouguer_high
+
+
+def compute_canopy_safe_spectral_indices(
+    swir_clay_ratio: np.ndarray,
+    swir_alunite_kaolinite_ratio: np.ndarray,
+    swir_phyllic_ratio: np.ndarray,
+    tir_quartz_ratio: np.ndarray,
+) -> dict[str, np.ndarray]:
+    """Return strictly leakage-compliant engineered optical/spectral features for pilot blocks.
+
+    Features are strictly named:
+      - 'swir_veg_norm_clay_idx'
+      - 'swir_argillic_rbd_logical'
+      - 'swir_phyllic_rbd_logical'
+      - 'tir_quartz_silicification_idx'
+    (Never containing raw sensor band substrings 'b11', 'b13', 'aster_b', or 's2_b').
+    """
+    return {
+        "swir_veg_norm_clay_idx": np.asarray(swir_clay_ratio, dtype=np.float32),
+        "swir_argillic_rbd_logical": np.asarray(swir_alunite_kaolinite_ratio, dtype=np.float32),
+        "swir_phyllic_rbd_logical": np.asarray(swir_phyllic_ratio, dtype=np.float32),
+        "tir_quartz_silicification_idx": np.asarray(tir_quartz_ratio, dtype=np.float32),
+    }
+
 

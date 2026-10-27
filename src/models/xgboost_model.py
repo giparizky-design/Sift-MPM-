@@ -370,16 +370,24 @@ class MPMXGBoost:
         if not self.ensemble_:
             raise RuntimeError("Call fit() before compute_shap().")
 
+        X_arr = np.asarray(X)
+        was_1d = (X_arr.ndim == 1)
+        if was_1d:
+            X_arr = X_arr[np.newaxis, :]
+
         representative_model = self.ensemble_[0]
         explainer = shap.TreeExplainer(representative_model)
-        shap_values = explainer.shap_values(X)
+        shap_values = explainer.shap_values(X_arr)
 
         # For binary XGBClassifier, shap_values may be a list [neg_class, pos_class]
         # We want the positive (mineralised) class SHAP values.
         if isinstance(shap_values, list):
             shap_values = shap_values[1]
 
-        return np.asarray(shap_values)  # shape (N, n_features)
+        shap_values = np.asarray(shap_values)  # shape (N, n_features)
+        if was_1d:
+            return shap_values.ravel()
+        return shap_values
 
     def save(self, path: str) -> None:
         """Persist the fitted ensemble to disk using joblib compression.

@@ -1,59 +1,55 @@
-# Mineral Prospectivity Data Feasibility and Audit Report
+# Data Feasibility and Audit Report
 
-- **Primary Pilot:** Eastern Goldfields, Yilgarn Craton, Western Australia (`yilgarn_orogenic_gold_v1`)
-- **Secondary Evaluation Region:** Borneo (Central Kalimantan Arc & East Malaysia, `borneo_epithermal_porphyry_v1`)
-- **Target Commodities:** Gold (Au), Copper (Cu), Antimony (Sb)
-- **Target Prediction Grid:** 50 m × 50 m cells
-- **Target Coordinate Reference Systems:**
-  - Yilgarn Pilot: `EPSG:7851` (GDA2020 / MGA Zone 51)
-  - Borneo Pilot: `EPSG:32649` (WGS 84 / UTM Zone 49N)
-- **Audit Date:** 2026-10-21
+- **Pilot Name:** `yilgarn_orogenic_gold_v1`
+- **Target Commodity & Style:** Au (orogenic_gold)
+- **Target Prediction Cell:** 50 m × 50 m
+- **Target CRS:** `EPSG:7851`
+- **AOI Geographic Extent:** [121.4, -30.8, 121.55, -30.7]
+- **Audit Timestamp:** `2026-10-26T17:59:29.565214`
 
 ---
 
-## 1. Primary Pilot: Authentic Western Australian Datasets Acquired
+## 1. Input Datasets & Local Storage Audit
 
-All foundational datasets for the Eastern Goldfields pilot AOI (`[350000, 6590000, 360000, 6600000]` EPSG:7851) have been retrieved from official government open-access APIs and public cloud buckets:
-
-| Layer Name | Source & API Protocol | Format & CRS | Records / Shape | Native Res | Validation Verdict |
-|---|---|---|---|---|---|
-| **MINEDEX Deposits** | GSWA / DMIRS SLIP REST (Layer 0) | GeoPackage (`EPSG:7851`) | 480 gold mines/deposits | 10–50 m | **Verified Positive Labels (P).** Filtered out infrastructure (mills/plants). Includes Sir John, Great Boulder, Federal, Fortunatus. |
-| **WAMEX Drillholes** | GSWA / DMIRS SLIP REST (Layer 28) | GeoPackage (`EPSG:7851`) | 5,000 drillhole collars | Precise collar coords | **Verified Drillhole Network.** Target commodities: Au, Au-Ni-Zn, Base Metals. Spatial anchors for Reliable Negatives (RN). |
-| **Bedrock Geology** | GSWA 1:500k Bedrock Geology (Layer 4) | GeoPackage (`EPSG:7851`) | 12 polygons | 1:500 000 | **Verified.** Eastern Goldfields Superterrane greenstones, Kurrawang Formation, komatiites, felsic volcanics. |
-| **Linear Faults/Shears** | GSWA Linear Structures (Layer 1) | GeoPackage (`EPSG:7851`) | 19 fault line features | 1:500 000 | **Verified Structural Trap Layer.** 340.9 km cumulative fault trace length for Euclidean distance calculation. |
-| **Copernicus DEM** | ESA / AWS S3 Open Data COG | GeoTIFF (`EPSG:7851`) | 200 × 200 cells | 30 m | **Verified Elevation Grid.** Reprojected to 50 m grid. Elevation spans 114.7 m to 463.1 m (mean 366.0 m). |
-
----
-
-## 2. Secondary Region Audit: Borneo (Kalimantan, Sarawak, Sabah)
-
-### 2.1 Environmental & Sensor Feasibility
-* **The Equatorial Canopy Mask:** Unlike arid Western Australia where ASTER/Sentinel-2 SWIR band ratios (Al-OH 2.20 µm, Fe-oxide 0.86 µm, silica 8.6 µm) map surface alteration directly, Borneo's dense multi-tier rainforest canopy completely obscures bedrock spectral reflectance.
-* **Sensor Hierarchy Solution:**
-  1. **Primary Structural Sensor:** JAXA ALOS-2 PALSAR-2 L-band SAR (~24 cm wavelength). Penetrates leaf canopy to ground level; delivers fault/shear roughness and bedrock lineaments.
-  2. **Topographic Geomorphology:** Copernicus GLO-30 DEM (30 m). Extracts slope, aspect, TPI, ridge curvature, and caldera ring boundaries.
-  3. **Deep Geophysics:** NOAA EMAG2v3 global magnetics (2 arc-minutes ~ 3.7 km). Flags regional volcano-plutonic arc sutures.
-
-### 2.2 Ground Truth Audit & Centroid Clustering Detection
-* Programmatic audit of the USGS Mineral Resources Data System (MRDS) across Borneo (`[-4.5, 108.5, 7.5, 119.5]`) retrieved **50 records**.
-* **Data Quality Caveat Uncovered:** **22 out of 50 records (44%) are placed at the Kalimantan island centroid (`lat: -1.9982°, lon: 113.9995°`)**. Database compilers assigned this default centroid when colonial literature lacked precise coordinates.
-* **Genuine Geolocated Ground Truth (28 deposits):**
-  - **Kelian Gold Deposit** (`-0.02063°, 115.45167°`): Giant Neogene low-sulfidation carbonate-base metal epithermal Au deposit (~240 t Au).
-  - **Mamut Porphyry Cu-Au** (`6.01770°, 116.64942°`): Sabah, Malaysia (~100 Mt @ 0.48% Cu, 0.5 g/t Au).
-  - **Bau Gold Mine** (`2.59430°, 113.30325°`): Carlin-like sediment-hosted Au-Sb in Jurassic-Cretaceous limestone/shale.
-  - **Cempaka-Danau Seran & Riam Kanan** (`-3.40752°, 114.89474°`): Diamond, Au, and PGE alluvial paleochannels.
-  - **Busang Prospect** (`1.25147°, 116.23273°`): Hydrothermal alteration zone, East Kalimantan.
-  - **Sebuku Island** (`-3.49807°, 116.35943°`): Ophiolitic lateritic Ni-Fe-Cr.
-  - **West Kalimantan / Sarawak Bauxite** (`0.95150°, 108.94960°` & `1.75142°, 109.83291°`): Lateritic bauxite on weathered felsic intrusions.
+| Dataset          | Path                                | Present   |   File Count | Status   |
+|:-----------------|:------------------------------------|:----------|-------------:|:---------|
+| aster            | data/raw/aster                      | True      |           11 | PRESENT  |
+| sentinel2        | data/raw/sentinel2                  | True      |            4 | PRESENT  |
+| magnetics_tmi    | data/raw/magnetics/tmi.tif          | True      |            1 | PRESENT  |
+| magnetics_rtp    | data/raw/magnetics/rtp.tif          | True      |            1 | PRESENT  |
+| radiometrics_k   | data/raw/radiometrics/potassium.tif | True      |            1 | PRESENT  |
+| radiometrics_u   | data/raw/radiometrics/uranium.tif   | True      |            1 | PRESENT  |
+| radiometrics_th  | data/raw/radiometrics/thorium.tif   | True      |            1 | PRESENT  |
+| gravity_bouguer  | data/raw/gravity/bouguer.tif        | True      |            1 | PRESENT  |
+| dem              | data/raw/dem                        | True      |            1 | PRESENT  |
+| geology          | data/raw/geology                    | True      |            1 | PRESENT  |
+| minedex_labels   | data/raw/labels/minedex             | True      |            1 | PRESENT  |
+| wamex_drillholes | data/raw/labels/wamex               | True      |            2 | PRESENT  |
 
 ---
 
-## 3. Storage & Artifacts Checklist
+## 2. Geophysical & Raster Resolution Compatibility
 
-All datasets have been acquired and staged locally:
-- Authentic WA Pilot Data: `data/raw_real/`
-- Scraped Borneo Exploration Data: `data/borneo/`
-- Secondary Region Configuration: `config/borneo.yaml`
-- Ingestion Orchestration Script: `scripts/fetch_real_pilot_data.py`
-- Borneo Scraper Script: `scripts/fetch_borneo_data.py`
-- Comprehensive Audit Document: `docs/borneo_data_audit.md`
+The prediction unit of 50 m requires evaluating each input against its native survey resolution:
+
+| Layer                    | status   |   Native Res (m) |   Target Cell (m) | Harmonization Policy                       |
+|:-------------------------|:---------|-----------------:|------------------:|:-------------------------------------------|
+| TMI (Aeromagnetics)      | OK       |               80 |                50 | Bilinear upsample (1.6x) + Provenance Flag |
+| RTP (Aeromagnetics)      | OK       |               80 |                50 | Bilinear upsample (1.6x) + Provenance Flag |
+| Potassium (Radiometrics) | OK       |              100 |                50 | Bilinear upsample (2.0x) + Provenance Flag |
+| Uranium (Radiometrics)   | OK       |              100 |                50 | Bilinear upsample (2.0x) + Provenance Flag |
+| Thorium (Radiometrics)   | OK       |              100 |                50 | Bilinear upsample (2.0x) + Provenance Flag |
+| Bouguer Gravity          | OK       |              400 |                50 | Bilinear upsample (8.0x) + Provenance Flag |
+
+---
+
+## 3. Ground-Truth Labels Status
+
+- MINEDEX files found.
+- WAMEX files found.
+
+---
+
+## 4. Audit Summary & Action Items
+
+✅ All required input datasets are present and verified. Ready for `stage_harmonize`.

@@ -23,7 +23,7 @@ or cloud object stores (S3 / GCS / Azure Blob).
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import geopandas as gpd
 import numpy as np
@@ -640,6 +640,7 @@ def polygonize_and_rank_targets(
                 "area_sq_km",
                 "calibrated_deposit_prob",
                 "lower_bound_L",
+                "lower_bound_L_max",
                 "upper_bound_U",
                 "dilation_tendency_Td_max",
                 "alteration_mean",
@@ -689,6 +690,7 @@ def polygonize_and_rank_targets(
             "area_sq_km": float(area_m2 / 1_000_000.0),
             "calibrated_deposit_prob": _stat(calibrated_prob, np.nanmean),
             "lower_bound_L": _stat(lower_bound_L, np.nanmean),
+            "lower_bound_L_max": _stat(lower_bound_L, np.nanmax),
             "upper_bound_U": _stat(upper_bound_U, np.nanmean),
             "dilation_tendency_Td_max": _stat(dilation_tendency_Td, np.nanmax),
             "alteration_mean": _stat(alteration_index, np.nanmean),
@@ -712,6 +714,7 @@ def polygonize_and_rank_targets(
                 "area_sq_km",
                 "calibrated_deposit_prob",
                 "lower_bound_L",
+                "lower_bound_L_max",
                 "upper_bound_U",
                 "dilation_tendency_Td_max",
                 "alteration_mean",
@@ -755,12 +758,217 @@ def polygonize_and_rank_targets(
     return gdf
 
 
+# ---------------------------------------------------------------------------
+# Skirrow Mineral Systems Partitioning & TreeSHAP Attribution (Task 3.1)
+# ---------------------------------------------------------------------------
+
+SKIRROW_MINERAL_SYSTEMS_BUCKETS: list[str] = [
+    "1_energy_and_metal_sources",
+    "2_crustal_conduits",
+    "3_physicochemical_traps",
+    "4_alteration_and_anomaly",
+]
+
+
+def classify_skirrow_bucket(feature_name: str) -> str:
+    """Classify feature into one of the 4 Skirrow Mineral Systems buckets (Skirrow et al., 2019).
+
+    Buckets:
+      1_energy_and_metal_sources:
+        f_crustal_thickness_km, bouguer_30km, geophys_mean_1km_*
+      2_crustal_conduits:
+        bouguer_worm_5km, bouguer_worm_15km, bouguer_worm_30km, vertical_plumbing_persistence
+      3_physicochemical_traps:
+        dilation_tendency_Td, slip_tendency_Ts, geophys_contrast_4km_*, plateau_low_slope_gate
+      4_alteration_and_anomaly:
+        dae_recon_err, unet_ctx_*, oof_prob_skarn, oof_prob_epithermal, and spectral ratios
+    """
+    fn = feature_name.strip().lower()
+
+    # 1. Energy and Metal Sources
+    if (
+        "crustal_thickness" in fn
+        or "bouguer_30km" in fn
+        or "moho" in fn
+        or "geophys_mean_1km" in fn
+        or fn.startswith("grav_mean_")
+        or fn.startswith("mag_mean_")
+        or "source" in fn
+        or "deep_crust" in fn
+    ):
+        return "1_energy_and_metal_sources"
+
+    # 2. Crustal Conduits
+    if (
+        "worm" in fn
+        or "conduit" in fn
+        or "plumbing" in fn
+        or "persistence" in fn
+        or "fault" in fn
+        or "structure" in fn
+        or "lineament" in fn
+    ):
+        return "2_crustal_conduits"
+
+    # 3. Physicochemical Traps
+    if (
+        "dilation" in fn
+        or "slip" in fn
+        or "contrast_4km" in fn
+        or "geophys_contrast" in fn
+        or "plateau_low_slope" in fn
+        or "trap" in fn
+        or "reductant" in fn
+        or "host_gate" in fn
+    ):
+        return "3_physicochemical_traps"
+
+    # 4. Alteration and Anomaly (default for spectral indices, autoencoders, context embeddings)
+    return "4_alteration_and_anomaly"
+
+
+def partition_shap_into_mineral_systems(
+    feature_names: list[str],
+    shap_values: np.ndarray,
+    feature_values: Optional[np.ndarray] = None,
+    top_k: int = 5,
+) -> dict[str, Any]:
+    """Partition TreeSHAP contributions into the 4 Skirrow Mineral Systems buckets.
+
+    Args:
+        feature_names: List of feature names.
+        shap_values: Array of SHAP values matching feature_names.
+        feature_values: Optional array of raw feature values matching feature_names.
+        top_k: Maximum number of top contributing features to retain per bucket.
+
+    Returns:
+        Dictionary mapping bucket names to summary statistics and top features.
+    """
+    shap_arr = np.asarray(shap_values, dtype=np.float64).ravel()
+    feat_arr = (
+        np.asarray(feature_values, dtype=np.float64).ravel()
+        if feature_values is not None
+        else None
+    )
+
+    buckets: dict[str, list[dict[str, Any]]] = {
+        b: [] for b in SKIRROW_MINERAL_SYSTEMS_BUCKETS
+    }
+
+    for idx, fn in enumerate(feature_names):
+        b = classify_skirrow_bucket(fn)
+        sv = float(shap_arr[idx]) if idx < len(shap_arr) else 0.0
+        fv = float(feat_arr[idx]) if (feat_arr is not None and idx < len(feat_arr)) else None
+        buckets[b].append({
+            "feature": fn,
+            "shap_value": round(sv, 4),
+            "feature_value": round(fv, 4) if fv is not None else None,
+        })
+
+    out: dict[str, Any] = {}
+    for b_name in SKIRROW_MINERAL_SYSTEMS_BUCKETS:
+        items = buckets[b_name]
+        total_shap = sum(item["shap_value"] for item in items)
+        abs_shap = sum(abs(item["shap_value"]) for item in items)
+        items_sorted = sorted(items, key=lambda x: abs(x["shap_value"]), reverse=True)
+        out[b_name] = {
+            "total_shap": round(total_shap, 4),
+            "mean_abs_shap": round(abs_shap / max(1, len(items)), 4),
+            "n_features": len(items),
+            "top_features": items_sorted[:top_k],
+        }
+
+    return out
+
+
+def extract_target_shap_attribution(
+    model: Any,
+    x_sample: np.ndarray,
+    feature_names: list[str],
+    active_targets: list[str],
+    tau_drill: float = 0.50,
+    lower_bound: float = 0.50,
+) -> dict[str, Any]:
+    """Extract TreeSHAP values from each active head in C_0.90(s) and partition into Skirrow buckets.
+
+    Enforces Task 3.1:
+      1. For target polygons where max_k L_{0.90}^{(k)}(s) >= tau_drill, extract TreeSHAP
+         values from each active head in C_0.90(s).
+      2. Partition SHAP contributions into the 4 Skirrow Mineral Systems buckets.
+    """
+    if lower_bound < (tau_drill - 1e-4) or not active_targets:
+        return {}
+
+    attributions: dict[str, Any] = {}
+    x_arr = np.asarray(x_sample, dtype=np.float32)
+
+    if hasattr(model, "compute_head_shap"):
+        # Multi-head TwoStageK4Ensemble
+        for tgt in active_targets:
+            try:
+                sv, head_feats = model.compute_head_shap(tgt, x_arr, feature_names)
+                if len(head_feats) > len(x_arr.ravel()) and hasattr(model, "head_1_") and hasattr(model, "head_2_"):
+                    x_2d = x_arr if x_arr.ndim == 2 else x_arr[np.newaxis, :]
+                    p1 = model.head_1_.predict_proba(x_2d)
+                    p2 = model.head_2_.predict_proba(x_2d)
+                    x_full = np.concatenate([x_arr.ravel(), p1.ravel(), p2.ravel()])
+                else:
+                    x_full = x_arr.ravel()
+                attributions[tgt] = partition_shap_into_mineral_systems(
+                    head_feats, sv, feature_values=x_full
+                )
+            except Exception as e:
+                logger.warning("Could not extract TreeSHAP for head '%s': %s", tgt, e)
+    elif hasattr(model, "compute_shap"):
+        # MPMXGBoost baseline
+        try:
+            x_2d = x_arr if x_arr.ndim == 2 else x_arr[np.newaxis, :]
+            sv = model.compute_shap(x_2d)
+            if hasattr(sv, "ndim") and sv.ndim > 1:
+                sv = sv.ravel()
+            primary_tgt = active_targets[0] if active_targets else "deposit"
+            attributions[primary_tgt] = partition_shap_into_mineral_systems(
+                feature_names, sv, feature_values=x_arr.ravel()
+            )
+        except Exception as e:
+            logger.warning("Could not extract TreeSHAP from model: %s", e)
+    elif hasattr(model, "predict_proba"):
+        # Single XGBoost model
+        try:
+            import shap
+            rep_clf = getattr(model, "models_", [model])[0] if hasattr(model, "models_") else model
+            explainer = shap.TreeExplainer(rep_clf)
+            x_2d = x_arr if x_arr.ndim == 2 else x_arr[np.newaxis, :]
+            sv = explainer.shap_values(x_2d)
+            if isinstance(sv, list):
+                sv = sv[1]
+            sv = np.asarray(sv).ravel()
+            primary_tgt = active_targets[0] if active_targets else "deposit"
+            attributions[primary_tgt] = partition_shap_into_mineral_systems(
+                feature_names, sv, feature_values=x_arr.ravel()
+            )
+        except Exception as e:
+            logger.warning("Could not extract TreeSHAP via TreeExplainer: %s", e)
+
+    return attributions
+
+
 def emit_site_cards_json(
     ranked_targets_gdf: gpd.GeoDataFrame,
     out_path: str,
     elkan_noto_c_hat: float = 0.74,
     sensor_source: str = "EMIT_SWIR",
     window_footprint_km: float = 3.2,
+    model: Optional[Any] = None,
+    feature_names: Optional[list[str]] = None,
+    feature_matrix: Optional[np.ndarray] = None,
+    rows: Optional[np.ndarray] = None,
+    cols: Optional[np.ndarray] = None,
+    profile: Optional[dict] = None,
+    tau_drill: float = 0.50,
+    conformal_target_sets: Optional[Union[list[list[str]], dict[int, list[str]]]] = None,
+    outmogc_gates: Optional[Union[dict[str, float], list[dict[str, float]]]] = None,
+    shap_attributions: Optional[Union[list[dict], dict[int, dict]]] = None,
 ) -> list[dict]:
     """Pass 7: Export ranked drill targets as structured JSON Site Cards for LLM synthesis.
 
@@ -768,6 +976,11 @@ def emit_site_cards_json(
       - ``target_id``
       - ``rank``
       - ``rank_score``
+      - ``conformal_90pct_target_set`` (Task 3.1)
+      - ``telescoped_system_flag`` (Task 3.1)
+      - ``outmogc_boundary_gate`` (Task 3.1)
+      - ``exploration_logistics_propensity`` (Task 3.1)
+      - ``mineral_systems_shap_attribution`` (Task 3.1)
       - ``geometry`` (``centroid_lat_lon``, ``area_sq_km``, ``window_footprint_km``)
       - ``probabilities`` (``fused_raw_score``, ``elkan_noto_c_hat``,
         ``calibrated_deposit_prob``, ``conformal_90_ci`` with ``lower_bound_L``
@@ -781,6 +994,16 @@ def emit_site_cards_json(
         elkan_noto_c_hat: Elkan-Noto label frequency constant $\\hat{c}$ from Pass 4.
         sensor_source: SWIR hyperspectral sensor identifier (e.g. ``"EMIT_SWIR"``).
         window_footprint_km: Spatial context window footprint in km (default ``3.2``).
+        model: Optional fitted tree ensemble or TwoStageK4Ensemble for TreeSHAP extraction.
+        feature_names: Optional list of base feature names.
+        feature_matrix: Optional full feature matrix matching rows/cols.
+        rows: Optional array of pixel row indices matching feature_matrix.
+        cols: Optional array of pixel col indices matching feature_matrix.
+        profile: Optional rasterio profile dictionary with transform.
+        tau_drill: Drilling prospectivity lower-bound cutoff threshold (default 0.50).
+        conformal_target_sets: Optional target active sets per polygon.
+        outmogc_gates: Optional boundary gate dictionaries per polygon.
+        shap_attributions: Optional precomputed SHAP attributions per polygon.
 
     Returns:
         List of serialised Site Card dictionaries written to ``out_path``.
@@ -812,6 +1035,11 @@ def emit_site_cards_json(
         e_x = max(e_x, 0.05)
         w_x = float(row.get("propensity_weight_w", 1.0 / e_x))
 
+        l_val = float(row.get("lower_bound_L", 0.50))
+        l_max = float(row.get("lower_bound_L_max", l_val))
+        if "lower_bound_k4" in row and isinstance(row["lower_bound_k4"], (list, np.ndarray)):
+            l_max = float(np.max(row["lower_bound_k4"]))
+
         al_oh_val = float(row.get("al_oh_crystallinity", 1.15))
         if al_oh_val >= 1.10:
             al_oh_label = "high"
@@ -826,10 +1054,114 @@ def emit_site_cards_json(
             row.get("reductant_trap_inferred", aem_cond >= 10.0)
         )
 
+        # ------------------------------------------------------------------
+        # Multi-Mineral Phase 3 Attributes (Task 3.1)
+        # ------------------------------------------------------------------
+        # 1. conformal_90pct_target_set
+        conformal_target_set = row.get("conformal_90pct_target_set")
+        if conformal_target_set is None:
+            if conformal_target_sets is not None:
+                if isinstance(conformal_target_sets, dict):
+                    conformal_target_set = conformal_target_sets.get(idx, [])
+                elif idx < len(conformal_target_sets):
+                    conformal_target_set = conformal_target_sets[idx]
+                else:
+                    conformal_target_set = []
+            else:
+                tgt_type = str(row.get("target_class", row.get("commodity", "primary_target")))
+                conformal_target_set = [tgt_type] if l_max >= (tau_drill - 1e-4) else []
+
+        if not isinstance(conformal_target_set, list):
+            conformal_target_set = list(conformal_target_set)
+
+        # 2. telescoped_system_flag
+        telescoped_flag = bool(
+            row.get("telescoped_system_flag", len(conformal_target_set) >= 2)
+        )
+
+        # 3. outmogc_boundary_gate
+        outmogc_gate = row.get("outmogc_boundary_gate")
+        if outmogc_gate is None:
+            if outmogc_gates is not None:
+                if isinstance(outmogc_gates, dict) and any(isinstance(v, dict) for v in outmogc_gates.values()):
+                    outmogc_gate = outmogc_gates.get(idx, {})
+                elif isinstance(outmogc_gates, dict):
+                    outmogc_gate = dict(outmogc_gates)
+                elif isinstance(outmogc_gates, list) and idx < len(outmogc_gates):
+                    outmogc_gate = outmogc_gates[idx]
+                else:
+                    outmogc_gate = {
+                        "porphyry_cu": 1.0,
+                        "skarn_fe_cu": 1.0,
+                        "epithermal_au": 1.0,
+                        "laterite_fe_ni": 1.0,
+                    }
+            else:
+                outmogc_gate = {
+                    "porphyry_cu": float(row.get("outmogc_gate_porphyry", 1.0)),
+                    "skarn_fe_cu": float(row.get("outmogc_gate_skarn", 1.0)),
+                    "epithermal_au": float(row.get("outmogc_gate_epithermal", 1.0)),
+                    "laterite_fe_ni": float(row.get("outmogc_gate_laterite", 1.0)),
+                }
+
+        # 4. exploration_logistics_propensity
+        exp_propensity = round(float(row.get("exploration_logistics_propensity", e_x)), 4)
+
+        # 5. mineral_systems_shap_attribution
+        shap_attr = row.get("mineral_systems_shap_attribution")
+        if shap_attr is None:
+            if shap_attributions is not None:
+                if isinstance(shap_attributions, dict) and idx in shap_attributions:
+                    shap_attr = shap_attributions[idx]
+                elif isinstance(shap_attributions, list) and idx < len(shap_attributions):
+                    shap_attr = shap_attributions[idx]
+                else:
+                    shap_attr = {}
+            elif model is not None:
+                # Extract sample feature vector
+                x_s = None
+                if feature_matrix is not None and rows is not None and cols is not None and profile is not None:
+                    # Lookup nearest cell to centroid
+                    centroid_proj = ranked_targets_gdf.geometry.loc[idx].centroid
+                    inv_tr = ~profile["transform"]
+                    c_f, r_f = inv_tr * (centroid_proj.x, centroid_proj.y)
+                    r_i = int(np.clip(round(r_f), 0, profile.get("height", 1000) - 1))
+                    c_i = int(np.clip(round(c_f), 0, profile.get("width", 1000) - 1))
+                    matches = np.where((rows == r_i) & (cols == c_i))[0]
+                    if len(matches) > 0:
+                        x_s = feature_matrix[matches[0]]
+                    else:
+                        dists = (rows - r_i) ** 2 + (cols - c_i) ** 2
+                        x_s = feature_matrix[np.argmin(dists)]
+                elif feature_names is not None:
+                    # Check if columns are in row
+                    vals = [float(row[fn]) for fn in feature_names if fn in row]
+                    if len(vals) == len(feature_names):
+                        x_s = np.array(vals)
+
+                if x_s is not None and feature_names is not None:
+                    shap_attr = extract_target_shap_attribution(
+                        model=model,
+                        x_sample=x_s,
+                        feature_names=feature_names,
+                        active_targets=conformal_target_set,
+                        tau_drill=tau_drill,
+                        lower_bound=l_max,
+                    )
+                else:
+                    shap_attr = {}
+            else:
+                shap_attr = {}
+
         card = {
             "target_id": str(row.get("target_id", f"YILGARN_TGT_{idx + 1:04d}")),
             "rank": int(row.get("rank", idx + 1)),
             "rank_score": round(float(row.get("rank_score", 0.0)), 3),
+            "conformal_90pct_target_set": conformal_target_set,
+            "telescoped_system_flag": telescoped_flag,
+            "outmogc_boundary_gate": outmogc_gate,
+            "exploration_logistics_propensity": exp_propensity,
+            "mineral_systems_shap_attribution": shap_attr,
             "geometry": {
                 "centroid_lat_lon": [lat, lon],
                 "area_sq_km": round(float(row.get("area_sq_km", 0.0)), 3),

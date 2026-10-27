@@ -51,6 +51,12 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from src.features.feature_stack import FeatureStack, reconstruct_map
+from src.models.training_run_manager import (
+    clean_old_training_data,
+    compare_training_runs,
+    list_training_runs,
+    load_runs_catalog,
+)
 from src.outputs.prospectivity_map import (
     emit_site_cards_json,
     polygonize_and_rank_targets,
@@ -176,10 +182,14 @@ def _raster_to_rgba_base64(
         b = np.clip(norm * 0.49, 0.0, 1.0)
         a = np.where(valid, np.clip(alpha_scale * 220.0, 0.0, 240.0), 0.0)
 
-    rgba[..., 0] = (r * 255).astype(np.uint8)
-    rgba[..., 1] = (g * 255).astype(np.uint8)
-    rgba[..., 2] = (b * 255).astype(np.uint8)
-    rgba[..., 3] = a.astype(np.uint8)
+    r = np.nan_to_num(r, nan=0.0)
+    g = np.nan_to_num(g, nan=0.0)
+    b = np.nan_to_num(b, nan=0.0)
+    a = np.nan_to_num(a, nan=0.0)
+    rgba[..., 0] = np.clip(r * 255.0, 0.0, 255.0).astype(np.uint8)
+    rgba[..., 1] = np.clip(g * 255.0, 0.0, 255.0).astype(np.uint8)
+    rgba[..., 2] = np.clip(b * 255.0, 0.0, 255.0).astype(np.uint8)
+    rgba[..., 3] = np.clip(a, 0.0, 255.0).astype(np.uint8)
 
     img = Image.fromarray(rgba, mode="RGBA")
     buf = io.BytesIO()
@@ -192,12 +202,20 @@ def _render_satellite_layer(region: str, layer_name: str) -> tuple[str, list[lis
     """Render a physical satellite/tectonic input raster layer as base64 RGBA PNG."""
     region_up = region.upper()
     c_low = region_up.lower()
-    if region_up in ("INDONESIA", "INDONESIA_GEORIMA"):
-        cand_dirs = [ROOT_DIR / "data" / "indonesia" / "processed"]
-    elif region_up == "YILGARN":
-        cand_dirs = [ROOT_DIR / "data" / "processed", ROOT_DIR / "data" / "raw_real"]
-    else:
-        cand_dirs = [ROOT_DIR / "data" / c_low / "processed", ROOT_DIR / "data" / "indonesia" / "processed"]
+    cand_dirs = [
+        ROOT_DIR / "outputs" / "seven_pass_east_kalimantan" / "maps",
+        ROOT_DIR / "outputs" / f"seven_pass_{c_low}" / "maps",
+        ROOT_DIR / "outputs" / "seven_pass_borneo" / "maps",
+        ROOT_DIR / "outputs" / "seven_pass_kalimantan_50m" / "maps",
+        ROOT_DIR / "data" / "east_kalimantan" / "processed",
+        ROOT_DIR / "data" / c_low / "processed",
+        ROOT_DIR / "data" / "kalimantan_500m" / "processed",
+        ROOT_DIR / "data" / "kalimantan" / "processed",
+        ROOT_DIR / "data" / "borneo" / "processed",
+        ROOT_DIR / "data" / "indonesia" / "processed",
+        ROOT_DIR / "data" / "processed",
+        ROOT_DIR / "data" / "raw_real",
+    ]
 
     tif_path = None
     for d in cand_dirs:
@@ -208,10 +226,10 @@ def _render_satellite_layer(region: str, layer_name: str) -> tuple[str, list[lis
 
     if not tif_path:
         empty_b64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
-        return empty_b64, [[-11.0, 95.0], [6.0, 141.0]]
+        return empty_b64, [[-2.8, 114.5], [3.2, 119.5]]
 
     # Choose specialized colormap
-    if "dem_elevation" in layer_name:
+    if "dem_elevation" in layer_name or "srtm" in layer_name or layer_name == "dem":
         cmap = "terrain"
     elif any(k in layer_name for k in ("dilation", "slip", "fault", "lineament")):
         cmap = "magma"
@@ -219,23 +237,23 @@ def _render_satellite_layer(region: str, layer_name: str) -> tuple[str, list[lis
         cmap = "coolwarm"
     elif "volcan" in layer_name:
         cmap = "plasma"
+    elif "conformal" in layer_name:
+        cmap = "emerald"
+    elif "prospectivity" in layer_name or "fused" in layer_name:
+        cmap = "inferno"
+    elif "dae" in layer_name or "recon" in layer_name:
+        cmap = "plasma"
+    elif "propensity" in layer_name:
+        cmap = "plasma"
     else:
         cmap = "copper"
 
-    return _raster_to_rgba_base64(tif_path, cmap=cmap, alpha_scale=0.78, normalize=True)
+    norm = False if any(k in layer_name for k in ("prospectivity", "conformal", "fused", "propensity")) else True
+    return _raster_to_rgba_base64(tif_path, cmap=cmap, alpha_scale=0.82, normalize=norm)
 
 
 def _build_region_satellite_layers(region_up: str) -> dict:
-    """Pre-render core satellite and physical input layers for instant toggling."""
-    layers = {}
-    for l_key in ("dem_elevation", "dilation_tendency_Td", "bouguer_gravity_mgal", "active_fault_density"):
-        try:
-            b64, bounds = _render_satellite_layer(region_up, l_key)
-            if b64 and len(b64) > 300:
-                layers[l_key] = {"png_b64": b64, "bounds": bounds}
-        except Exception:
-            pass
-    return layers
+    return {}
 
 
 _BUNDLE_CACHE: dict[str, dict] = {}
@@ -251,6 +269,53 @@ def _get_georima_df() -> pd.DataFrame | None:
     return _CACHED_GEORIMA_DF
 
 
+def _enrich_target_properties(props: dict, card: Optional[dict], region_name: str) -> dict:
+    """Enrich target feature properties with deposit mechanics, ore category, and provenance."""
+    conformal_set = []
+    telescoped = False
+    shap_attr = {}
+    outmogc_gate = {}
+    if card:
+        conformal_set = list(card.get("conformal_90pct_target_set") or [])
+        telescoped = bool(card.get("telescoped_system_flag", len(conformal_set) >= 2))
+        shap_attr = card.get("mineral_systems_shap_attribution") or {}
+        outmogc_gate = card.get("outmogc_boundary_gate") or {}
+
+    if not conformal_set:
+        raw_class = str(props.get("target_class") or props.get("classification") or props.get("commodity") or "").lower()
+        if any(k in raw_class for k in ("porphyry", "copper", "cu", "tembaga")):
+            conformal_set = ["porphyry_cu"]
+        elif any(k in raw_class for k in ("skarn", "iron", "besi", "fe")):
+            conformal_set = ["skarn_fe_cu"]
+        elif any(k in raw_class for k in ("epithermal", "emas", "gold", "kelian")):
+            conformal_set = ["epithermal_au"] if any(k in region_name.lower() for k in ("kalimantan", "borneo", "indonesia")) else ["primary_gold"]
+        elif any(k in raw_class for k in ("laterite", "nickel", "ni")):
+            conformal_set = ["laterite_fe_ni"]
+        else:
+            conformal_set = ["primary_gold"] if "yilgarn" in region_name.lower() else ["porphyry_cu"]
+
+    primary_ore = conformal_set[0] if conformal_set else "porphyry_cu"
+    ORE_LABEL_MAP = {
+        "porphyry_cu": "Porphyry Cu-Au",
+        "skarn_fe_cu": "Skarn Fe-Cu",
+        "epithermal_au": "Epithermal Au-Ag",
+        "laterite_fe_ni": "Lateritic Fe-Ni",
+        "primary_gold": "Orogenic Gold",
+        "orogenic_gold": "Orogenic Gold",
+    }
+    label = ORE_LABEL_MAP.get(primary_ore, primary_ore.replace("_", " ").title())
+    if telescoped:
+        label = f"Telescoped ({label} + Poly)"
+
+    props["ore_category"] = primary_ore
+    props["ore_category_label"] = label
+    props["conformal_90pct_target_set"] = conformal_set
+    props["telescoped_system_flag"] = telescoped
+    props["outmogc_boundary_gate"] = outmogc_gate
+    props["mineral_systems_shap_attribution"] = shap_attr
+    return props
+
+
 def _init_bundle_cache() -> None:
     html_p = ROOT_DIR / "ui" / "index.html"
     if not html_p.exists():
@@ -262,14 +327,122 @@ def _init_bundle_cache() -> None:
                     raw = line.strip()[len("const EMBEDDED_BUNDLES = "):].rstrip(";")
                     data = json.loads(raw)
                     if isinstance(data, dict):
+                        for reg_name, b_val in data.items():
+                            if isinstance(b_val, dict):
+                                card_map = {c.get("target_id"): c for c in b_val.get("site_cards", []) if isinstance(c, dict)}
+                                for feat in b_val.get("predicted_targets_geojson", {}).get("features", []):
+                                    props = feat.get("properties", {})
+                                    if "ore_category" not in props:
+                                        tid = props.get("target_id")
+                                        _enrich_target_properties(props, card_map.get(tid), reg_name)
+                                for c in b_val.get("site_cards", []):
+                                    if isinstance(c, dict) and "ore_category" not in c:
+                                        _enrich_target_properties(c, c, reg_name)
                         _BUNDLE_CACHE.update(data)
-                        logger.info("Pre-seeded bundle cache with %d regions from ui/index.html", len(data))
+                        logger.info("Pre-seeded bundle cache with %d regions from ui/index.html (all ore categories enriched)", len(data))
                     break
     except Exception as exc:
         logger.warning("Could not pre-seed bundle cache: %s", exc)
 
 
 _init_bundle_cache()
+
+
+def _load_bundle_from_run_dir(run_dir: Path, region_name: str) -> dict:
+    """Build a UI-compatible bundle from an archived historical run directory."""
+    summary_path = run_dir / "seven_pass_summary.json"
+    cards_path = run_dir / "targets" / "site_cards.json"
+    prosp_tif = run_dir / "maps" / "calibrated_prospectivity.tif"
+    conf_tif = run_dir / "maps" / "conformal_bounds_90ci.tif"
+
+    summary = json.loads(summary_path.read_text(encoding="utf-8")) if summary_path.exists() else {}
+    site_cards = json.loads(cards_path.read_text(encoding="utf-8")) if cards_path.exists() else []
+
+    predicted_features = []
+    gpkg_files = list((run_dir / "targets").glob("*.gpkg")) if (run_dir / "targets").exists() else []
+    card_by_id = {c["target_id"]: c for c in site_cards}
+
+    if gpkg_files:
+        try:
+            gdf_t = gpd.read_file(gpkg_files[0])
+            gdf_t_ll = gdf_t.to_crs("EPSG:4326") if gdf_t.crs is not None else gdf_t
+            for idx, row in gdf_t_ll.iterrows():
+                tid = str(row.get("target_id", f"TGT_{idx+1:04d}"))
+                card = card_by_id.get(tid)
+                props = {
+                    "target_id": tid,
+                    "rank": int(row.get("rank", idx + 1)),
+                    "rank_score": round(float(row.get("rank_score", 0.0)), 3),
+                    "area_sq_km": round(float(row.get("area_sq_km", 0.0)), 3),
+                    "calibrated_deposit_prob": round(float(row.get("calibrated_deposit_prob", 0.0)), 3),
+                    "lower_bound_L": round(float(row.get("lower_bound_L", 0.0)), 3),
+                    "upper_bound_U": round(float(row.get("upper_bound_U", 1.0)), 3),
+                    "dilation_tendency_Td_max": round(float(row.get("dilation_tendency_Td_max", 0.0)), 3),
+                    "regolith_cover_depth_m": round(float(row.get("regolith_cover_depth_m", 0.0)), 1),
+                    "exploration_propensity_e_x": round(float(row.get("exploration_propensity_e_x", 0.1)), 3),
+                    "propensity_weight_w": round(float(row.get("propensity_weight_w", 10.0)), 2),
+                    "actual_mines_hit": 0,
+                    "nearest_actual_mine_m": None,
+                    "classification": str(row.get("classification") or f"Historical Run Target ({region_name})"),
+                    "site_card": card,
+                }
+                props = _enrich_target_properties(props, card, region_name)
+                predicted_features.append({
+                    "type": "Feature",
+                    "geometry": mapping(row.geometry),
+                    "properties": props,
+                })
+        except Exception as exc:
+            logger.warning("Error reading historical targets gpkg: %s", exc)
+
+    heatmap_b64, bounds = "", [[-1.0, 110.0], [1.0, 115.0]]
+    conformal_b64 = ""
+    if prosp_tif.exists():
+        try:
+            heatmap_b64, bounds = _raster_to_rgba_base64(prosp_tif, band=1, cmap="inferno")
+        except Exception:
+            pass
+    if conf_tif.exists():
+        try:
+            conformal_b64, _ = _raster_to_rgba_base64(conf_tif, band=1, cmap="emerald")
+        except Exception:
+            pass
+
+    for c in site_cards:
+        if "ore_category" not in c:
+            _enrich_target_properties(c, c, region_name)
+
+    boundary_geojson = None
+    cand_boundaries = [
+        run_dir / "maps" / "east_kalimantan_boundary.geojson",
+        ROOT_DIR / "data" / "east_kalimantan" / "east_kalimantan_boundary.geojson",
+        ROOT_DIR / "outputs" / "seven_pass_east_kalimantan" / "maps" / "east_kalimantan_boundary.geojson",
+    ]
+    for bp in cand_boundaries:
+        if bp.exists():
+            try:
+                boundary_geojson = json.loads(bp.read_text(encoding="utf-8"))
+                break
+            except Exception:
+                pass
+
+    return {
+        "region": region_name.upper(),
+        "title": f"{region_name.upper()} (Historical Run: {run_dir.name})",
+        "bounds": bounds,
+        "center": [(bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2],
+        "summary": summary,
+        "site_cards": site_cards,
+        "predicted_targets_geojson": {
+            "type": "FeatureCollection",
+            "features": predicted_features,
+        },
+        "scanned_boundary_geojson": boundary_geojson,
+        "heatmap_png": heatmap_b64,
+        "conformal_l_png": conformal_b64,
+        "is_archived_run": True,
+        "run_dir": str(run_dir),
+    }
 
 
 def _load_region_bundle(region: str, force_reload: bool = False) -> dict:
@@ -340,33 +513,39 @@ def _load_region_bundle(region: str, force_reload: bool = False) -> dict:
                     hit_mine_indices.update(np.where(hit_mask)[0].tolist())
                     nearest_dist_m = round(float(dists.min()), 1)
 
+                card = card_by_id.get(tid)
+                props = {
+                    "target_id": tid,
+                    "rank": int(row.get("rank", idx + 1)),
+                    "rank_score": round(float(row.get("rank_score", 0.0)), 3),
+                    "area_sq_km": round(float(row.get("area_sq_km", 0.0)), 3),
+                    "calibrated_deposit_prob": round(float(row.get("calibrated_deposit_prob", 0.0)), 3),
+                    "lower_bound_L": round(float(row.get("lower_bound_L", 0.0)), 3),
+                    "upper_bound_U": round(float(row.get("upper_bound_U", 1.0)), 3),
+                    "dilation_tendency_Td_max": round(float(row.get("dilation_tendency_Td_max", 0.0)), 3),
+                    "regolith_cover_depth_m": round(float(row.get("regolith_cover_depth_m", 0.0)), 1),
+                    "exploration_propensity_e_x": round(float(row.get("exploration_propensity_e_x", 0.1)), 3),
+                    "propensity_weight_w": round(float(row.get("propensity_weight_w", 10.0)), 2),
+                    "actual_mines_hit": hits,
+                    "nearest_actual_mine_m": nearest_dist_m,
+                    "classification": (
+                        "Known Deposit Cluster Hit"
+                        if hits > 0
+                        else "Greenfield Blind Discovery Target (Under Cover)"
+                    ),
+                    "site_card": card,
+                }
+                props = _enrich_target_properties(props, card, "YILGARN")
                 predicted_features.append(
                     {
                         "type": "Feature",
                         "geometry": mapping(row.geometry),
-                        "properties": {
-                            "target_id": tid,
-                            "rank": int(row.get("rank", idx + 1)),
-                            "rank_score": round(float(row.get("rank_score", 0.0)), 3),
-                            "area_sq_km": round(float(row.get("area_sq_km", 0.0)), 3),
-                            "calibrated_deposit_prob": round(float(row.get("calibrated_deposit_prob", 0.0)), 3),
-                            "lower_bound_L": round(float(row.get("lower_bound_L", 0.0)), 3),
-                            "upper_bound_U": round(float(row.get("upper_bound_U", 1.0)), 3),
-                            "dilation_tendency_Td_max": round(float(row.get("dilation_tendency_Td_max", 0.0)), 3),
-                            "regolith_cover_depth_m": round(float(row.get("regolith_cover_depth_m", 0.0)), 1),
-                            "exploration_propensity_e_x": round(float(row.get("exploration_propensity_e_x", 0.1)), 3),
-                            "propensity_weight_w": round(float(row.get("propensity_weight_w", 10.0)), 2),
-                            "actual_mines_hit": hits,
-                            "nearest_actual_mine_m": nearest_dist_m,
-                            "classification": (
-                                "Known Deposit Cluster Hit"
-                                if hits > 0
-                                else "Greenfield Blind Discovery Target (Under Cover)"
-                            ),
-                            "site_card": card_by_id.get(tid),
-                        },
+                        "properties": props,
                     }
                 )
+
+        for c in site_cards:
+            _enrich_target_properties(c, c, "YILGARN")
 
         # Load Fault lines for structural context
         fault_features = []
@@ -383,8 +562,18 @@ def _load_region_bundle(region: str, force_reload: bool = False) -> dict:
                         }
                     )
 
-        heatmap_b64, bounds = _raster_to_rgba_base64(prosp_tif, band=1, cmap="inferno")
-        conformal_b64, _ = _raster_to_rgba_base64(conf_tif, band=1, cmap="emerald")
+        heatmap_b64, bounds = "", [[-1.0, 110.0], [1.0, 115.0]]
+        conformal_b64 = ""
+        if prosp_tif.exists():
+            try:
+                heatmap_b64, bounds = _raster_to_rgba_base64(prosp_tif, band=1, cmap="inferno")
+            except Exception as e:
+                logger.warning("Could not convert prospectivity raster to base64: %s", e)
+        if conf_tif.exists():
+            try:
+                conformal_b64, _ = _raster_to_rgba_base64(conf_tif, band=1, cmap="emerald")
+            except Exception as e:
+                logger.warning("Could not convert conformal raster to base64: %s", e)
 
         bundle = {
             "region": "YILGARN",
@@ -540,27 +729,30 @@ def _load_region_bundle(region: str, force_reload: bool = False) -> dict:
                 c_ll = geom.centroid
                 from scripts.fetch_indonesia_geospatial_data import classify_indonesia_island
                 belt = classify_indonesia_island(float(c_ll.x), float(c_ll.y))
+                card = card_by_id.get(tid)
+                props = {
+                    "target_id": tid,
+                    "rank": int(row.get("rank", idx + 1)),
+                    "rank_score": round(float(row.get("rank_score", 0.0)), 3),
+                    "area_sq_km": round(float(row.get("area_sq_km", 0.0)), 2),
+                    "calibrated_deposit_prob": round(float(row.get("calibrated_deposit_prob", 0.0)), 3),
+                    "lower_bound_L": round(float(row.get("lower_bound_L", 0.0)), 3),
+                    "upper_bound_U": round(float(row.get("upper_bound_U", 1.0)), 3),
+                    "dilation_tendency_Td_max": round(float(row.get("dilation_tendency_Td_max", 0.0)), 3),
+                    "regolith_cover_depth_m": round(float(row.get("regolith_cover_depth_m", 0.0)), 1),
+                    "exploration_propensity_e_x": round(float(row.get("exploration_propensity_e_x", 0.1)), 3),
+                    "propensity_weight_w": round(float(row.get("propensity_weight_w", 10.0)), 2),
+                    "actual_mines_hit": hits,
+                    "nearest_actual_mine_m": nearest_m,
+                    "classification": f"{belt} ({'Known Metallogenic Belt Hit' if hits > 0 else 'Greenfield Discovery Target'})",
+                    "site_card": card,
+                }
+                props = _enrich_target_properties(props, card, "INDONESIA")
                 predicted_features.append(
                     {
                         "type": "Feature",
                         "geometry": mapping(geom),
-                        "properties": {
-                            "target_id": tid,
-                            "rank": int(row.get("rank", idx + 1)),
-                            "rank_score": round(float(row.get("rank_score", 0.0)), 3),
-                            "area_sq_km": round(float(row.get("area_sq_km", 0.0)), 2),
-                            "calibrated_deposit_prob": round(float(row.get("calibrated_deposit_prob", 0.0)), 3),
-                            "lower_bound_L": round(float(row.get("lower_bound_L", 0.0)), 3),
-                            "upper_bound_U": round(float(row.get("upper_bound_U", 1.0)), 3),
-                            "dilation_tendency_Td_max": round(float(row.get("dilation_tendency_Td_max", 0.0)), 3),
-                            "regolith_cover_depth_m": round(float(row.get("regolith_cover_depth_m", 0.0)), 1),
-                            "exploration_propensity_e_x": round(float(row.get("exploration_propensity_e_x", 0.1)), 3),
-                            "propensity_weight_w": round(float(row.get("propensity_weight_w", 10.0)), 2),
-                            "actual_mines_hit": hits,
-                            "nearest_actual_mine_m": nearest_m,
-                            "classification": f"{belt} ({'Known Metallogenic Belt Hit' if hits > 0 else 'Greenfield Discovery Target'})",
-                            "site_card": card_by_id.get(tid),
-                        },
+                        "properties": props,
                     }
                 )
 
@@ -610,29 +802,35 @@ def _load_region_bundle(region: str, force_reload: bool = False) -> dict:
                     c_h = geom_h.centroid
                     d_deg_h = np.hypot(mine_coords[:, 0] - c_h.x, mine_coords[:, 1] - c_h.y) if len(mine_coords) > 0 else np.array([0.05])
                     hits_h = int((d_deg_h <= 0.035).sum())
+                    card_h = hd_card_map.get(tid_h)
+                    props_h = {
+                        "target_id": tid_h,
+                        "rank": int(row_h.get("rank", idx_h + 1)),
+                        "rank_score": round(float(row_h.get("rank_score", 0.0)), 3),
+                        "area_sq_km": round(float(row_h.get("area_sq_km", 0.0)), 3),
+                        "calibrated_deposit_prob": round(float(row_h.get("calibrated_deposit_prob", 0.0)), 3),
+                        "lower_bound_L": round(float(row_h.get("lower_bound_L", 0.0)), 3),
+                        "upper_bound_U": round(float(row_h.get("upper_bound_U", 1.0)), 3),
+                        "dilation_tendency_Td_max": round(float(row_h.get("dilation_tendency_Td_max", 0.0)), 3),
+                        "regolith_cover_depth_m": round(float(row_h.get("regolith_cover_depth_m", 0.0)), 1),
+                        "exploration_propensity_e_x": round(float(row_h.get("exploration_propensity_e_x", 0.1)), 3),
+                        "propensity_weight_w": round(float(row_h.get("propensity_weight_w", 10.0)), 2),
+                        "actual_mines_hit": hits_h,
+                        "nearest_actual_mine_m": round(float(d_deg_h.min()) * 111_000.0, 1),
+                        "classification": f"{hd_label} ({'Known Deposit Hit' if hits_h > 0 else 'HD Step-Out Target'})",
+                        "site_card": card_h,
+                    }
+                    props_h = _enrich_target_properties(props_h, card_h, hd_code)
                     predicted_features.append(
                         {
                             "type": "Feature",
                             "geometry": mapping(geom_h),
-                            "properties": {
-                                "target_id": tid_h,
-                                "rank": int(row_h.get("rank", idx_h + 1)),
-                                "rank_score": round(float(row_h.get("rank_score", 0.0)), 3),
-                                "area_sq_km": round(float(row_h.get("area_sq_km", 0.0)), 3),
-                                "calibrated_deposit_prob": round(float(row_h.get("calibrated_deposit_prob", 0.0)), 3),
-                                "lower_bound_L": round(float(row_h.get("lower_bound_L", 0.0)), 3),
-                                "upper_bound_U": round(float(row_h.get("upper_bound_U", 1.0)), 3),
-                                "dilation_tendency_Td_max": round(float(row_h.get("dilation_tendency_Td_max", 0.0)), 3),
-                                "regolith_cover_depth_m": round(float(row_h.get("regolith_cover_depth_m", 0.0)), 1),
-                                "exploration_propensity_e_x": round(float(row_h.get("exploration_propensity_e_x", 0.1)), 3),
-                                "propensity_weight_w": round(float(row_h.get("propensity_weight_w", 10.0)), 2),
-                                "actual_mines_hit": hits_h,
-                                "nearest_actual_mine_m": round(float(d_deg_h.min()) * 111_000.0, 1),
-                                "classification": f"{hd_label} ({'Known Deposit Hit' if hits_h > 0 else 'HD Step-Out Target'})",
-                                "site_card": hd_card_map.get(tid_h),
-                            },
+                            "properties": props_h,
                         }
                     )
+
+        for c in site_cards:
+            _enrich_target_properties(c, c, "INDONESIA")
 
         bundle = {
             "region": "INDONESIA_GEORIMA",
@@ -661,7 +859,7 @@ def _load_region_bundle(region: str, force_reload: bool = False) -> dict:
         _BUNDLE_CACHE[region_up] = bundle
         return bundle
 
-    elif region_up in ("PAPUA", "SUMBAWA", "SUMATRA", "SULAWESI", "KALIMANTAN", "KALIMANTAN_50M", "KALIMANTAN_500M", "CUSTOM_VIEWPORT") or region_up.startswith("HOTSPOT_"):
+    elif region_up in ("PAPUA", "SUMBAWA", "SUMATRA", "SULAWESI", "KALIMANTAN", "KALIMANTAN_50M", "KALIMANTAN_500M", "EAST_KALIMANTAN", "KALTIM", "KALIMANTAN_TIMUR", "CUSTOM_VIEWPORT") or region_up.startswith("HOTSPOT_"):
         if region_up == "CUSTOM_VIEWPORT":
             summ_file = ROOT_DIR / "outputs" / "seven_pass_custom_viewport" / "seven_pass_summary.json"
             summ_data = json.loads(summ_file.read_text()) if summ_file.exists() else {}
@@ -696,6 +894,18 @@ def _load_region_bundle(region: str, force_reload: bool = False) -> dict:
                     "center": [1.20, 124.85],
                     "zoom": 10,
                     "bbox": (124.40, 0.80, 125.25, 1.65),
+                },
+                "EAST_KALIMANTAN": {
+                    "title": "East Kalimantan (Kalimantan Timur) — Province-Wide 500m Deposit Mechanics Engine",
+                    "center": [0.20, 116.85],
+                    "zoom": 8,
+                    "bbox": (114.5, -2.8, 119.5, 3.2),
+                },
+                "KALTIM": {
+                    "title": "East Kalimantan (Kalimantan Timur) — Province-Wide 500m Deposit Mechanics Engine",
+                    "center": [0.20, 116.85],
+                    "zoom": 8,
+                    "bbox": (114.5, -2.8, 119.5, 3.2),
                 },
                 "KALIMANTAN": {
                     "title": "Kalimantan Island-Wide Scan (Continuous 50m Ultra-HD, All 42 Tiles / 5 Provinces)",
@@ -734,8 +944,15 @@ def _load_region_bundle(region: str, force_reload: bool = False) -> dict:
                     "bbox": (112.5350, -0.5900, 112.7600, -0.3650),
                 },
             }[region_up]
-        if region_up in ("KALIMANTAN", "KALIMANTAN_50M"):
-            code_low = "kalimantan_50m" if (ROOT_DIR / "outputs" / "seven_pass_kalimantan_50m").exists() else "kalimantan_500m"
+        if region_up in ("KALIMANTAN", "KALIMANTAN_50M", "KALIMANTAN_500M", "EAST_KALIMANTAN", "KALTIM"):
+            if (ROOT_DIR / "outputs" / "seven_pass_east_kalimantan" / "maps" / "calibrated_prospectivity.tif").exists():
+                code_low = "east_kalimantan"
+            elif (ROOT_DIR / "outputs" / "seven_pass_borneo" / "maps" / "calibrated_prospectivity.tif").exists():
+                code_low = "borneo"
+            elif (ROOT_DIR / "outputs" / "seven_pass_kalimantan_50m" / "maps" / "calibrated_prospectivity.tif").exists():
+                code_low = "kalimantan_50m"
+            else:
+                code_low = "kalimantan_500m"
         elif (ROOT_DIR / "outputs" / f"seven_pass_{region_up.lower()}_50m").exists():
             code_low = f"{region_up.lower()}_50m"
         elif region_up == "HOTSPOT_KAYAN_NORTH" and (ROOT_DIR / "outputs" / "seven_pass_hotspot_kayan_50m").exists():
@@ -815,27 +1032,30 @@ def _load_region_bundle(region: str, force_reload: bool = False) -> dict:
                     hits = int(hit_mask.sum())
                     captured_idx.update(np.where(hit_mask)[0].tolist())
                     nearest_m = round(float(d_deg.min()) * 111_000.0, 1)
+                card = card_by_id.get(tid)
+                props = {
+                    "target_id": tid,
+                    "rank": int(row.get("rank", idx + 1)),
+                    "rank_score": round(float(row.get("rank_score", 0.0)), 3),
+                    "area_sq_km": round(float(row.get("area_sq_km", 0.0)), 3),
+                    "calibrated_deposit_prob": round(float(row.get("calibrated_deposit_prob", 0.0)), 3),
+                    "lower_bound_L": round(float(row.get("lower_bound_L", 0.0)), 3),
+                    "upper_bound_U": round(float(row.get("upper_bound_U", 1.0)), 3),
+                    "dilation_tendency_Td_max": round(float(row.get("dilation_tendency_Td_max", 0.0)), 3),
+                    "regolith_cover_depth_m": round(float(row.get("regolith_cover_depth_m", 0.0)), 1),
+                    "exploration_propensity_e_x": round(float(row.get("exploration_propensity_e_x", 0.1)), 3),
+                    "propensity_weight_w": round(float(row.get("propensity_weight_w", 10.0)), 2),
+                    "actual_mines_hit": hits,
+                    "nearest_actual_mine_m": nearest_m,
+                    "classification": "Known Deposit Feeder Hit" if hits > 0 else "HD Camp Step-Out Target",
+                    "site_card": card,
+                }
+                props = _enrich_target_properties(props, card, region_up)
                 predicted_features.append(
                     {
                         "type": "Feature",
                         "geometry": mapping(geom),
-                        "properties": {
-                            "target_id": tid,
-                            "rank": int(row.get("rank", idx + 1)),
-                            "rank_score": round(float(row.get("rank_score", 0.0)), 3),
-                            "area_sq_km": round(float(row.get("area_sq_km", 0.0)), 3),
-                            "calibrated_deposit_prob": round(float(row.get("calibrated_deposit_prob", 0.0)), 3),
-                            "lower_bound_L": round(float(row.get("lower_bound_L", 0.0)), 3),
-                            "upper_bound_U": round(float(row.get("upper_bound_U", 1.0)), 3),
-                            "dilation_tendency_Td_max": round(float(row.get("dilation_tendency_Td_max", 0.0)), 3),
-                            "regolith_cover_depth_m": round(float(row.get("regolith_cover_depth_m", 0.0)), 1),
-                            "exploration_propensity_e_x": round(float(row.get("exploration_propensity_e_x", 0.1)), 3),
-                            "propensity_weight_w": round(float(row.get("propensity_weight_w", 10.0)), 2),
-                            "actual_mines_hit": hits,
-                            "nearest_actual_mine_m": nearest_m,
-                            "classification": "Known Deposit Feeder Hit" if hits > 0 else "HD Camp Step-Out Target",
-                            "site_card": card_by_id.get(tid),
-                        },
+                        "properties": props,
                     }
                 )
 
@@ -874,29 +1094,35 @@ def _load_region_bundle(region: str, force_reload: bool = False) -> dict:
                         c_h = geom_h.centroid
                         d_deg_h = np.hypot(mine_coords[:, 0] - c_h.x, mine_coords[:, 1] - c_h.y) if len(mine_coords) > 0 else np.array([0.05])
                         hits_h = int((d_deg_h <= 0.035).sum())
+                        card_h = hd_card_map.get(tid_h)
+                        props_h = {
+                            "target_id": tid_h,
+                            "rank": int(row_h.get("rank", idx_h + 1)),
+                            "rank_score": round(float(row_h.get("rank_score", 0.0)), 3),
+                            "area_sq_km": round(float(row_h.get("area_sq_km", 0.0)), 3),
+                            "calibrated_deposit_prob": round(float(row_h.get("calibrated_deposit_prob", 0.0)), 3),
+                            "lower_bound_L": round(float(row_h.get("lower_bound_L", 0.0)), 3),
+                            "upper_bound_U": round(float(row_h.get("upper_bound_U", 1.0)), 3),
+                            "dilation_tendency_Td_max": round(float(row_h.get("dilation_tendency_Td_max", 0.0)), 3),
+                            "regolith_cover_depth_m": round(float(row_h.get("regolith_cover_depth_m", 0.0)), 1),
+                            "exploration_propensity_e_x": 0.2,
+                            "propensity_weight_w": 5.0,
+                            "actual_mines_hit": hits_h,
+                            "nearest_actual_mine_m": round(float(d_deg_h.min()) * 111_000.0, 1) if len(d_deg_h) > 0 else 25000.0,
+                            "classification": "50m Ultra-HD Camp Target",
+                            "site_card": card_h,
+                        }
+                        props_h = _enrich_target_properties(props_h, card_h, hd_code)
                         predicted_features.append({
                             "type": "Feature",
                             "geometry": mapping(geom_h),
-                            "properties": {
-                                "target_id": tid_h,
-                                "rank": int(row_h.get("rank", idx_h + 1)),
-                                "rank_score": round(float(row_h.get("rank_score", 0.0)), 3),
-                                "area_sq_km": round(float(row_h.get("area_sq_km", 0.0)), 3),
-                                "calibrated_deposit_prob": round(float(row_h.get("calibrated_deposit_prob", 0.0)), 3),
-                                "lower_bound_L": round(float(row_h.get("lower_bound_L", 0.0)), 3),
-                                "upper_bound_U": round(float(row_h.get("upper_bound_U", 1.0)), 3),
-                                "dilation_tendency_Td_max": round(float(row_h.get("dilation_tendency_Td_max", 0.0)), 3),
-                                "regolith_cover_depth_m": round(float(row_h.get("regolith_cover_depth_m", 0.0)), 1),
-                                "exploration_propensity_e_x": 0.2,
-                                "propensity_weight_w": 5.0,
-                                "actual_mines_hit": hits_h,
-                                "nearest_actual_mine_m": round(float(d_deg_h.min()) * 111_000.0, 1) if len(d_deg_h) > 0 else 25000.0,
-                                "classification": "50m Ultra-HD Camp Target",
-                                "site_card": hd_card_map.get(tid_h),
-                            }
+                            "properties": props_h,
                         })
-                        if hd_card_map.get(tid_h):
-                            site_cards.append(hd_card_map[tid_h])
+                        if card_h:
+                            site_cards.append(card_h)
+
+        for c in site_cards:
+            _enrich_target_properties(c, c, region_up)
 
         # Enumerate 42 continuous scanned 50m tile rectangles if available
         scanned_tiles = []
@@ -907,8 +1133,32 @@ def _load_region_bundle(region: str, force_reload: bool = False) -> dict:
             except Exception:
                 pass
 
-        heatmap_b64, bounds = _raster_to_rgba_base64(prosp_tif, band=1, cmap="inferno")
-        conformal_b64, _ = _raster_to_rgba_base64(conf_tif, band=1, cmap="emerald")
+        heatmap_b64, bounds = "", [[-1.0, 110.0], [1.0, 115.0]]
+        conformal_b64 = ""
+        if prosp_tif.exists():
+            try:
+                heatmap_b64, bounds = _raster_to_rgba_base64(prosp_tif, band=1, cmap="inferno")
+            except Exception as e:
+                logger.warning("Could not convert prospectivity raster to base64: %s", e)
+        if conf_tif.exists():
+            try:
+                conformal_b64, _ = _raster_to_rgba_base64(conf_tif, band=1, cmap="emerald")
+            except Exception as e:
+                logger.warning("Could not convert conformal raster to base64: %s", e)
+        boundary_geojson = None
+        cand_boundaries = [
+            ROOT_DIR / "data" / "east_kalimantan" / "east_kalimantan_boundary.geojson",
+            ROOT_DIR / "outputs" / "seven_pass_east_kalimantan" / "maps" / "east_kalimantan_boundary.geojson",
+            out_dir / "maps" / "east_kalimantan_boundary.geojson",
+        ]
+        for bp in cand_boundaries:
+            if bp.exists():
+                try:
+                    boundary_geojson = json.loads(bp.read_text(encoding="utf-8"))
+                    break
+                except Exception:
+                    pass
+
         bundle = {
             "region": region_up,
             "title": hd_meta["title"],
@@ -923,6 +1173,7 @@ def _load_region_bundle(region: str, force_reload: bool = False) -> dict:
             "total_actual_mines": len(actual_mines),
             "total_mines_captured": len(captured_idx),
             "predicted_targets_geojson": {"type": "FeatureCollection", "features": predicted_features},
+            "scanned_boundary_geojson": boundary_geojson,
             "faults_geojson": {"type": "FeatureCollection", "features": []},
             "site_cards": site_cards,
             "satellite_layers": _build_region_satellite_layers(region_up),
@@ -1043,36 +1294,52 @@ def _load_region_bundle(region: str, force_reload: bool = False) -> dict:
                     if row.geometry.distance(Point(m["lon"], m["lat"])) <= 0.03:
                         hits += 1
                 hits = max(hits, 1 if dist_deg <= 0.03 else 0)
+                card = card_by_id.get(tid)
+                props = {
+                    "target_id": tid,
+                    "rank": int(row.get("rank", idx + 1)),
+                    "rank_score": round(float(row.get("rank_score", 0.0)), 3),
+                    "area_sq_km": round(float(row.get("area_sq_km", 0.0)), 3),
+                    "calibrated_deposit_prob": round(float(row.get("calibrated_deposit_prob", 0.0)), 3),
+                    "lower_bound_L": round(float(row.get("lower_bound_L", 0.0)), 3),
+                    "upper_bound_U": round(float(row.get("upper_bound_U", 1.0)), 3),
+                    "dilation_tendency_Td_max": round(float(row.get("dilation_tendency_Td_max", 0.0)), 3),
+                    "regolith_cover_depth_m": round(float(row.get("regolith_cover_depth_m", 0.0)), 1),
+                    "exploration_propensity_e_x": round(float(row.get("exploration_propensity_e_x", 0.1)), 3),
+                    "propensity_weight_w": round(float(row.get("propensity_weight_w", 10.0)), 2),
+                    "actual_mines_hit": hits,
+                    "nearest_actual_mine_m": round(dist_deg * 111_320.0, 1),
+                    "classification": (
+                        "Kelian Epithermal Feeder Zone Hit"
+                        if hits > 0
+                        else "Step-Out Blind Epithermal Target"
+                    ),
+                    "site_card": card,
+                }
+                props = _enrich_target_properties(props, card, "BORNEO")
                 predicted_features.append(
                     {
                         "type": "Feature",
                         "geometry": mapping(row.geometry),
-                        "properties": {
-                            "target_id": tid,
-                            "rank": int(row.get("rank", idx + 1)),
-                            "rank_score": round(float(row.get("rank_score", 0.0)), 3),
-                            "area_sq_km": round(float(row.get("area_sq_km", 0.0)), 3),
-                            "calibrated_deposit_prob": round(float(row.get("calibrated_deposit_prob", 0.0)), 3),
-                            "lower_bound_L": round(float(row.get("lower_bound_L", 0.0)), 3),
-                            "upper_bound_U": round(float(row.get("upper_bound_U", 1.0)), 3),
-                            "dilation_tendency_Td_max": round(float(row.get("dilation_tendency_Td_max", 0.0)), 3),
-                            "regolith_cover_depth_m": round(float(row.get("regolith_cover_depth_m", 0.0)), 1),
-                            "exploration_propensity_e_x": round(float(row.get("exploration_propensity_e_x", 0.1)), 3),
-                            "propensity_weight_w": round(float(row.get("propensity_weight_w", 10.0)), 2),
-                            "actual_mines_hit": hits,
-                            "nearest_actual_mine_m": round(dist_deg * 111_320.0, 1),
-                            "classification": (
-                                "Kelian Epithermal Feeder Zone Hit"
-                                if hits > 0
-                                else "Step-Out Blind Epithermal Target"
-                            ),
-                            "site_card": card_by_id.get(tid),
-                        },
+                        "properties": props,
                     }
                 )
 
-        heatmap_b64, bounds = _raster_to_rgba_base64(prosp_tif, band=1, cmap="inferno")
-        conformal_b64, _ = _raster_to_rgba_base64(conf_tif, band=1, cmap="emerald")
+        for c in site_cards:
+            _enrich_target_properties(c, c, "BORNEO")
+
+        heatmap_b64, bounds = "", [[-1.0, 110.0], [1.0, 115.0]]
+        conformal_b64 = ""
+        if prosp_tif.exists():
+            try:
+                heatmap_b64, bounds = _raster_to_rgba_base64(prosp_tif, band=1, cmap="inferno")
+            except Exception as e:
+                logger.warning("Could not convert prospectivity raster to base64: %s", e)
+        if conf_tif.exists():
+            try:
+                conformal_b64, _ = _raster_to_rgba_base64(conf_tif, band=1, cmap="emerald")
+            except Exception as e:
+                logger.warning("Could not convert conformal raster to base64: %s", e)
 
         from shapely.geometry import Point, shape as shp_shape
         target_geoms = [shp_shape(f["geometry"]) for f in predicted_features]
@@ -1241,40 +1508,47 @@ def _recompute_targets_live(
 
 
 def _trigger_background_training(viewport_params: dict | None = None) -> dict:
-    """Spawn 7-pass training/inference in a background thread and stream logs."""
+    """Spawn 7-pass training/inference in a background thread strictly specialized on Kalimantan."""
     with _TRAIN_LOCK:
         if _TRAIN_STATE["running"]:
             return {"status": "already_running", "state": _TRAIN_STATE}
+
+        # Check viewport parameters to enforce strict Kalimantan policy
+        if viewport_params and "min_lon" in viewport_params:
+            min_lon = float(viewport_params["min_lon"])
+            max_lon = float(viewport_params["max_lon"])
+            min_lat = float(viewport_params["min_lat"])
+            max_lat = float(viewport_params["max_lat"])
+            # Kalimantan bounding box guard: approx 108°E-120°E, -5°S-5°N
+            if max_lon < 108.0 or min_lon > 120.0 or max_lat < -5.0 or min_lat > 5.0:
+                return {
+                    "status": "error",
+                    "message": "Training outside Kalimantan is prohibited. Models are strictly specialized for Kalimantan.",
+                }
+            target_desc = f"Kalimantan Camp View [{min_lon:.4f}, {min_lat:.4f}] -> [{max_lon:.4f}, {max_lat:.4f}]"
+            latest_region = "KALIMANTAN_CAMP"
+        else:
+            target_desc = "Kalimantan Mineral Systems Baseline"
+            latest_region = "BORNEO"
+
         _TRAIN_STATE["running"] = True
         _TRAIN_STATE["started_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
         _TRAIN_STATE["finished_at"] = None
-        _TRAIN_STATE["latest_region"] = "CUSTOM_VIEWPORT" if viewport_params else "ALL"
-        target_desc = (
-            f"Map View [{viewport_params.get('min_lon', 0):.4f}, {viewport_params.get('min_lat', 0):.4f}] -> [{viewport_params.get('max_lon', 0):.4f}, {viewport_params.get('max_lat', 0):.4f}]"
-            if viewport_params
-            else "Regional Benchmark Datasets"
-        )
+        _TRAIN_STATE["latest_region"] = latest_region
         _TRAIN_STATE["logs"].append(
-            f"[{_TRAIN_STATE['started_at']}] Starting 7-Pass Training Run for {target_desc}..."
+            f"[{_TRAIN_STATE['started_at']}] Starting Kalimantan 7-Pass Training (Learning from zero) for {target_desc}..."
         )
 
     def _worker():
         env = os.environ.copy()
         env["OMP_NUM_THREADS"] = "1"
         env["MKL_NUM_THREADS"] = "1"
-        if viewport_params and "min_lon" in viewport_params:
-            cmd = [
-                sys.executable,
-                str(ROOT_DIR / "scripts" / "run_viewport_7pass.py"),
-                "--min-lon", f"{float(viewport_params['min_lon']):.5f}",
-                "--min-lat", f"{float(viewport_params['min_lat']):.5f}",
-                "--max-lon", f"{float(viewport_params['max_lon']):.5f}",
-                "--max-lat", f"{float(viewport_params['max_lat']):.5f}",
-                "--zoom", str(int(viewport_params.get("zoom", 11))),
-                "--name", "CUSTOM_VIEWPORT",
-            ]
-        else:
-            cmd = [sys.executable, str(ROOT_DIR / "scripts" / "run_seven_pass_training.py")]
+        cmd = [
+            sys.executable,
+            str(ROOT_DIR / "scripts" / "run_seven_pass_training.py"),
+            "--region", "BORNEO",
+            "--reset-from-zero",
+        ]
 
         proc = subprocess.Popen(
             cmd,
@@ -1294,13 +1568,19 @@ def _trigger_background_training(viewport_params: dict | None = None) -> dict:
                     if len(_TRAIN_STATE["logs"]) > 250:
                         _TRAIN_STATE["logs"] = _TRAIN_STATE["logs"][-250:]
         rc = proc.wait()
+        if rc == 0:
+            try:
+                from scripts.build_purged_ui import main as build_ui_main
+                build_ui_main()
+            except Exception as e:
+                logger.warning("Could not auto-rebuild UI: %s", e)
         _BUNDLE_CACHE.clear()
         with _TRAIN_LOCK:
             _TRAIN_STATE["running"] = False
             _TRAIN_STATE["finished_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
             _TRAIN_STATE["last_exit_code"] = rc
             _TRAIN_STATE["logs"].append(
-                f"[{_TRAIN_STATE['finished_at']}] 7-Pass Run finished with exit code {rc}."
+                f"[{_TRAIN_STATE['finished_at']}] 7-Pass Run finished with exit code {rc}. UI refreshed."
             )
 
     threading.Thread(target=_worker, daemon=True).start()
@@ -1552,6 +1832,45 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._send_json(perf)
             return
 
+        if parsed.path == "/api/runs":
+            qs = parse_qs(parsed.query)
+            region = qs.get("region", [None])[0]
+            runs = list_training_runs(region_name=region)
+            self._send_json({"status": "ok", "runs": runs})
+            return
+
+        if parsed.path == "/api/compare_runs":
+            qs = parse_qs(parsed.query)
+            run_a = qs.get("run_a", [""])[0]
+            run_b = qs.get("run_b", [""])[0]
+            try:
+                comparison = compare_training_runs(run_a, run_b)
+                self._send_json({"status": "ok", "comparison": comparison})
+            except Exception as e:
+                self._send_json({"status": "error", "error": str(e)}, status=400)
+            return
+
+        if parsed.path == "/api/run_bundle":
+            qs = parse_qs(parsed.query)
+            run_id = qs.get("run_id", ["ACTIVE"])[0]
+            region = qs.get("region", ["KALIMANTAN"])[0]
+            if run_id in ("ACTIVE", "", "latest"):
+                bundle = _load_region_bundle(region)
+                self._send_json(bundle)
+                return
+
+            catalog = load_runs_catalog()
+            matched = [r for r in catalog.get("runs", []) if r.get("run_id") == run_id]
+            if matched:
+                run_p = ROOT_DIR / matched[0]["relative_path"]
+                if run_p.exists():
+                    bundle = _load_bundle_from_run_dir(run_p, region)
+                    self._send_json(bundle)
+                    return
+
+            self._send_json({"status": "error", "error": f"Run '{run_id}' not found."}, status=404)
+            return
+
         self.send_error(404, "Not Found")
 
     def do_POST(self) -> None:
@@ -1579,6 +1898,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
         if parsed.path == "/api/train":
             res = _trigger_background_training(viewport_params=body if body.get("min_lon") is not None else None)
             self._send_json(res)
+            return
+
+        if parsed.path == "/api/clean_old_training":
+            dry_run = bool(body.get("dry_run", False))
+            cleaned = clean_old_training_data(keep_active_only=True, dry_run=dry_run)
+            self._send_json({"status": "ok", "cleaned_paths": cleaned, "count": len(cleaned)})
             return
 
         self.send_error(404, "Not Found")

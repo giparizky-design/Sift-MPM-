@@ -517,3 +517,350 @@ def compute_inverse_propensity_weights(
     weights = np.clip(weights, 1.0, cap)
     return weights.astype(np.float64)
 
+
+# ---------------------------------------------------------------------------
+# Pass 2: Pooled Propensity, N x 4 Exclusion Buffers, Asymmetric Weights & OUTMOGC
+# ---------------------------------------------------------------------------
+
+
+def fit_pooled_exploration_propensity(
+    accessibility_features: np.ndarray,
+    explored_footprint: np.ndarray,
+    min_propensity: float = 0.05,
+    max_propensity: float = 1.0,
+    model_type: str = "logistic",
+    random_state: int = 42,
+) -> np.ndarray:
+    """Fit a single pooled observation propensity model on the exploration footprint.
+
+    Enforces Task 1.3 Rule 1:
+      Fits a single logistic or random forest propensity estimator on the pooled
+      exploration footprint (N ≈ 1,800) using accessibility covariates (distance to
+      navigable rivers, road tracks, coast, and DEM slope); clips predictions to [0.05, 1.0].
+
+    Args:
+        accessibility_features: 2-D array of shape (N, n_covariates).
+        explored_footprint: 1-D binary array of shape (N,) where 1 denotes explored.
+        min_propensity: Floor on observation propensity (default 0.05).
+        max_propensity: Upper cap on observation propensity (default 1.0).
+        model_type: 'logistic' or 'rf' (Random Forest). Defaults to 'logistic'.
+        random_state: Solver random seed.
+
+    Returns:
+        1-D float64 array of observation propensities e_hat_logistics(s) in [0.05, 1.0].
+    """
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.preprocessing import StandardScaler
+
+    if min_propensity <= 0.0 or min_propensity >= 1.0:
+        raise ValueError(f"min_propensity must be in (0, 1), got {min_propensity}")
+
+    X_acc = np.asarray(accessibility_features, dtype=np.float64)
+    if X_acc.ndim == 1:
+        X_acc = X_acc[:, np.newaxis]
+    if X_acc.ndim != 2:
+        raise ValueError(f"accessibility_features must be 2-D, got shape {X_acc.shape}")
+
+    s = (np.asarray(explored_footprint) > 0).astype(np.int32).ravel()
+    if len(s) != X_acc.shape[0]:
+        raise ValueError(
+            f"explored_footprint length ({len(s)}) != accessibility_features rows ({X_acc.shape[0]})"
+        )
+
+    # Impute NaNs with column medians
+    col_medians = np.nanmedian(X_acc, axis=0)
+    col_medians = np.where(np.isnan(col_medians), 0.0, col_medians)
+    X_clean = X_acc.copy()
+    nan_r, nan_c = np.where(np.isnan(X_clean))
+    if len(nan_r) > 0:
+        X_clean[nan_r, nan_c] = col_medians[nan_c]
+
+    if len(np.unique(s)) < 2:
+        base_rate = float(np.clip(np.mean(s), min_propensity, max_propensity))
+        return np.full(len(s), base_rate, dtype=np.float64)
+
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X_clean)
+
+    if model_type.lower() == "rf":
+        clf = RandomForestClassifier(
+            n_estimators=100,
+            max_depth=5,
+            random_state=random_state,
+            n_jobs=-1,
+        )
+    else:
+        clf = LogisticRegression(C=1.0, max_iter=500, random_state=random_state)
+
+    clf.fit(X_scaled, s)
+    e_raw = clf.predict_proba(X_scaled)[:, 1]
+    e_clipped = np.clip(e_raw, float(min_propensity), float(max_propensity))
+
+    logger.info(
+        "fit_pooled_exploration_propensity (%s): e(s) min=%.4f median=%.4f max=%.4f",
+        model_type,
+        float(e_clipped.min()),
+        float(np.median(e_clipped)),
+        float(e_clipped.max()),
+    )
+    return e_clipped.astype(np.float64)
+
+
+def compute_k4_exclusion_mask(
+    coords: np.ndarray,
+    positive_coords_k: dict[int, np.ndarray],
+    labels_k4: Optional[np.ndarray] = None,
+    is_geographic: bool = True,
+    r_k_star_m: Optional[dict[int, Any]] = None,
+) -> np.ndarray:
+    """Compute the N x 4 exclusion buffer mask M to eliminate negative halo contamination.
+
+    Enforces Task 1.3 Rule 2:
+      For each class k in {0, 1, 2, 3}, sets M[i, k] = 0.0 if cell i has label_k == -1 and lies
+      within r_k* of any positive cell in P_k:
+        - r_0* = 6.0 km (isotropic, Porphyry Cu-Au)
+        - r_1* = 3.5 km (isotropic, Contact Fe-Cu Skarn)
+        - r_2* = 6.0 km (isotropic, Epithermal Au-Ag)
+        - r_3* = 10.0 km along-strike x 2.0 km across-strike (anisotropic, Meratus NE-SW Ophiolite Lateritic Fe)
+      Otherwise M[i, k] = 1.0.
+
+    Args:
+        coords: (N, 2) array of cell coordinates ([lon, lat] or projected [easting, northing]).
+        positive_coords_k: Dictionary mapping head index k in {0, 1, 2, 3} to (N_k, 2) positive coordinates.
+        labels_k4: Optional (N, 4) array of labels in {-1, 1}. If supplied, mask 0.0 applies only to
+            unlabeled cells (label == -1); positive cells remain 1.0.
+        is_geographic: Whether coords are in decimal degrees (EPSG:4326).
+        r_k_star_m: Optional dictionary overriding default buffer radii.
+
+    Returns:
+        (N, 4) float64 array M with values in {0.0, 1.0}.
+    """
+    from scipy.spatial import cKDTree
+
+    xy = np.asarray(coords, dtype=np.float64)
+    N = xy.shape[0]
+    M = np.ones((N, 4), dtype=np.float64)
+
+    if is_geographic:
+        mean_lat = float(np.nanmean(xy[:, 1]))
+        m_per_deg_lon = 111320.0 * np.cos(np.radians(mean_lat))
+        m_per_deg_lat = 110570.0
+        metric_xy = np.column_stack([xy[:, 0] * m_per_deg_lon, xy[:, 1] * m_per_deg_lat])
+    else:
+        metric_xy = xy
+        m_per_deg_lon = 1.0
+        m_per_deg_lat = 1.0
+
+    tree = cKDTree(metric_xy)
+
+    # Default buffer radii in metres
+    default_r = {
+        0: 6000.0,   # 6.0 km isotropic
+        1: 3500.0,   # 3.5 km isotropic
+        2: 6000.0,   # 6.0 km isotropic
+        3: (10000.0, 2000.0, 45.0),  # 10.0 km along-strike x 2.0 km across-strike, azimuth 45°
+    }
+    radii = r_k_star_m if r_k_star_m is not None else default_r
+
+    for k in range(4):
+        pos_pts = positive_coords_k.get(k)
+        if pos_pts is None or len(pos_pts) == 0:
+            continue
+
+        pos_pts = np.asarray(pos_pts, dtype=np.float64)
+        if pos_pts.ndim == 1:
+            pos_pts = pos_pts.reshape(1, -1)
+
+        if is_geographic:
+            pos_metric = np.column_stack([pos_pts[:, 0] * m_per_deg_lon, pos_pts[:, 1] * m_per_deg_lat])
+        else:
+            pos_metric = pos_pts
+
+        if k == 3 and isinstance(radii[3], (tuple, list)):
+            # Anisotropic ellipse: 10 km along-strike x 2 km across-strike, strike 45° (NE-SW)
+            a, b, strike_deg = radii[3]
+            theta_rad = np.radians(strike_deg)
+            sin_t = np.sin(theta_rad)
+            cos_t = np.cos(theta_rad)
+
+            # Query cells within bounding radius a around any P3 point
+            candidate_indices = tree.query_ball_point(pos_metric, r=float(a))
+            for p_idx, cell_indices in enumerate(candidate_indices):
+                if not cell_indices:
+                    continue
+                px_m, py_m = pos_metric[p_idx]
+                dx = metric_xy[cell_indices, 0] - px_m
+                dy = metric_xy[cell_indices, 1] - py_m
+                u = dx * sin_t + dy * cos_t   # along-strike
+                v = dx * cos_t - dy * sin_t   # across-strike
+                in_ellipse = (u / a) ** 2 + (v / b) ** 2 <= 1.0
+                masked_cells = np.array(cell_indices)[in_ellipse]
+                if len(masked_cells) > 0:
+                    if labels_k4 is not None:
+                        # Only mask unlabeled cells (label == -1)
+                        is_unl = (labels_k4[masked_cells, k] == -1)
+                        M[masked_cells[is_unl], k] = 0.0
+                    else:
+                        M[masked_cells, k] = 0.0
+        else:
+            # Isotropic circular buffer
+            r_val = float(radii[k])
+            matched_indices = tree.query_ball_point(pos_metric, r=r_val)
+            flat_indices = np.unique([idx for sublist in matched_indices for idx in sublist])
+            if len(flat_indices) > 0:
+                if labels_k4 is not None:
+                    is_unl = (labels_k4[flat_indices, k] == -1)
+                    M[flat_indices[is_unl], k] = 0.0
+                else:
+                    M[flat_indices, k] = 0.0
+
+    return M
+
+
+def compute_asymmetric_head_weights(
+    labels_k: np.ndarray,
+    e_logistics: np.ndarray,
+    exclusion_mask_k: np.ndarray,
+    min_propensity: float = 0.05,
+) -> np.ndarray:
+    """Compute asymmetric 1D sample weights w_k for Head k.
+
+    Enforces Task 1.3 Rule 3 and Reconciled Engineering Rule 5:
+      - Positive cells (label_k == 1): receive inverse propensity weighting:
+            w_k[pos_mask] = 1.0 / np.clip(e_logistics[pos_mask], 0.05, 1.0)
+      - Unlabeled cells (label_k == -1): receive r_k* halo mask * exploration-confidence weight:
+            w_k[unl_mask] = M[unl_mask, k] * (0.25 + 0.75 * e_logistics[unl_mask])
+
+    Eliminates the double-division trap where unexplored jungle is penalised 20x relative
+    to roads.
+
+    Args:
+        labels_k: 1-D array of shape (N,) with labels in {1, -1}.
+        e_logistics: 1-D array of shape (N,) of observation propensities e(s).
+        exclusion_mask_k: 1-D array of shape (N,) representing column k of M in {0.0, 1.0}.
+        min_propensity: Floor on observation propensity for positive weighting (default 0.05).
+
+    Returns:
+        1-D float64 array w_k of shape (N,).
+    """
+    labels = np.asarray(labels_k).ravel()
+    e_prop = np.asarray(e_logistics, dtype=np.float64).ravel()
+    m_mask = np.asarray(exclusion_mask_k, dtype=np.float64).ravel()
+
+    if len(labels) != len(e_prop) or len(labels) != len(m_mask):
+        raise ValueError(
+            f"Dimension mismatch: labels ({len(labels)}), e_logistics ({len(e_prop)}), exclusion_mask ({len(m_mask)})"
+        )
+
+    w_k = np.zeros(len(labels), dtype=np.float64)
+    pos_mask = (labels == 1)
+    unl_mask = (labels == -1)
+
+    # Positive cells (label_k == 1): inverse propensity weighting
+    w_k[pos_mask] = 1.0 / np.clip(e_prop[pos_mask], float(min_propensity), 1.0)
+
+    # Unlabeled cells (label_k == -1): r_k* halo masked + exploration-confidence weighted
+    w_k[unl_mask] = m_mask[unl_mask] * (0.25 + 0.75 * e_prop[unl_mask])
+
+    return w_k
+
+
+class OUTMOGCGate:
+    """Outlier Mitigation & Gated Calibration (OUTMOGC) closed-boundary gate.
+
+    Enforces Task 1.3 Rule 4:
+      Fits a 4-component PCA(n_components=4, whiten=True) + 2-component
+      GaussianMixture(n_components=2, covariance_type="full") on the Merdith
+      geophysical features of each positive set P_k to compute Gamma_closed^(k)(s) in (0, 1]
+      via exponential Mahalanobis distance decay above chi^2_{4, 0.95} (~ 9.488).
+
+    For points inside the 95% confidence ellipsoid (d^2 <= chi^2_{4, 0.95}):
+      Gamma_closed = 1.0
+    For points outside (d^2 > chi^2_{4, 0.95}):
+      Gamma_closed = exp(-0.5 * (d^2 - chi^2_{4, 0.95}))
+    """
+
+    def __init__(
+        self,
+        n_pca_components: int = 4,
+        n_gmm_components: int = 2,
+        random_state: int = 42,
+    ) -> None:
+        self.n_pca_components = n_pca_components
+        self.n_gmm_components = n_gmm_components
+        self.random_state = random_state
+        self.pca = None
+        self.gmm = None
+        self.chi2_crit = None
+        self.actual_df = None
+
+    def fit(self, X_positives: np.ndarray) -> OUTMOGCGate:
+        """Fit PCA and GMM on the Merdith geophysical features of positive set P_k.
+
+        Args:
+            X_positives: 2-D array of shape (N_p, n_features).
+
+        Returns:
+            Fitted self.
+        """
+        from sklearn.decomposition import PCA
+        from sklearn.mixture import GaussianMixture
+        from scipy.stats import chi2
+
+        X = np.asarray(X_positives, dtype=np.float64)
+        if X.ndim != 2:
+            raise ValueError(f"X_positives must be 2-D, got shape {X.shape}")
+
+        n_samples, n_features = X.shape
+        actual_pca_comp = max(1, min(self.n_pca_components, n_samples - 1, n_features))
+        self.actual_df = actual_pca_comp
+        self.chi2_crit = float(chi2.ppf(0.95, df=self.actual_df))
+
+        self.pca = PCA(n_components=actual_pca_comp, whiten=True, random_state=self.random_state)
+        Z = self.pca.fit_transform(X)
+
+        actual_gmm_comp = max(1, min(self.n_gmm_components, n_samples // 2))
+        self.gmm = GaussianMixture(
+            n_components=actual_gmm_comp,
+            covariance_type="full",
+            random_state=self.random_state,
+        )
+        self.gmm.fit(Z)
+        return self
+
+    def score(self, X: np.ndarray) -> np.ndarray:
+        """Evaluate Gamma_closed^(k)(s) in (0, 1] on query cells.
+
+        Args:
+            X: 2-D feature array of shape (N, n_features).
+
+        Returns:
+            1-D float64 array of shape (N,) with Gamma_closed in (0, 1].
+        """
+        if self.pca is None or self.gmm is None:
+            raise RuntimeError("OUTMOGCGate is not fitted yet. Call fit() first.")
+
+        X_arr = np.asarray(X, dtype=np.float64)
+        Z = self.pca.transform(X_arr)
+
+        d2_components = []
+        for c in range(self.gmm.n_components):
+            diff = Z - self.gmm.means_[c]
+            cov = self.gmm.covariances_[c]
+            # Ridge regularization for singular-free matrix inversion
+            cov_reg = cov + np.eye(cov.shape[0]) * 1e-6
+            inv_cov = np.linalg.pinv(cov_reg)
+            d2_c = np.sum(diff @ inv_cov * diff, axis=1)
+            d2_components.append(d2_c)
+
+        d2_min = np.min(d2_components, axis=0)
+        # Inside gate (d^2 <= chi2_crit): Gamma = 1.0; outside: exponential decay
+        gamma = np.where(
+            d2_min <= self.chi2_crit,
+            1.0,
+            np.exp(-0.5 * (d2_min - self.chi2_crit))
+        )
+        return np.clip(gamma, 1e-12, 1.0).astype(np.float64)
+
+

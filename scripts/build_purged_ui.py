@@ -23,32 +23,56 @@ def main():
 
     print(f'Found bundle line ({len(bundle_line)} bytes)')
 
-    # Ensure KALIMANTAN bundle uses the Seagate 50m continuous scan
+    # Ensure KALIMANTAN bundle and archived runs are loaded cleanly
     try:
         raw_json = bundle_line.strip()[len('const EMBEDDED_BUNDLES = '):].rstrip(';')
-        bundles = json.loads(raw_json)
-        needs_update = False
-        k_feats = bundles.get('KALIMANTAN', {}).get('predicted_targets_geojson', {}).get('features', [])
-        first_pts = len(k_feats[0]['geometry']['coordinates'][0]) if k_feats and k_feats[0]['geometry']['type'] == 'Polygon' else 0
-        if first_pts < 20:
-            print('Updating KALIMANTAN bundle with true 50m High-Definition vector polygons...')
-            from scripts.dashboard_server import _load_region_bundle
-            bundles['KALIMANTAN'] = _load_region_bundle('KALIMANTAN')
-            needs_update = True
-            print('Successfully updated KALIMANTAN bundle with 50m HD vector polygons!')
+        bundles = {}
 
-        for hs in ['HOTSPOT_KAHAYAN', 'HOTSPOT_SCHWANER', 'HOTSPOT_KAYAN_NORTH']:
-            if bundles.get(hs, {}).get('summary', {}).get('resolution_m', 100) > 60:
-                print(f'Updating {hs} bundle with true 50m Ultra-HD data...')
-                from scripts.dashboard_server import _load_region_bundle
-                bundles[hs] = _load_region_bundle(hs)
-                needs_update = True
-                print(f'Successfully updated {hs} bundle with true 50m data!')
+        # Load active Kalimantan bundle with fresh K=4 prospectivity map
+        from scripts.dashboard_server import _load_region_bundle, _load_bundle_from_run_dir
+        k_bundle = _load_region_bundle('EAST_KALIMANTAN', force_reload=True)
+        bundles['KALIMANTAN'] = k_bundle
+        bundles['EAST_KALIMANTAN'] = k_bundle
+        bundles['BORNEO'] = k_bundle
+        print('Successfully loaded active KALIMANTAN K=4 bundle with prospectivity heatmap!')
 
-        if needs_update:
-            bundle_line = 'const EMBEDDED_BUNDLES = ' + json.dumps(bundles) + ';\n'
+        # Embed all valid archived runs for 0ms instant switching
+        catalog_p = ROOT_DIR / "outputs" / "run_history" / "training_runs_catalog.json"
+        if catalog_p.exists():
+            cdata = json.loads(catalog_p.read_text(encoding="utf-8"))
+            for r in cdata.get("runs", []):
+                if not r.get("is_active"):
+                    run_id = r.get("run_id")
+                    rel = r.get("relative_path")
+                    if run_id and rel:
+                        p = ROOT_DIR / rel
+                        if p.exists() and (p / "maps" / "calibrated_prospectivity.tif").exists():
+                            try:
+                                bundles[run_id] = _load_bundle_from_run_dir(p, "KALIMANTAN")
+                                print(f'Embedded archived run {run_id}')
+                            except Exception as ex:
+                                print(f'Notice: could not embed archived run {run_id}: {ex}')
+
+        bundle_line = 'const EMBEDDED_BUNDLES = ' + json.dumps(bundles) + ';\n'
     except Exception as e:
-        print(f'Warning: Could not update Seagate 50m bundle: {e}')
+        print(f'Warning: Could not update bundles: {e}')
+
+    # Read catalog for archived runs to populate the dropdown
+    archived_opts = ""
+    catalog_p = ROOT_DIR / "outputs" / "run_history" / "training_runs_catalog.json"
+    if catalog_p.exists():
+        try:
+            cdata = json.loads(catalog_p.read_text(encoding="utf-8"))
+            runs_archived = [r for r in cdata.get("runs", []) if not r.get("is_active") and r.get("region") in ("BORNEO", "KALIMANTAN", "EAST_KALIMANTAN", "KALTIM")]
+            for r in runs_archived:
+                time_str = (r.get("archived_at") or r.get("created_at") or "")[:16].replace("T", " ")
+                fused = r.get("metrics", {}).get("pr_auc_fused", 0) or 0
+                reg = r.get("region", "KALIMANTAN")
+                archived_opts += f'            <option value="{r["run_id"]}">{reg} ARCHIVE ({time_str} // PR-AUC: {fused:.3f})</option>\n'
+        except Exception as e:
+            print("Warning reading catalog:", e)
+    if not archived_opts:
+        archived_opts = '            <option value="" disabled>No archived runs available</option>\n'
 
     # Construct the ultra-clean, spacious, modern & minimalistic, yet data-dense Antigravity Workspace HTML
     html_head = '''<!DOCTYPE html>
@@ -314,6 +338,66 @@ def main():
       color: var(--text-primary);
       font-size: 11px;
       padding: 4px 8px;
+    }
+
+    .select-ore-category {
+      max-width: 215px;
+      border-color: rgba(249, 115, 22, 0.4);
+      color: var(--text-primary);
+    }
+
+    .select-run-history {
+      max-width: 235px;
+      border-color: rgba(56, 189, 248, 0.4);
+      color: var(--text-primary);
+    }
+
+    .ore-badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 9.5px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .ore-badge-porphyry_cu {
+      background: rgba(249, 115, 22, 0.15);
+      color: #F97316;
+      border: 1px solid rgba(249, 115, 22, 0.4);
+    }
+
+    .ore-badge-skarn_fe_cu {
+      background: rgba(168, 85, 247, 0.15);
+      color: #C084FC;
+      border: 1px solid rgba(168, 85, 247, 0.4);
+    }
+
+    .ore-badge-epithermal_au {
+      background: rgba(234, 179, 8, 0.15);
+      color: #FACC15;
+      border: 1px solid rgba(234, 179, 8, 0.4);
+    }
+
+    .ore-badge-laterite_fe_ni {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34D399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .ore-badge-primary_gold {
+      background: rgba(245, 158, 11, 0.15);
+      color: #FBBF24;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+
+    .ore-badge-telescoped {
+      background: rgba(56, 189, 248, 0.18);
+      color: #38BDF8;
+      border: 1px solid rgba(56, 189, 248, 0.5);
     }
 
     .btn-icon {
@@ -862,28 +946,27 @@ def main():
           </button>
         </div>
 
-        <!-- Comprehensive Scanned Regions Selector (All Scans Included) -->
+        <!-- Kalimantan Specialized Regional Selector & Archived Training Runs -->
         <select class="select-dataset" id="dataset-select" onchange="selectRegion(this.value)" aria-label="Select Target Region">
-          <optgroup label="KALIMANTAN ISLAND &amp; 50M ULTRA-HD CAMPS">
-            <option value="KALIMANTAN" selected>KALIMANTAN (ISLAND-WIDE 50M ULTRA-HD // 42 TILES)</option>
-            <option value="HOTSPOT_SCHWANER">WEST KALIMANTAN // SCHWANER RANGE (50M BLIND DISCOVERY)</option>
-            <option value="HOTSPOT_KAYAN_NORTH">NORTH KALIMANTAN // KAYAN RIVER (50M FRACTURE JOG)</option>
-            <option value="HOTSPOT_KAHAYAN">CENTRAL KALIMANTAN // UPPER KAHAYAN (50M SUTURE)</option>
-            <option value="BORNEO">EAST KALIMANTAN // KELIAN EPITHERMAL (50M HD AU-AG)</option>
-          </optgroup>
-          <optgroup label="INDONESIA NATIONAL &amp; ISLAND ARCS">
-            <option value="INDONESIA_GEORIMA">NATIONAL INDONESIA (5,000KM GEORIMA ATLAS)</option>
-            <option value="PAPUA">PAPUA CENTRAL RANGE (GRASBERG-WABU 200M HD)</option>
-            <option value="SUMBAWA">SUMBAWA ARC (BATU HIJAU-ELANG 230M HD)</option>
-            <option value="SUMATRA">NORTH SUMATRA (MARTABE-TORU 240M HD)</option>
-            <option value="SULAWESI">NORTH SULAWESI (TOKA TINDUNG-MINAHASA 290M HD)</option>
-          </optgroup>
-          <optgroup label="CUSTOM MAP VIEWPORT SCANS">
-            <option value="CUSTOM_VIEWPORT">MAP VIEWPORT (INTERACTIVE 7-PASS SCAN)</option>
-          </optgroup>
-          <optgroup label="WESTERN AUSTRALIA PILOT">
-            <option value="YILGARN">YILGARN CRATON (KALGOORLIE 50M GOLDFIELDS)</option>
-          </optgroup>
+          <option value="KALIMANTAN" selected>EAST KALIMANTAN (PROVINCE-WIDE 500M K=4 MODEL)</option>
+          <optgroup id="optgroup-archived-runs" label="ARCHIVED TRAINING RUNS">
+''' + archived_opts + '''          </optgroup>
+        </select>
+
+        <!-- Deposit Mechanics Ore Category Filter -->
+        <select class="select-dataset select-ore-category" id="ore-category-select" onchange="selectOreCategory(this.value)" aria-label="Filter Ore Mechanics">
+          <option value="ALL" selected>ORE: ALL DEPOSIT STYLES (K=4)</option>
+          <option value="porphyry_cu">PORPHYRY CU-AU (HEAD 0)</option>
+          <option value="skarn_fe_cu">SKARN FE-CU (HEAD 1)</option>
+          <option value="epithermal_au">EPITHERMAL AU-AG (HEAD 2)</option>
+          <option value="laterite_fe_ni">LATERITIC FE-NI (HEAD 3)</option>
+          <option value="primary_gold">OROGENIC GOLD (PILOT)</option>
+          <option value="telescoped">TELESCOPED / POLY-PHASE</option>
+        </select>
+
+        <!-- Independent Training Run Version Selector -->
+        <select class="select-dataset select-run-history" id="run-history-select" onchange="selectTrainingRun(this.value)" aria-label="Select Training Run Version">
+          <option value="ACTIVE" selected>RUN: ACTIVE (LATEST 7-PASS)</option>
         </select>
 
         <!-- Theme Toggle -->
@@ -962,13 +1045,22 @@ def main():
             <span class="panel-title" style="font-size:10.5px; text-transform:uppercase; color:var(--text-muted);">MAP OVERLAYS &amp; SENSORS</span>
             
             <label style="display:flex; justify-content:space-between; align-items:center; font-size:11px; padding:6px 8px; background:var(--bg-elevated); border:1px solid var(--border-hairline); border-radius:5px; cursor:pointer;">
-              <span style="display:flex; align-items:center; gap:6px;"><span style="display:inline-block; width:8px; height:8px; border-radius:2px; border:1.5px dashed var(--accent-primary);"></span> Scanned Target Boundary</span>
-              <input type="checkbox" id="chk-scanned-rect" checked onchange="toggleScannedRect(this.checked)" style="accent-color:var(--accent-primary);" />
+              <span style="display:flex; align-items:center; gap:6px;"><span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:linear-gradient(45deg, #f97316, #e11d48);"></span> Show Prospectivity Heatmap</span>
+              <input type="checkbox" id="chk-heatmap" checked onchange="toggleHeatmapLayer(this.checked)" style="accent-color:var(--accent-primary);" />
             </label>
 
+            <div style="display:flex; flex-direction:column; gap:4px; padding-top:2px;">
+              <div style="display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:10px; color:var(--text-muted);">
+                <span>HEATMAP OPACITY</span>
+                <span id="lbl-opacity">80%</span>
+              </div>
+              <input type="range" id="rng-opacity" min="0.1" max="1.0" step="0.05" value="0.80" oninput="setHeatmapOpacity(this.value)" style="accent-color:var(--accent-primary); cursor:pointer;" />
+            </div>
+
+            <!-- Vector Overlays -->
             <label style="display:flex; justify-content:space-between; align-items:center; font-size:11px; padding:6px 8px; background:var(--bg-elevated); border:1px solid var(--border-hairline); border-radius:5px; cursor:pointer;">
-              <span style="display:flex; align-items:center; gap:6px;"><span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:linear-gradient(45deg, #f97316, #e11d48);"></span> Prospectivity Heatmap</span>
-              <input type="checkbox" id="chk-heatmap" checked onchange="toggleHeatmapLayer(this.checked)" style="accent-color:var(--accent-primary);" />
+              <span style="display:flex; align-items:center; gap:6px;"><span style="display:inline-block; width:8px; height:8px; border-radius:2px; border:1.5px dashed var(--accent-primary);"></span> Provincial Scan Boundary</span>
+              <input type="checkbox" id="chk-scanned-rect" checked onchange="toggleScannedRect(this.checked)" style="accent-color:var(--accent-primary);" />
             </label>
 
             <label style="display:flex; justify-content:space-between; align-items:center; font-size:11px; padding:6px 8px; background:var(--bg-elevated); border:1px solid var(--border-hairline); border-radius:5px; cursor:pointer;">
@@ -980,14 +1072,6 @@ def main():
               <span style="display:flex; align-items:center; gap:6px;"><span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--accent-amber);"></span> Ground Truth Mines</span>
               <input type="checkbox" id="chk-ground-mines" checked onchange="toggleMinesLayer(this.checked)" style="accent-color:var(--accent-primary);" />
             </label>
-
-            <div style="display:flex; flex-direction:column; gap:4px; padding-top:6px;">
-              <div style="display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:10px; color:var(--text-muted);">
-                <span>HEATMAP OPACITY</span>
-                <span id="lbl-opacity">80%</span>
-              </div>
-              <input type="range" id="rng-opacity" min="0.1" max="1.0" step="0.05" value="0.80" oninput="setHeatmapOpacity(this.value)" style="accent-color:var(--accent-primary); cursor:pointer;" />
-            </div>
           </div>
 
           <button onclick="resetDefaults()" style="margin-top:6px; width:100%; padding:7px; background:var(--bg-elevated); border:1px solid var(--border-hairline); border-radius:5px; font-family:var(--font-mono); font-size:10.5px; color:var(--text-secondary); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;" aria-label="Reset Default Prior">
@@ -1073,9 +1157,14 @@ def main():
                   Regional Target Discovery — Ingestion Active
                 </p>
               </div>
-              <span id="target-card-class" class="badge-pill" style="background:rgba(56, 189, 248, 0.15); color:var(--accent-primary); border:1px solid var(--accent-primary);">
-                RANK #1
-              </span>
+              <div style="display:flex; gap:6px; align-items:center;">
+                <span id="target-card-ore-badge" class="badge-pill ore-badge ore-badge-porphyry_cu">
+                  PORPHYRY CU-AU
+                </span>
+                <span id="target-card-class" class="badge-pill" style="background:rgba(56, 189, 248, 0.15); color:var(--accent-primary); border:1px solid var(--accent-primary);">
+                  RANK #1
+                </span>
+              </div>
             </div>
 
             <div class="kpi-grid">
@@ -1191,6 +1280,7 @@ def main():
                 <thead>
                   <tr>
                     <th onclick="sortTable('id')">ID ↕</th>
+                    <th onclick="sortTable('ore')">ORE STYLE ↕</th>
                     <th onclick="sortTable('name')">NAME &amp; DOMAIN / CLASSIFICATION ↕</th>
                     <th>COORDINATES (LAT / LON)</th>
                     <th onclick="sortTable('depth')">REGOLITH / DEPTH ↕</th>
@@ -1225,10 +1315,31 @@ def main():
     let hoveredTargetId = null;
     let isLightTheme = false;
     let activeFilter = "ALL";
+    let activeOreCategory = "ALL";
+    let selectedRunId = "ACTIVE";
+    let availableRuns = [];
     let searchQuery = "";
     let sortColumn = "score";
     let sortAsc = false;
     let activeAnalyticsSubTab = "tomography";
+
+    const ORE_LABEL_MAP = {
+      "porphyry_cu": "Porphyry Cu-Au",
+      "skarn_fe_cu": "Skarn Fe-Cu",
+      "epithermal_au": "Epithermal Au-Ag",
+      "laterite_fe_ni": "Lateritic Fe-Ni",
+      "primary_gold": "Orogenic Gold",
+      "orogenic_gold": "Orogenic Gold"
+    };
+
+    const ORE_COLORS = {
+      porphyry_cu: { stroke: "#f97316", fill: "#ea580c" },
+      skarn_fe_cu: { stroke: "#a855f7", fill: "#9333ea" },
+      epithermal_au: { stroke: "#eab308", fill: "#ca8a04" },
+      laterite_fe_ni: { stroke: "#10b981", fill: "#059669" },
+      primary_gold: { stroke: "#f59e0b", fill: "#d97706" },
+      telescoped: { stroke: "#38bdf8", fill: "#0284c7" }
+    };
 
     let map = null;
     let baseTileLayer = null;
@@ -1285,11 +1396,23 @@ def main():
 
     // ==================== REGION SELECTION & BUNDLE PARSING ====================
     function selectRegion(regionCode) {
+      if (regionCode && regionCode.startsWith("RUN_")) {
+        selectTrainingRun(regionCode);
+        return;
+      }
       currentRegion = regionCode;
+      selectedRunId = "ACTIVE";
       const selectEl = document.getElementById("dataset-select");
       if (selectEl && selectEl.value !== regionCode) {
         selectEl.value = regionCode;
       }
+      const runEl = document.getElementById("run-history-select");
+      if (runEl) {
+        runEl.value = "ACTIVE";
+      }
+
+      // Query available historical training runs for this region
+      fetchRunHistory(regionCode);
 
       // Immediately display embedded bundle if present (0ms UI latency)
       if (typeof EMBEDDED_BUNDLES !== "undefined" && EMBEDDED_BUNDLES[regionCode]) {
@@ -1310,6 +1433,91 @@ def main():
             console.warn("Live API error, using embedded bundle:", err);
           });
       }
+    }
+
+    function selectOreCategory(category) {
+      activeOreCategory = category;
+      const el = document.getElementById("ore-category-select");
+      if (el && el.value !== category) el.value = category;
+      renderTable();
+      updateTargetsGeoLayerStyles();
+      updateMapTargetMarkers();
+    }
+
+    function selectTrainingRun(runId) {
+      selectedRunId = runId;
+      const selectEl = document.getElementById("dataset-select");
+      if (selectEl && runId !== "ACTIVE") {
+        selectEl.value = runId;
+      }
+      const runEl = document.getElementById("run-history-select");
+      if (runEl && runEl.value !== runId) runEl.value = runId;
+
+      if (runId === "ACTIVE" || !runId) {
+        if (typeof EMBEDDED_BUNDLES !== "undefined" && EMBEDDED_BUNDLES[currentRegion]) {
+          loadRegionBundle(EMBEDDED_BUNDLES[currentRegion]);
+        }
+      } else {
+        if (typeof EMBEDDED_BUNDLES !== "undefined" && EMBEDDED_BUNDLES[runId]) {
+          loadRegionBundle(EMBEDDED_BUNDLES[runId]);
+        }
+      }
+
+      if (window.location.protocol.startsWith("http")) {
+        const url = (runId === "ACTIVE" || !runId)
+          ? `/api/region?name=${encodeURIComponent(currentRegion)}`
+          : `/api/run_bundle?region=${encodeURIComponent(currentRegion)}&run_id=${encodeURIComponent(runId)}`;
+        fetch(url)
+          .then(res => res.json())
+          .then(data => {
+            if (typeof EMBEDDED_BUNDLES !== "undefined") {
+              const cacheKey = (runId === "ACTIVE" || !runId) ? currentRegion : runId;
+              EMBEDDED_BUNDLES[cacheKey] = data;
+            }
+            loadRegionBundle(data);
+          })
+          .catch(err => {
+            console.error("Failed to load training run bundle:", err);
+          });
+      }
+    }
+
+    function fetchRunHistory(regionCode) {
+      if (!window.location.protocol.startsWith("http")) return;
+      fetch(`/api/runs?region=${encodeURIComponent(regionCode)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (!data || !data.runs) return;
+          availableRuns = data.runs;
+          const selectEl = document.getElementById("run-history-select");
+          if (selectEl) {
+            let html = '<option value="ACTIVE">RUN: ACTIVE (LATEST 7-PASS)</option>';
+            availableRuns.forEach(r => {
+              const timeStr = r.archived_at ? r.archived_at.slice(0, 16).replace('T', ' ') : (r.created_at ? r.created_at.slice(0, 16).replace('T', ' ') : 'Run');
+              const fusedStr = (r.metrics && r.metrics.pr_auc_fused !== undefined && r.metrics.pr_auc_fused !== null) ? Number(r.metrics.pr_auc_fused).toFixed(3) : '—';
+              const tgtCount = r.n_ranked_targets || (r.site_cards ? r.site_cards.length : 0);
+              html += `<option value="${r.run_id}">RUN: ${r.run_id} (${timeStr}) // PR-AUC: ${fusedStr} [${tgtCount} TGT]</option>`;
+            });
+            selectEl.innerHTML = html;
+            selectEl.value = selectedRunId || "ACTIVE";
+          }
+          const optArchived = document.getElementById("optgroup-archived-runs");
+          if (optArchived) {
+            const archivedRuns = availableRuns.filter(r => !r.is_active && (r.region === "KALIMANTAN" || r.region === "BORNEO"));
+            if (archivedRuns.length > 0) {
+              let optHtml = '';
+              archivedRuns.forEach(r => {
+                const timeStr = r.archived_at ? r.archived_at.slice(0, 16).replace('T', ' ') : (r.created_at ? r.created_at.slice(0, 16).replace('T', ' ') : 'Archived');
+                const fusedStr = (r.metrics && r.metrics.pr_auc_fused !== undefined && r.metrics.pr_auc_fused !== null) ? Number(r.metrics.pr_auc_fused).toFixed(3) : '—';
+                optHtml += `<option value="${r.run_id}">KALIMANTAN ARCHIVE (${timeStr} // PR-AUC: ${fusedStr})</option>`;
+              });
+              optArchived.innerHTML = optHtml;
+            }
+          }
+        })
+        .catch(err => {
+          console.warn("Could not query training run history:", err);
+        });
     }
 
     function loadRegionBundle(bundle) {
@@ -1358,6 +1566,11 @@ def main():
           const struct = phys.geomechanics_and_structure || {};
           const cover = phys.cover_and_conductivity || {};
 
+          const conformalSet = sc.conformal_90pct_target_set || (sc.properties && sc.properties.conformal_90pct_target_set) || [];
+          const primaryOre = sc.ore_category || (sc.properties && sc.properties.ore_category) || (conformalSet[0]) || "porphyry_cu";
+          const oreLabel = sc.ore_category_label || (sc.properties && sc.properties.ore_category_label) || ORE_LABEL_MAP[primaryOre] || primaryOre.replace(/_/g, ' ');
+          const isTelescoped = Boolean(sc.telescoped_system_flag || (sc.properties && sc.properties.telescoped_system_flag) || (conformalSet.length >= 2));
+
           return {
             id: sc.target_id,
             name: sc.target_id.replace(/_/g, ' '),
@@ -1371,7 +1584,12 @@ def main():
             structuralDomain: alter.sensor_source || bundle.title || "Regional Tectonic Zone",
             classification: sc.classification || (sc.rank <= 3 ? "TIER-1 CORE" : "STRUCTURAL EXT"),
             rank: sc.rank || 1,
-            area_sq_km: geom.area_sq_km || 1.0
+            area_sq_km: geom.area_sq_km || 1.0,
+            oreCategory: primaryOre,
+            oreCategoryLabel: oreLabel,
+            conformalTargetSet: conformalSet,
+            telescopedFlag: isTelescoped,
+            shapAttribution: sc.mineral_systems_shap_attribution || (sc.properties && sc.properties.mineral_systems_shap_attribution) || {}
           };
         });
       } else if (bundle.predicted_targets_geojson && bundle.predicted_targets_geojson.features) {
@@ -1388,6 +1606,11 @@ def main():
               }
             } catch (e) {}
           }
+          const conformalSet = p.conformal_90pct_target_set || [];
+          const primaryOre = p.ore_category || (conformalSet[0]) || "porphyry_cu";
+          const oreLabel = p.ore_category_label || ORE_LABEL_MAP[primaryOre] || primaryOre.replace(/_/g, ' ');
+          const isTelescoped = Boolean(p.telescoped_system_flag || (conformalSet.length >= 2));
+
           return {
             id: p.target_id || `TGT_${idx+1}`,
             name: (p.target_id || `Target #${idx+1}`).replace(/_/g, ' '),
@@ -1401,7 +1624,12 @@ def main():
             structuralDomain: p.classification || "Scanned Tectonic Unit",
             classification: p.classification || "SHEAR ANOMALY",
             rank: p.rank || idx + 1,
-            area_sq_km: p.area_sq_km || 1.0
+            area_sq_km: p.area_sq_km || 1.0,
+            oreCategory: primaryOre,
+            oreCategoryLabel: oreLabel,
+            conformalTargetSet: conformalSet,
+            telescopedFlag: isTelescoped,
+            shapAttribution: p.mineral_systems_shap_attribution || {}
           };
         });
       }
@@ -1518,15 +1746,40 @@ def main():
       }
 
       // =========================================================================
-      // 2. THE TARGET SCANNED EXTENT BOUNDARY
+      // 2. THE TARGET SCANNED EXTENT BOUNDARY (ACTUAL PROVINCIAL BORDER VECTOR)
       // =========================================================================
       if (scannedAreaRect) {
         map.removeLayer(scannedAreaRect);
         scannedAreaRect = null;
       }
 
-      if (b.bounds) {
+      const boundaryGeo = b.scanned_boundary_geojson || b.boundary_geojson;
+      if (boundaryGeo) {
+        scannedAreaRect = L.geoJSON(boundaryGeo, {
+          pane: "scannedTilesPane",
+          style: {
+            color: "#38bdf8",
+            weight: 2.2,
+            dashArray: "6, 5",
+            fillColor: "#0284c7",
+            fillOpacity: 0.04
+          },
+          onEachFeature: (feat, layer) => {
+            const p = feat.properties || {};
+            layer.bindTooltip(
+              `<div style="font-family:monospace; font-size:11px; line-height:1.4;">
+                <b style="color:#38bdf8;">EAST KALIMANTAN PROVINCIAL SCAN BOUNDARY</b><br/>
+                <span><b>${p.name || b.title || 'East Kalimantan (Kalimantan Timur)'}</b></span><br/>
+                <span style="color:#94a3b8;">Status: ${p.scan_status || '250m Ultra-HD Continuous Scan'}</span><br/>
+                <span style="color:#64748b;">Border: Official Provincial Administrative Line (Polygon Vector)</span>
+              </div>`,
+              { direction: "top", sticky: true }
+            );
+          }
+        }).addTo(map);
+      } else if (b.bounds) {
         scannedAreaRect = L.rectangle(b.bounds, {
+          pane: "scannedTilesPane",
           color: "#38bdf8",
           weight: 1.5,
           dashArray: "6, 6",
@@ -1714,28 +1967,47 @@ def main():
       const p = (feat && feat.properties) || {};
       const isSelected = activeTarget && (activeTarget.id === (p.target_id || p.id));
       const isTopRank = (p.rank || 99) <= 5;
+      const ore = p.ore_category || "porphyry_cu";
+      const isTelescoped = Boolean(p.telescoped_system_flag || (p.conformal_90pct_target_set && p.conformal_90pct_target_set.length >= 2));
+      const oreTheme = isTelescoped ? ORE_COLORS.telescoped : (ORE_COLORS[ore] || ORE_COLORS.porphyry_cu);
+
+      const passesOre = activeOreCategory === "ALL" ||
+        (activeOreCategory === "telescoped" && isTelescoped) ||
+        (ore === activeOreCategory) ||
+        (p.conformal_90pct_target_set && p.conformal_90pct_target_set.includes(activeOreCategory));
+
+      if (!passesOre) {
+        return {
+          opacity: 0.08,
+          fillOpacity: 0.03,
+          weight: 1,
+          color: "#64748b",
+          dashArray: "3 3"
+        };
+      }
+
       if (isSelected) {
         return {
-          color: "#38bdf8",
+          color: oreTheme.stroke,
           weight: 3.5,
-          fillColor: "#0284c7",
+          fillColor: oreTheme.fill,
           fillOpacity: 0.65,
           dashArray: null
         };
       }
       if (isTopRank) {
         return {
-          color: "#f59e0b",
-          weight: 2,
-          fillColor: "#d97706",
+          color: oreTheme.stroke,
+          weight: 2.2,
+          fillColor: oreTheme.fill,
           fillOpacity: 0.40,
           dashArray: null
         };
       }
       return {
-        color: "#38bdf8",
+        color: oreTheme.stroke,
         weight: 1.5,
-        fillColor: "#0284c7",
+        fillColor: oreTheme.fill,
         fillOpacity: 0.22,
         dashArray: "4 3"
       };
@@ -1771,18 +2043,28 @@ def main():
         const targetAreaHa = (t.area_sq_km || 0.05) * 100.0;
         const passesArea = targetAreaHa >= minAreaHa;
 
-        if (activeFilter === "TOP_RANKED") return t.rank <= 5 && passesL && passesArea;
-        if (activeFilter === "HIGH_CONF") return (t.conformalInterval ? t.conformalInterval[0] >= 0.70 : false) && passesArea;
-        return passesL && passesArea;
+        const passesOre = activeOreCategory === "ALL" ||
+          (activeOreCategory === "telescoped" && (t.telescopedFlag || (t.conformalTargetSet && t.conformalTargetSet.length >= 2))) ||
+          (t.oreCategory === activeOreCategory) ||
+          (t.conformalTargetSet && t.conformalTargetSet.includes(activeOreCategory));
+
+        if (activeFilter === "TOP_RANKED") return t.rank <= 5 && passesL && passesArea && passesOre;
+        if (activeFilter === "HIGH_CONF") return (t.conformalInterval ? t.conformalInterval[0] >= 0.70 : false) && passesArea && passesOre;
+        return passesL && passesArea && passesOre;
       });
 
       filtered.forEach(t => {
         const isSelected = activeTarget && activeTarget.id === t.id;
+        const oreCat = t.oreCategory || "porphyry_cu";
+        const oreTheme = (t.telescopedFlag ? ORE_COLORS.telescoped : (ORE_COLORS[oreCat] || ORE_COLORS.porphyry_cu));
+        const pinBorder = isSelected ? oreTheme.stroke : oreTheme.stroke;
+        const pinColor = isSelected ? "#ffffff" : oreTheme.stroke;
+        const pinBg = isSelected ? oreTheme.fill : "var(--bg-elevated)";
 
         // High-Acuity Target Site Reticle Marker (L.divIcon)
         const rankLabel = t.rank <= 99 ? `#${t.rank}` : `⌖`;
         const pinHtml = `
-          <div class="target-pin ${isSelected ? 'selected' : ''}" style="width:${isSelected ? '34px' : '26px'}; height:${isSelected ? '34px' : '26px'}; font-size:${isSelected ? '11px' : '9.5px'};" title="${t.id} (Rank #${t.rank})">
+          <div class="target-pin ${isSelected ? 'selected' : ''}" style="width:${isSelected ? '34px' : '26px'}; height:${isSelected ? '34px' : '26px'}; font-size:${isSelected ? '11px' : '9.5px'}; border-color:${pinBorder}; color:${pinColor}; background:${pinBg};" title="${t.id} (Rank #${t.rank} // ${t.oreCategoryLabel || oreCat})">
             ${rankLabel}
           </div>
         `;
@@ -1801,6 +2083,7 @@ def main():
         marker.bindTooltip(
           `<div style="font-family:monospace; font-size:11px; line-height:1.4;">
             <b style="color:#38bdf8;">TARGET SITE: ${t.id}</b><br/>
+            <span style="color:${oreTheme.stroke}; font-weight:700;">${t.telescopedFlag ? '⚡ TELESCOPED: ' : ''}${t.oreCategoryLabel || oreCat.toUpperCase()}</span><br/>
             <span>Rank #${t.rank || 1} // ${t.classification}</span><br/>
             <span>Calibrated Deposit Prob: <b>${t.prospectivityScore.toFixed(3)}</b></span><br/>
             <span>Regolith Depth: <b>${t.depthMeters}m</b> | CI: <b>[${t.conformalInterval.join(' - ')}]</b></span><br/>
@@ -1894,6 +2177,14 @@ def main():
       document.getElementById("target-card-domain").innerText = `${target.structuralDomain} — ${target.primaryDriver}`;
       document.getElementById("target-card-class").innerText = `RANK #${target.rank || 1} // ${target.classification}`;
 
+      const oreBadge = document.getElementById("target-card-ore-badge");
+      if (oreBadge) {
+        const cat = target.oreCategory || "porphyry_cu";
+        const label = target.oreCategoryLabel || ORE_LABEL_MAP[cat] || cat.toUpperCase();
+        oreBadge.innerText = (target.telescopedFlag ? "TELESCOPED: " : "") + label.toUpperCase();
+        oreBadge.className = `badge-pill ore-badge ore-badge-${cat}`;
+      }
+
       const cLow = target.conformalInterval ? target.conformalInterval[0] : 0.50;
       const cHigh = target.conformalInterval ? target.conformalInterval[1] : 1.00;
 
@@ -1943,7 +2234,7 @@ def main():
         sortAsc = !sortAsc;
       } else {
         sortColumn = col;
-        sortAsc = col === "name" || col === "id";
+        sortAsc = col === "name" || col === "id" || col === "ore";
       }
       renderTable();
     }
@@ -1960,15 +2251,21 @@ def main():
         const targetAreaHa = (t.area_sq_km || 0.05) * 100.0;
         const passesArea = targetAreaHa >= minAreaHa;
 
+        const passesOre = activeOreCategory === "ALL" ||
+          (activeOreCategory === "telescoped" && (t.telescopedFlag || (t.conformalTargetSet && t.conformalTargetSet.length >= 2))) ||
+          (t.oreCategory === activeOreCategory) ||
+          (t.conformalTargetSet && t.conformalTargetSet.includes(activeOreCategory));
+
         const matchesFilter = activeFilter === "ALL" || 
           (activeFilter === "TOP_RANKED" && t.rank <= 5) || 
           (activeFilter === "HIGH_CONF" && (t.conformalInterval ? t.conformalInterval[0] >= 0.70 : false));
         const matchesSearch = !searchQuery || 
           t.name.toLowerCase().includes(searchQuery) || 
           t.id.toLowerCase().includes(searchQuery) ||
+          (t.oreCategoryLabel && t.oreCategoryLabel.toLowerCase().includes(searchQuery)) ||
           t.structuralDomain.toLowerCase().includes(searchQuery) ||
           t.primaryDriver.toLowerCase().includes(searchQuery);
-        return matchesFilter && matchesSearch && passesL && passesArea;
+        return matchesFilter && matchesSearch && passesL && passesArea && passesOre;
       });
 
       const countLabel = `${filtered.length} TARGETS`;
@@ -1980,6 +2277,7 @@ def main():
       filtered.sort((a, b) => {
         let valA, valB;
         if (sortColumn === "id") { valA = a.id; valB = b.id; }
+        else if (sortColumn === "ore") { valA = a.oreCategoryLabel || a.oreCategory || ""; valB = b.oreCategoryLabel || b.oreCategory || ""; }
         else if (sortColumn === "name") { valA = a.name; valB = b.name; }
         else if (sortColumn === "depth") { valA = a.depthMeters; valB = b.depthMeters; }
         else if (sortColumn === "score") { valA = a.prospectivityScore; valB = b.prospectivityScore; }
@@ -1994,12 +2292,19 @@ def main():
       tbody.innerHTML = filtered.slice(0, 50).map(t => {
         const isSelected = activeTarget && activeTarget.id === t.id;
         const isHovered = hoveredTargetId === t.id;
+        const oreCat = t.oreCategory || "porphyry_cu";
+        const oreLabel = t.oreCategoryLabel || ORE_LABEL_MAP[oreCat] || oreCat;
         return `
           <tr class="${isSelected ? 'active-row' : ''}" 
               onclick="selectTargetById('${t.id}')"
               onmouseenter="hoverTarget('${t.id}')"
               onmouseleave="hoverTarget(null)">
             <td style="font-weight:700; color:var(--accent-primary);">${t.id}</td>
+            <td>
+              <span class="badge-pill ore-badge ore-badge-${oreCat}">
+                ${t.telescopedFlag ? '⚡ ' : ''}${oreLabel}
+              </span>
+            </td>
             <td style="font-family:var(--font-sans); color:var(--text-primary); font-weight:500;">
               ${t.name}
               <div style="font-family:var(--font-editorial); font-size:11px; font-style:italic; color:var(--text-secondary);">${t.structuralDomain}</div>
@@ -2416,6 +2721,7 @@ def main():
       initMap();
       initAsciiTomography();
       initSplitHandle();
+      fetchRunHistory(currentRegion);
     });
   </script>
 </body>
