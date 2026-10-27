@@ -1707,9 +1707,9 @@ def main():
 
     // ==================== LEAFLET MAP & SCANNED RECTANGLE ENGINE ====================
     const BASEMAPS = {
-      dark: "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
+      dark: "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
       satellite: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-      topo: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
+      topo: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"
     };
 
     function initMap() {
