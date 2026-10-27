@@ -543,6 +543,9 @@ def main():
        ========================================================================== */
     .view-home-container {
       flex: 1;
+      min-height: 0;
+      width: 100%;
+      box-sizing: border-box;
       overflow-y: auto;
       overflow-x: hidden;
       background: var(--bg-canvas);
@@ -1646,7 +1649,6 @@ def main():
           </button>
         </div>
       </div>
-    </div>
 
     <!-- VIEW 1: HOMEPAGE // MISSION CONTROL -->
     <div id="view-home" class="view-home-container">
@@ -1878,7 +1880,7 @@ def main():
     </div>
 
     <!-- VIEW 2: EXPLORATION WORKSPACE // INTERACTIVE GIS & ANALYTICS -->
-    <div id="view-workspace" style="display:none; flex:1; overflow:hidden;">
+    <div id="view-workspace" style="display:none; flex:1; min-height:0; overflow:hidden;">
       <div id="workspace-container" class="workspace-body mode-split" style="width:100%; height:100%;">
         <!-- PROGRESSIVE DISCLOSURE DRAWER (270px / 48px) -->
         <aside id="sensor-drawer" class="telemetry-drawer">

@@ -1364,21 +1364,25 @@ class MPMDistrictDAEUNet:
                 stride_w=W_c,
                 window_size=win_size,
             )
-            val_loader = DataLoader(val_ds, batch_size=max(self.batch_size * 2, 32), shuffle=False)
+            val_batch_size = 128
+            val_loader = DataLoader(val_ds, batch_size=val_batch_size, shuffle=False, num_workers=0)
 
-            val_preds_list, val_err_list, val_ctx_list = [], [], []
+            n_val = len(val_indices)
+            val_p = np.empty((n_val, 4), dtype=np.float32)
+            val_err = np.empty(n_val, dtype=np.float32)
+            val_ctx = np.empty((n_val, 4), dtype=np.float32)
+
             with torch.no_grad():
+                ptr = 0
                 for xb in val_loader:
                     xb = xb.to(self.device)
                     p, recon, err, ctx = fold_model(xb)
                     hc, wc = p.shape[-2] // 2, p.shape[-1] // 2
-                    val_preds_list.append(p[:, :, hc, wc].cpu().numpy())
-                    val_err_list.append(err[:, 0, hc, wc].cpu().numpy())
-                    val_ctx_list.append(ctx[:, :4, hc, wc].cpu().numpy())
-
-            val_p = np.concatenate(val_preds_list, axis=0)
-            val_err = np.concatenate(val_err_list, axis=0)
-            val_ctx = np.concatenate(val_ctx_list, axis=0)
+                    bsz = p.shape[0]
+                    val_p[ptr : ptr + bsz] = p[:, :, hc, wc].cpu().numpy()
+                    val_err[ptr : ptr + bsz] = err[:, 0, hc, wc].cpu().numpy()
+                    val_ctx[ptr : ptr + bsz] = ctx[:, :4, hc, wc].cpu().numpy()
+                    ptr += bsz
 
             val_rows = val_indices // W_c
             val_cols = val_indices % W_c
@@ -1387,6 +1391,10 @@ class MPMDistrictDAEUNet:
             for k in range(4):
                 oof_preds_coarse[k, val_rows, val_cols] = val_p[:, k]
                 oof_ctx_coarse[k, val_rows, val_cols] = val_ctx[:, k]
+
+            del fold_model, optimiser, val_loader, train_ds, val_ds, val_p, val_err, val_ctx
+            import gc
+            gc.collect()
 
         # 4. Project out-of-fold spatial context embeddings and reconstruction error back to 50 m grid
         proj_err_50m = project_spatial_grid(oof_recon_err_coarse, target_shape=target_shape, order=1)
