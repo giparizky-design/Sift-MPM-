@@ -1068,11 +1068,30 @@ def main():
               </label>
 
               <select id="sel-satellite-layer" onchange="updateSatelliteLayer()" style="width:100%; padding:5px 7px; font-family:var(--font-mono); font-size:10px; background:var(--bg-surface); color:var(--text-primary); border:1px solid var(--border-hairline); border-radius:4px; outline:none; cursor:pointer;">
-                <option value="dem_elevation">Topography // SRTM-DEM 30m Elevation</option>
-                <option value="outcrop_exposure_index">Multispectral // Rock Outcrop & Alteration</option>
-                <option value="dilation_tendency_Td">Geomechanics // Fault Dilation Strain (Td)</option>
-                <option value="bouguer_gravity_mgal">Geophysics // Bouguer Gravity Density</option>
-                <option value="volcanic_arc_halo">Geodynamics // Volcanic Arc Hydrothermal</option>
+                <optgroup label="── TOPOGRAPHY & GEOMORPHOLOGY ──">
+                  <option value="dem_elevation" selected>Topography // SRTM-DEM 30m Elevation</option>
+                  <option value="dem_slope">Slope // Topographic Slope Steepness</option>
+                  <option value="terrain_ruggedness_tri">Roughness // Terrain Ruggedness (TRI)</option>
+                </optgroup>
+                <optgroup label="── MULTISPECTRAL & REGOLITH ──">
+                  <option value="outcrop_exposure_index">Outcrop // Multispectral Rock Alteration</option>
+                  <option value="regolith_cover_m">Cover // Weathered Regolith/Saprolite Depth</option>
+                </optgroup>
+                <optgroup label="── STRUCTURAL & 3D GEOMECHANICS ──">
+                  <option value="dilation_tendency_Td">Geomechanics // Fault Dilation Strain (Td)</option>
+                  <option value="slip_tendency_Ts">Geomechanics // Fault Slip Tendency (Ts)</option>
+                  <option value="active_fault_density">Fracture // Active Fault Network Density</option>
+                </optgroup>
+                <optgroup label="── DEEP CRUSTAL GEOPHYSICS ──">
+                  <option value="bouguer_gravity_mgal">Gravity // Bouguer Density Anomaly (Plutons)</option>
+                  <option value="moho_gravity_step_mgal_km">Moho Step // Moho Density Gradient</option>
+                  <option value="crustal_thickness_km">Crustal Thickness // Moho Depth Inversion</option>
+                </optgroup>
+                <optgroup label="── AI NEURAL GEODYNAMICS ──">
+                  <option value="volcanic_arc_halo">Volcanic Arc // Hydrothermal Fluid Halo</option>
+                  <option value="dae_reconstruction_error">DAE-U-Net // Neural Structural Anomaly</option>
+                  <option value="propensity_e_x">Observation // Jungle Exploration Propensity e(x)</option>
+                </optgroup>
               </select>
 
               <div style="display:flex; flex-direction:column; gap:2px;">
@@ -1086,6 +1105,10 @@ def main():
             </div>
 
             <!-- Vector Overlays -->
+            <label style="display:flex; justify-content:space-between; align-items:center; font-size:11px; padding:6px 8px; background:var(--bg-elevated); border:1px solid var(--border-hairline); border-radius:5px; cursor:pointer;">
+              <span style="display:flex; align-items:center; gap:6px;"><span style="display:inline-block; width:8px; height:8px; border-radius:1px; background:#38bdf8;"></span> Tectonic Fault Lines (GEM)</span>
+              <input type="checkbox" id="chk-faults-geo" checked onchange="toggleFaultsLayer(this.checked)" style="accent-color:var(--accent-primary);" />
+            </label>
             <label style="display:flex; justify-content:space-between; align-items:center; font-size:11px; padding:6px 8px; background:var(--bg-elevated); border:1px solid var(--border-hairline); border-radius:5px; cursor:pointer;">
               <span style="display:flex; align-items:center; gap:6px;"><span style="display:inline-block; width:8px; height:8px; border-radius:2px; border:1.5px dashed var(--accent-primary);"></span> Provincial Scan Boundary</span>
               <input type="checkbox" id="chk-scanned-rect" checked onchange="toggleScannedRect(this.checked)" style="accent-color:var(--accent-primary);" />
@@ -1379,6 +1402,7 @@ def main():
     let hdHeatmapOverlays = [];
     let actualMinesLayer = null;
     let targetsGeoLayer = null;
+    let faultsGeoLayer = null;
     let targetMarkersGroup = null;
     let satelliteOverlayLayer = null;
     const satelliteLayersCache = {};
@@ -1734,6 +1758,9 @@ def main():
       map.createPane("scannedTilesPane");
       map.getPane("scannedTilesPane").style.zIndex = "400";
 
+      map.createPane("faultsPane");
+      map.getPane("faultsPane").style.zIndex = "420";
+
       map.createPane("targetRectsPane");
       map.getPane("targetRectsPane").style.zIndex = "450";
 
@@ -2019,6 +2046,46 @@ def main():
             });
           }
         }).addTo(map);
+      }
+
+      // =========================================================================
+      // 6b. TECTONIC FAULTS VECTOR OVERLAY (GEM Active Faults)
+      // =========================================================================
+      if (faultsGeoLayer) {
+        map.removeLayer(faultsGeoLayer);
+        faultsGeoLayer = null;
+      }
+      const fg = b.faults_geojson;
+      if (fg && fg.features && fg.features.length) {
+        faultsGeoLayer = L.geoJSON(fg, {
+          pane: "faultsPane",
+          style: {
+            color: "#0ea5e9",
+            weight: 1.8,
+            dashArray: "5 4",
+            opacity: 0.85
+          },
+          onEachFeature: (feat, layer) => {
+            const p = feat.properties || {};
+            layer.bindTooltip(
+              `<div style="font-family:monospace; font-size:11px; line-height:1.4;">
+                <b style="color:#38bdf8;">TECTONIC FAULT // ${p.name || 'Regional Active Fault'}</b><br/>
+                <span>Kinematic Slip: <b>${p.slip_type || p.fault_type || 'Strike-Slip / Dip-Slip'}</b></span><br/>
+                <span style="color:#94a3b8;">Source: ${p.source || 'GEM Global Active Faults Database'}</span>
+              </div>`,
+              { direction: 'top', sticky: true }
+            );
+            layer.on('mouseover', () => {
+              layer.setStyle({ color: "#f43f5e", weight: 3.5, opacity: 1.0 });
+            });
+            layer.on('mouseout', () => {
+              layer.setStyle({ color: "#0ea5e9", weight: 1.8, opacity: 0.85 });
+            });
+          }
+        });
+        if (!document.getElementById("chk-faults-geo") || document.getElementById("chk-faults-geo").checked) {
+          faultsGeoLayer.addTo(map);
+        }
       }
 
       // =========================================================================
@@ -2363,6 +2430,12 @@ def main():
       if (!map || !targetsGeoLayer) return;
       if (show) map.addLayer(targetsGeoLayer);
       else map.removeLayer(targetsGeoLayer);
+    }
+
+    function toggleFaultsLayer(show) {
+      if (!map || !faultsGeoLayer) return;
+      if (show) map.addLayer(faultsGeoLayer);
+      else map.removeLayer(faultsGeoLayer);
     }
 
     // ==================== TARGET SELECTION & TABLE RENDERING ====================

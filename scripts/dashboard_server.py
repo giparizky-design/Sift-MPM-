@@ -231,7 +231,7 @@ def _render_satellite_layer(region: str, layer_name: str) -> tuple[str, list[lis
     # Choose specialized colormap
     if "dem_elevation" in layer_name or "srtm" in layer_name or layer_name == "dem":
         cmap = "terrain"
-    elif any(k in layer_name for k in ("dilation", "slip", "fault", "lineament")):
+    elif any(k in layer_name for k in ("dilation", "slip", "fault", "lineament", "slope", "tri")):
         cmap = "magma"
     elif any(k in layer_name for k in ("gravity", "moho", "crustal")):
         cmap = "coolwarm"
@@ -1159,6 +1159,13 @@ def _load_region_bundle(region: str, force_reload: bool = False) -> dict:
                 except Exception:
                     pass
 
+        faults_gj_path = ROOT_DIR / "data" / "indonesia" / "indonesia_tectonic_faults.geojson"
+        faults_geojson = (
+            json.loads(faults_gj_path.read_text(encoding="utf-8"))
+            if faults_gj_path.exists()
+            else {"type": "FeatureCollection", "features": []}
+        )
+
         bundle = {
             "region": region_up,
             "title": hd_meta["title"],
@@ -1174,7 +1181,7 @@ def _load_region_bundle(region: str, force_reload: bool = False) -> dict:
             "total_mines_captured": len(captured_idx),
             "predicted_targets_geojson": {"type": "FeatureCollection", "features": predicted_features},
             "scanned_boundary_geojson": boundary_geojson,
-            "faults_geojson": {"type": "FeatureCollection", "features": []},
+            "faults_geojson": faults_geojson,
             "site_cards": site_cards,
             "satellite_layers": _build_region_satellite_layers(region_up),
             "hd_sub_overlays": hd_sub_overlays,
