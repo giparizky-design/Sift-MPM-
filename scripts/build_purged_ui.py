@@ -1057,6 +1057,34 @@ def main():
               <input type="range" id="rng-opacity" min="0.1" max="1.0" step="0.05" value="0.80" oninput="setHeatmapOpacity(this.value)" style="accent-color:var(--accent-primary); cursor:pointer;" />
             </div>
 
+            <!-- Satellite Physical & Multispectral Sensor Overlay -->
+            <div style="display:flex; flex-direction:column; gap:6px; padding:8px; background:var(--bg-elevated); border:1px solid var(--border-hairline); border-radius:5px; margin-top:2px;">
+              <label style="display:flex; justify-content:space-between; align-items:center; font-size:11px; cursor:pointer;">
+                <span style="display:flex; align-items:center; gap:6px; font-weight:600;">
+                  <span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:linear-gradient(45deg, #10b981, #06b6d4);"></span>
+                  Satellite Sensor Overlay
+                </span>
+                <input type="checkbox" id="chk-satellite-layer" onchange="updateSatelliteLayer()" style="accent-color:var(--accent-primary);" />
+              </label>
+
+              <select id="sel-satellite-layer" onchange="updateSatelliteLayer()" style="width:100%; padding:5px 7px; font-family:var(--font-mono); font-size:10px; background:var(--bg-surface); color:var(--text-primary); border:1px solid var(--border-hairline); border-radius:4px; outline:none; cursor:pointer;">
+                <option value="dem_elevation">Topography // SRTM-DEM 30m Elevation</option>
+                <option value="outcrop_exposure_index">Multispectral // Rock Outcrop & Alteration</option>
+                <option value="dilation_tendency_Td">Geomechanics // Fault Dilation Strain (Td)</option>
+                <option value="bouguer_gravity_mgal">Geophysics // Bouguer Gravity Density</option>
+                <option value="volcanic_arc_halo">Geodynamics // Volcanic Arc Hydrothermal</option>
+              </select>
+
+              <div style="display:flex; flex-direction:column; gap:2px;">
+                <div style="display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:9.5px; color:var(--text-muted);">
+                  <span>SATELLITE DATA OPACITY</span>
+                  <span id="lbl-sat-opacity">75%</span>
+                </div>
+                <input type="range" id="rng-sat-opacity" min="0.1" max="1.0" step="0.05" value="0.75" oninput="setSatelliteOpacity(this.value)" style="accent-color:var(--accent-primary); cursor:pointer;" />
+                <span id="lbl-sat-status" style="font-family:var(--font-mono); font-size:9px; color:var(--accent-primary);"></span>
+              </div>
+            </div>
+
             <!-- Vector Overlays -->
             <label style="display:flex; justify-content:space-between; align-items:center; font-size:11px; padding:6px 8px; background:var(--bg-elevated); border:1px solid var(--border-hairline); border-radius:5px; cursor:pointer;">
               <span style="display:flex; align-items:center; gap:6px;"><span style="display:inline-block; width:8px; height:8px; border-radius:2px; border:1.5px dashed var(--accent-primary);"></span> Provincial Scan Boundary</span>
@@ -1352,6 +1380,8 @@ def main():
     let actualMinesLayer = null;
     let targetsGeoLayer = null;
     let targetMarkersGroup = null;
+    let satelliteOverlayLayer = null;
+    const satelliteLayersCache = {};
 
     let rawHeatmapImage = null;
     let rawHeatmapPixels = null;
@@ -1677,7 +1707,7 @@ def main():
 
     // ==================== LEAFLET MAP & SCANNED RECTANGLE ENGINE ====================
     const BASEMAPS = {
-      dark: "https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png?key=cb1_4rkp_1_2f75140ddfbd27cb22776e95",
+      dark: "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
       satellite: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
       topo: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
     };
@@ -1695,6 +1725,9 @@ def main():
       });
 
       // Strict Z-Index Map Panes (prevents any basemap from hiding rasters or targets)
+      map.createPane("satellitePane");
+      map.getPane("satellitePane").style.zIndex = "300";
+
       map.createPane("heatmapPane");
       map.getPane("heatmapPane").style.zIndex = "350";
 
@@ -1992,6 +2025,11 @@ def main():
       // 7. INTERACTIVE TARGET PINS & HIGH-ACUITY RETICLES
       // =========================================================================
       updateMapTargetMarkers();
+
+      // Synchronize active satellite data overlay if toggled
+      if (document.getElementById("chk-satellite-layer") && document.getElementById("chk-satellite-layer").checked) {
+        updateSatelliteLayer();
+      }
     }
 
     function applyHeatmapThreshold() {
@@ -2252,6 +2290,67 @@ def main():
       document.getElementById("lbl-opacity").innerText = Math.round(op * 100) + "%";
       if (heatmapOverlay) heatmapOverlay.setOpacity(op);
       if (hdHeatmapOverlays) hdHeatmapOverlays.forEach(ov => ov.setOpacity(Math.min(1.0, op + 0.1)));
+    }
+
+    async function updateSatelliteLayer() {
+      const chk = document.getElementById("chk-satellite-layer");
+      const show = chk ? chk.checked : false;
+      const sel = document.getElementById("sel-satellite-layer");
+      const layerName = sel ? sel.value : "dem_elevation";
+      const rng = document.getElementById("rng-sat-opacity");
+      const op = rng ? parseFloat(rng.value) : 0.75;
+      const statusEl = document.getElementById("lbl-sat-status");
+
+      if (!show) {
+        if (satelliteOverlayLayer && map) {
+          map.removeLayer(satelliteOverlayLayer);
+          satelliteOverlayLayer = null;
+        }
+        if (statusEl) statusEl.innerText = "";
+        return;
+      }
+
+      const cacheKey = `${currentRegion}_${layerName}`;
+      let layerData = satelliteLayersCache[cacheKey];
+
+      if (!layerData) {
+        if (statusEl) statusEl.innerText = "STREAMING SATELLITE RASTER...";
+        try {
+          const res = await fetch(`/api/satellite_layer?region=${encodeURIComponent(currentRegion)}&layer=${encodeURIComponent(layerName)}`);
+          if (res.ok) {
+            layerData = await res.json();
+            satelliteLayersCache[cacheKey] = layerData;
+          }
+        } catch (err) {
+          console.warn("Failed to fetch satellite layer:", err);
+          if (statusEl) statusEl.innerText = "LAYER UNAVAILABLE";
+          return;
+        } finally {
+          if (statusEl) statusEl.innerText = "";
+        }
+      }
+
+      if (layerData && layerData.png_b64 && layerData.bounds) {
+        if (satelliteOverlayLayer && map) {
+          map.removeLayer(satelliteOverlayLayer);
+          satelliteOverlayLayer = null;
+        }
+        const pngSrc = layerData.png_b64.startsWith("data:") ? layerData.png_b64 : ("data:image/png;base64," + layerData.png_b64);
+        satelliteOverlayLayer = L.imageOverlay(pngSrc, layerData.bounds, {
+          pane: "satellitePane",
+          opacity: op,
+          interactive: false
+        }).addTo(map);
+      }
+    }
+
+    function setSatelliteOpacity(val) {
+      const op = parseFloat(val);
+      const lbl = document.getElementById("lbl-sat-opacity");
+      if (lbl) lbl.innerText = Math.round(op * 100) + "%";
+      if (satelliteOverlayLayer) {
+        satelliteOverlayLayer.setOpacity(op);
+      }
     }
 
     function toggleMinesLayer(show) {
@@ -2767,6 +2866,10 @@ def main():
       document.getElementById("ctrl-min-area").value = "5";
       document.getElementById("lbl-min-area").innerText = "5.0 ha";
       onAsciiZChange(450);
+      if (document.getElementById("chk-satellite-layer")) {
+        document.getElementById("chk-satellite-layer").checked = false;
+        updateSatelliteLayer();
+      }
       renderTable();
       updateMapTargetMarkers();
       applyHeatmapThreshold();
