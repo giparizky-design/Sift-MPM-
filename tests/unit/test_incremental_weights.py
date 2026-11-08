@@ -183,9 +183,9 @@ def test_archival_preserves_models_directory(tmp_path, monkeypatch):
     assert manifest is not None
     archived_run_dir = Path(manifest["run_dir"])
 
-    # Verify models were copied to the archive directory
+    # Verify models were copied to the archive directory (excluding .pt fold checkpoints per R5.2)
     assert (archived_run_dir / "models" / "k4_ensemble.joblib").exists()
-    assert (archived_run_dir / "models" / "dae_unet_fold_0.pt").exists()
+    assert not (archived_run_dir / "models" / "dae_unet_fold_0.pt").exists()
     assert (archived_run_dir / "models" / "k4_ensemble.joblib").read_bytes() == b"mock_ensemble_weights"
     assert manifest["training_mode"] == "incremental_warm_start"
     assert manifest["is_warm_started"] is True

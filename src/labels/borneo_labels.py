@@ -39,6 +39,14 @@ DEFAULT_COAL_PATH = Path("data/borneo/kalimantan_coal_deposits.gpkg")
 # Bounding box covering Kalimantan and surrounding Borneo: 108.5°E - 119.5°E, 4.5°S - 7.0°N
 BORNEO_BBOX = (108.5, -4.5, 119.5, 7.0)
 
+# Canonical K=4 metallic deposit label columns
+K4_LABEL_COLS = [
+    "label_k0_porphyry_cu",
+    "label_k1_skarn_fe_cu",
+    "label_k2_epithermal_au",
+    "label_k3_laterite_fe_ni",
+]
+
 
 # ---------------------------------------------------------------------------
 # Global Hygiene Guard
@@ -204,13 +212,19 @@ def build_k4_deposit_targets(
     clean_mrds = filter_valid_ore_candidates(mrds_gdf)
 
     # ------------------------------------------------------------------
-    # Head k=0: Porphyry Cu-Au
+    # Head k=0: Porphyry Cu-Au & Intrusive-Hosted Magmatic-Hydrothermal Systems
     # ------------------------------------------------------------------
+    east_kal_intrusive_mask = (
+        clean_geo["geological_role"].isin(["felsic_intrusive", "potassic_host"])
+        & clean_geo["lon"].between(114.50, 119.50)
+        & clean_geo["lat"].between(-2.80, 3.20)
+    )
     k0_geo_mask = (
         (clean_geo["resource_group"] == "COPPER_ORE")
         | (clean_geo["commodity_label"] == "Tembaga")
         | (clean_geo["resource_group"] == "BASE_METALS")
         | (clean_geo["geological_role"] == "porphyry_intrusive")
+        | east_kal_intrusive_mask
     )
     k0_geo = clean_geo[k0_geo_mask].copy()
 
@@ -578,4 +592,626 @@ def rasterize_borneo_k4_labels(
         out_rasters["explored_footprint"] = fp_raster
 
     return out_rasters
+
+
+# ---------------------------------------------------------------------------
+# Kalimantan K=3 Coal Rank Label Engineering & Rim-Anchored Halo Sampling
+# ---------------------------------------------------------------------------
+
+_PROJECT_ROOT: Path = Path(__file__).resolve().parent.parent.parent
+BORNEO_LON_MIN: float = 108.0
+BORNEO_LON_MAX: float = 119.5
+BORNEO_LAT_MIN: float = -5.0
+BORNEO_LAT_MAX: float = 7.5
+_ARTIFACT_LAT: float = -1.9982
+_ARTIFACT_LON: float = 113.9995
+_ARTIFACT_TOL_DEG: float = 0.01
+
+COAL_HEAD_NAMES: dict[int | str, str] = {
+    0: "coal_k0_high_cv",
+    1: "coal_k1_med_cv",
+    2: "coal_k2_low_cv",
+    "coal_k0_high_cv": "coal_k0_high_cv",
+    "coal_k1_med_cv": "coal_k1_med_cv",
+    "coal_k2_low_cv": "coal_k2_low_cv",
+}
+
+# Physical strike-extension halo distances in meters along strike (D6):
+#   - High CV (coal_k0_high_cv, > 6,100 kcal/kg): 1,000–2,000 m
+#   - Med CV (coal_k1_med_cv, 5,100–6,100 kcal/kg): 1,500–3,000 m
+#   - Low CV (coal_k2_low_cv, < 5,100 kcal/kg): 1,500–3,500 m
+COAL_RIM_HALO_METERS: dict[int | str, tuple[float, float]] = {
+    0: (1000.0, 2000.0),
+    1: (1500.0, 3000.0),
+    2: (1500.0, 3500.0),
+    "coal_k0_high_cv": (1000.0, 2000.0),
+    "coal_k1_med_cv": (1500.0, 3000.0),
+    "coal_k2_low_cv": (1500.0, 3500.0),
+}
+
+
+def get_rank_adaptive_offsets_cells(px_size_m: float = 250.0) -> dict[int | str, tuple[int, int]]:
+    """Compute rank-adaptive strike offsets in cells for a given physical pixel size (D6).
+
+    Args:
+        px_size_m: Physical pixel size in meters (default 250.0).
+
+    Returns:
+        Dictionary mapping coal rank head (int or name) to (d_min_cells, d_max_cells).
+    """
+    px = max(1.0, float(px_size_m))
+    return {
+        0: (int(round(1000.0 / px)), int(round(2000.0 / px))),
+        1: (int(round(1500.0 / px)), int(round(3000.0 / px))),
+        2: (int(round(1500.0 / px)), int(round(3500.0 / px))),
+        "coal_k0_high_cv": (int(round(1000.0 / px)), int(round(2000.0 / px))),
+        "coal_k1_med_cv": (int(round(1500.0 / px)), int(round(3000.0 / px))),
+        "coal_k2_low_cv": (int(round(1500.0 / px)), int(round(3500.0 / px))),
+    }
+
+
+# Default rank-adaptive offsets in 250m grid cells (backward compatibility)
+RANK_ADAPTIVE_OFFSETS_CELLS: dict[int | str, tuple[int, int]] = get_rank_adaptive_offsets_cells(250.0)
+
+
+def _classify_coal_rank_head(row: pd.Series) -> int:
+    """Map ESDM coal quality attributes to K=3 calorific rank head {0, 1, 2}.
+
+    Returns:
+        0: High-CV (> 6,100 kcal/kg, Kalori Tinggi / Bituminous-Anthracite)
+        1: Med-CV (5,100 - 6,100 kcal/kg, Kalori Sedang / Sub-bituminous A/B)
+        2: Low-CV (< 5,100 kcal/kg, Kalori Rendah / Lignite-Sub-bituminous C)
+        -1: Unclassified / invalid
+    """
+    for num_col in ("kalori_kcal_kg", "cv_kcal_kg", "calorific_value"):
+        if num_col in row and pd.notna(row[num_col]):
+            try:
+                cv = float(row[num_col])
+                if cv > 6100.0:
+                    return 0
+                if cv >= 5100.0:
+                    return 1
+                if cv > 0.0:
+                    return 2
+            except (ValueError, TypeError):
+                pass
+
+    for str_col in ("klsbb", "kelas_kalori", "coal_rank", "rank_class"):
+        if str_col in row and pd.notna(row[str_col]):
+            val = str(row[str_col]).strip().lower()
+            if "tinggi" in val or "high" in val or "bitumin" in val or "antrasit" in val or val == "coal_k0_high_cv":
+                return 0
+            if "sedang" in val or "med" in val or val == "coal_k1_med_cv":
+                return 1
+            if "rendah" in val or "low" in val or "lignit" in val or val == "coal_k2_low_cv":
+                return 2
+
+    if "coal_rank_head" in row and pd.notna(row["coal_rank_head"]):
+        val_str = str(row["coal_rank_head"]).strip().lower()
+        if val_str in ("0", "coal_k0_high_cv") or "high" in val_str:
+            return 0
+        if val_str in ("1", "coal_k1_med_cv") or "med" in val_str:
+            return 1
+        if val_str in ("2", "coal_k2_low_cv") or "low" in val_str:
+            return 2
+        try:
+            h = int(row["coal_rank_head"])
+            if h in (0, 1, 2):
+                return h
+        except (ValueError, TypeError):
+            pass
+
+    return -1
+
+
+def load_kalimantan_coal_sources(
+    coal_csv_path: Path | str | pd.DataFrame | None = None,
+    purge_centroid_artifact: bool = True,
+) -> gpd.GeoDataFrame:
+    """Load and standardize the 850 ESDM Kalimantan coal deposit records.
+
+    Computes resource tonnage sample weights:
+        w_i = 1.0 + ln(1.0 + Resources_Mt)
+    and assigns each deposit to one of the K=3 calorific rank heads:
+        0: coal_k0_high_cv (> 6,100 kcal/kg, Kalori Tinggi)
+        1: coal_k1_med_cv  (5,100 - 6,100 kcal/kg, Kalori Sedang)
+        2: coal_k2_low_cv  (< 5,100 kcal/kg, Kalori Rendah)
+    """
+    if isinstance(coal_csv_path, (pd.DataFrame, gpd.GeoDataFrame)):
+        df = coal_csv_path.copy()
+    else:
+        if coal_csv_path is None:
+            default_paths = [
+                _PROJECT_ROOT / "data" / "borneo" / "kalimantan_coal_deposits.csv",
+                _PROJECT_ROOT / "data" / "kalimantan" / "raw" / "kalimantan_coal_deposits.csv",
+            ]
+            resolved = next((p for p in default_paths if p.exists()), default_paths[0])
+        else:
+            resolved = Path(coal_csv_path)
+
+        if not resolved.exists():
+            logger.warning("Coal source file not found at %s; returning empty GeoDataFrame.", resolved)
+            return gpd.GeoDataFrame(
+                columns=[
+                    "concession_id",
+                    "namobj",
+                    "klsbb",
+                    "coal_rank_head",
+                    "coal_rank_name",
+                    "resources_mt",
+                    "tonnage_weight",
+                    "latitude",
+                    "longitude",
+                    "geometry",
+                ],
+                geometry="geometry",
+                crs="EPSG:4326",
+            )
+        df = pd.read_csv(resolved)
+
+    if len(df) == 0:
+        return gpd.GeoDataFrame(
+            columns=[
+                "concession_id",
+                "namobj",
+                "klsbb",
+                "coal_rank_head",
+                "coal_rank_name",
+                "resources_mt",
+                "tonnage_weight",
+                "latitude",
+                "longitude",
+                "geometry",
+            ],
+            geometry="geometry",
+            crs="EPSG:4326",
+        )
+
+    # Standardize coordinate columns
+    lon_col = next((c for c in ("longitude", "lon", "x") if c in df.columns), None)
+    lat_col = next((c for c in ("latitude", "lat", "y") if c in df.columns), None)
+    if lon_col is not None and lat_col is not None:
+        df["longitude"] = pd.to_numeric(df[lon_col], errors="coerce")
+        df["latitude"] = pd.to_numeric(df[lat_col], errors="coerce")
+        valid_coords = (
+            df["longitude"].notna()
+            & df["latitude"].notna()
+            & (df["longitude"] >= BORNEO_LON_MIN)
+            & (df["longitude"] <= BORNEO_LON_MAX)
+            & (df["latitude"] >= BORNEO_LAT_MIN)
+            & (df["latitude"] <= BORNEO_LAT_MAX)
+        )
+        df = df.loc[valid_coords].copy()
+        if purge_centroid_artifact and len(df) > 0:
+            is_artifact = (
+                np.isclose(df["latitude"].values, _ARTIFACT_LAT, atol=_ARTIFACT_TOL_DEG)
+                & np.isclose(df["longitude"].values, _ARTIFACT_LON, atol=_ARTIFACT_TOL_DEG)
+            )
+            df = df.loc[~is_artifact].copy()
+    else:
+        df["longitude"] = np.nan
+        df["latitude"] = np.nan
+
+    df = df.reset_index(drop=True)
+
+    # Assign unique integer concession_id >= 1
+    if "concession_id" in df.columns:
+        df["concession_id"] = pd.to_numeric(df["concession_id"], errors="coerce").fillna(0).astype(int)
+        zero_mask = df["concession_id"] <= 0
+        if zero_mask.any():
+            df.loc[zero_mask, "concession_id"] = np.arange(1, int(zero_mask.sum()) + 1)
+    elif "objectid" in df.columns:
+        df["concession_id"] = pd.to_numeric(df["objectid"], errors="coerce").fillna(
+            pd.Series(np.arange(1, len(df) + 1), index=df.index)
+        ).astype(int)
+    else:
+        df["concession_id"] = np.arange(1, len(df) + 1, dtype=int)
+
+    # Map calorific rank head
+    df["coal_rank_head"] = df.apply(_classify_coal_rank_head, axis=1).astype(int)
+    df = df.loc[df["coal_rank_head"].isin([0, 1, 2])].copy().reset_index(drop=True)
+    df["coal_rank_name"] = df["coal_rank_head"].map(COAL_HEAD_NAMES)
+
+    # Compute resource tonnage in Mt and logarithmic sample weight w_i = 1 + ln(1 + Resources_Mt)
+    res_col = next(
+        (c for c in ("totsdbb", "resources_mt", "tonnage_mt", "totcadbb") if c in df.columns),
+        None,
+    )
+    if res_col is not None:
+        resources_mt = pd.to_numeric(df[res_col], errors="coerce").fillna(0.0).clip(lower=0.0).to_numpy(dtype=np.float64)
+    else:
+        resources_mt = np.zeros(len(df), dtype=np.float64)
+
+    df["resources_mt"] = resources_mt
+    df["tonnage_weight"] = (1.0 + np.log1p(resources_mt)).astype(np.float32)
+
+    if "geometry" not in df.columns or not isinstance(df, gpd.GeoDataFrame):
+        if df["longitude"].notna().all() and df["latitude"].notna().all():
+            geom = gpd.points_from_xy(df["longitude"], df["latitude"])
+        else:
+            geom = [Point(0.0, 0.0) for _ in range(len(df))]
+        gdf = gpd.GeoDataFrame(df, geometry=geom, crs="EPSG:4326")
+    else:
+        gdf = gpd.GeoDataFrame(df, geometry="geometry", crs="EPSG:4326")
+
+    return gdf
+
+
+def build_k3_coal_rank_targets(
+    concessions: gpd.GeoDataFrame | pd.DataFrame | Path | str | None,
+    ndvi: np.ndarray,
+    active_mine_mask: np.ndarray,
+    formation_polygon_id: np.ndarray,
+    sar_bedding_strike_deg: np.ndarray | float | None = None,
+    gfw_forest_disturbance: np.ndarray | None = None,
+    sar_hh_db: np.ndarray | None = None,
+    transform: object | None = None,
+    bounds: tuple[float, float, float, float] = (108.5, -4.5, 119.5, 4.5),
+    canopy_ndvi_min: float = 0.25,
+    disturbance_ndvi_max: float = 0.20,
+    max_rim_search_cells: int = 40,
+    px_size_m: float = 250.0,
+) -> dict[str, object]:
+    """Build K=3 Coal Rank positive halo targets with 3 Non-Negotiable Spatial Guardrails.
+
+    Parameterized in physical meters divided by pixel size px_size_m (D6, Bug 10):
+      - High CV (coal_k0_high_cv, > 6,100 kcal/kg): 1,000–2,000 m along strike
+      - Med CV (coal_k1_med_cv, 5,100–6,100 kcal/kg): 1,500–3,000 m along strike
+      - Low CV (coal_k2_low_cv, < 5,100 kcal/kg): 1,500–3,500 m along strike
+      - Canopy NDVI footprint: 750 x 750 m kernel (k_size = max(3, round(750 / px_size_m)))
+
+    Three Non-Negotiable Kalimantan Spatial Guardrails:
+      1. Rim-Anchored Origin (d=0 at Disturbance Boundary):
+         Traces along the bedding strike ray through any contiguous bare-earth/mine
+         disturbance zone (NDVI < 0.20, active_mine_mask == 1, gfw_forest_disturbance >= 0.5,
+         or sar_hh_db > -2.0 dB) to find the outer boundary pixel (r_rim, c_rim).
+         Sets d = 0 at (r_rim, c_rim) and steps out by d in [d_min^(k), d_max^(k)].
+      2. Same-Formation Polygon Lock:
+         Candidate (r', c') must satisfy:
+             formation_polygon_id[r', c'] == formation_polygon_id[r_i, c_i] > 0
+         If a strike-offset vector crosses into a different formation polygon, it is
+         immediately rejected.
+      3. Canopy Integrity Check:
+         Candidate (r', c') must pass a neighborhood check requiring every pixel in
+         the 750 x 750 m footprint to have NDVI >= 0.25 and active_mine_mask == 0
+         (plus undisturbed GFW/SAR where provided).
+    """
+    ndvi_arr = np.asarray(ndvi, dtype=np.float32)
+    if ndvi_arr.ndim != 2:
+        raise ValueError(f"Expected 2D ndvi array, got shape {ndvi_arr.shape}")
+    H, W = ndvi_arr.shape
+
+    mine_arr = np.asarray(active_mine_mask, dtype=np.int8)
+    poly_arr = np.asarray(formation_polygon_id, dtype=np.int32)
+    if mine_arr.shape != (H, W) or poly_arr.shape != (H, W):
+        raise ValueError("ndvi, active_mine_mask, and formation_polygon_id must have identical 2D shape.")
+
+    if sar_bedding_strike_deg is None:
+        strike_arr = np.full((H, W), 45.0, dtype=np.float32)
+    elif np.ndim(sar_bedding_strike_deg) == 0:
+        strike_arr = np.full((H, W), float(sar_bedding_strike_deg), dtype=np.float32)
+    else:
+        strike_arr = np.asarray(sar_bedding_strike_deg, dtype=np.float32)
+
+    gfw_arr = (
+        np.asarray(gfw_forest_disturbance, dtype=np.float32)
+        if gfw_forest_disturbance is not None
+        else np.zeros((H, W), dtype=np.float32)
+    )
+    hh_arr = (
+        np.asarray(sar_hh_db, dtype=np.float32)
+        if sar_hh_db is not None
+        else np.full((H, W), -10.0, dtype=np.float32)
+    )
+
+    # Load or standardize concessions DataFrame
+    if concessions is None or isinstance(concessions, (Path, str)):
+        gdf_conc = load_kalimantan_coal_sources(concessions)
+    else:
+        gdf_conc = load_kalimantan_coal_sources(concessions, purge_centroid_artifact=False)
+
+    # Map concessions to grid (row, col) if not already provided
+    lon_min, lat_min, lon_max, lat_max = bounds
+    res_lon = (lon_max - lon_min) / float(W)
+    res_lat = (lat_max - lat_min) / float(H)
+
+    if "row" in gdf_conc.columns and "col" in gdf_conc.columns and gdf_conc["row"].notna().all():
+        rows_origin = gdf_conc["row"].to_numpy(dtype=np.int32)
+        cols_origin = gdf_conc["col"].to_numpy(dtype=np.int32)
+    elif transform is not None and hasattr(transform, "a"):
+        # Affine transform from rasterio
+        inv_t = ~transform
+        cols_f, rows_f = inv_t * (
+            gdf_conc["longitude"].to_numpy(dtype=np.float64),
+            gdf_conc["latitude"].to_numpy(dtype=np.float64),
+        )
+        rows_origin = np.floor(rows_f).astype(np.int32)
+        cols_origin = np.floor(cols_f).astype(np.int32)
+    else:
+        rows_origin = np.floor((lat_max - gdf_conc["latitude"].to_numpy(dtype=np.float64)) / res_lat).astype(np.int32)
+        cols_origin = np.floor((gdf_conc["longitude"].to_numpy(dtype=np.float64) - lon_min) / res_lon).astype(np.int32)
+
+    gdf_conc = gdf_conc.copy()
+    gdf_conc["row"] = rows_origin
+    gdf_conc["col"] = cols_origin
+
+    # Precompute disturbance mask (for Guardrail 1 rim tracing)
+    is_disturbed = (
+        (ndvi_arr < float(disturbance_ndvi_max))
+        | (mine_arr > 0)
+        | (gfw_arr >= 0.5)
+        | (hh_arr > -2.0)
+        | ~np.isfinite(ndvi_arr)
+    )
+
+    # Precompute canopy footprint integrity pass mask (Guardrail 3, D6)
+    # Every pixel in N_{k_size}(r', c') (750 x 750 m footprint) must have NDVI >= canopy_ndvi_min and active_mine_mask == 0
+    single_pixel_intact = (
+        np.isfinite(ndvi_arr)
+        & (ndvi_arr >= float(canopy_ndvi_min))
+        & (mine_arr == 0)
+        & (gfw_arr < 0.5)
+        & (hh_arr <= -2.0)
+    )
+    k_size = max(3, int(round(750.0 / max(1.0, float(px_size_m)))))
+    if k_size % 2 == 0:
+        k_size += 1
+    k_half = k_size // 2
+
+    canopy_3x3_valid = np.zeros((H, W), dtype=bool)
+    if H >= k_size and W >= k_size:
+        intact_core = np.ones((H - 2 * k_half, W - 2 * k_half), dtype=bool)
+        for dr in range(-k_half, k_half + 1):
+            for dc in range(-k_half, k_half + 1):
+                intact_core &= single_pixel_intact[
+                    k_half + dr : H - k_half + dr,
+                    k_half + dc : W - k_half + dc,
+                ]
+        canopy_3x3_valid[k_half : H - k_half, k_half : W - k_half] = intact_core
+
+    # Dynamic rank-adaptive offsets in grid cells
+    rank_offsets = get_rank_adaptive_offsets_cells(px_size_m)
+
+    # Output rasters
+    label_k0 = np.full((H, W), -1, dtype=np.int8)
+    label_k1 = np.full((H, W), -1, dtype=np.int8)
+    label_k2 = np.full((H, W), -1, dtype=np.int8)
+    head_rasters = {0: label_k0, 1: label_k1, 2: label_k2}
+
+    tonnage_weights_grid = np.ones((H, W), dtype=np.float32)
+    parent_concession_grid = np.zeros((H, W), dtype=np.int32)
+
+    halo_records: list[dict[str, object]] = []
+
+    for idx, row in gdf_conc.iterrows():
+        r0 = int(row["row"])
+        c0 = int(row["col"])
+        if not (0 <= r0 < H and 0 <= c0 < W):
+            continue
+
+        origin_poly_id = int(poly_arr[r0, c0])
+        # Guardrail 2 requires a valid mapped formation polygon (> 0)
+        if origin_poly_id <= 0:
+            continue
+
+        rank_head = int(row["coal_rank_head"])
+        if rank_head not in rank_offsets:
+            continue
+        d_min, d_max = rank_offsets[rank_head]
+        concession_id = int(row["concession_id"])
+        w_tonnage = float(row["tonnage_weight"])
+
+        theta_deg = float(strike_arr[r0, c0])
+        if not np.isfinite(theta_deg):
+            theta_deg = 45.0
+        theta_rad = np.deg2rad(theta_deg)
+        # Unit strike vector (ur, uc)
+        ur_base = float(np.sin(theta_rad))
+        uc_base = float(np.cos(theta_rad))
+
+        # Step along both strike directions (+1 and -1)
+        for sign in (+1.0, -1.0):
+            ur = sign * ur_base
+            uc = sign * uc_base
+
+            # Guardrail 1: Rim-Anchored Origin (d=0 at Disturbance Boundary)
+            # If the concession origin (r0, c0) sits inside a contiguous disturbance / open-pit
+            # zone, trace along the ray until the outer boundary of that disturbance zone.
+            r_rim, c_rim = r0, c0
+            rim_step = 0
+            if is_disturbed[r0, c0]:
+                for s in range(1, int(max_rim_search_cells) + 1):
+                    rs = int(np.round(r0 + s * ur))
+                    cs = int(np.round(c0 + s * uc))
+                    if not (0 <= rs < H and 0 <= cs < W):
+                        break
+                    if is_disturbed[rs, cs]:
+                        r_rim, c_rim = rs, cs
+                        rim_step = s
+                    else:
+                        # Reached undisturbed canopy just outside the disturbance rim
+                        break
+
+            # Step out from (r_rim, c_rim) by d in [d_min, d_max] cells
+            seen_cells: set[tuple[int, int]] = set()
+            for d in range(int(d_min), int(d_max) + 1):
+                rc = int(np.round(r_rim + d * ur))
+                cc = int(np.round(c_rim + d * uc))
+                if (rc, cc) in seen_cells:
+                    continue
+                seen_cells.add((rc, cc))
+
+                # Must lie inside valid footprint interior bounds
+                if not (k_half <= rc < H - k_half and k_half <= cc < W - k_half):
+                    continue
+
+                # Guardrail 2: Same-Formation Polygon Lock
+                cand_poly_id = int(poly_arr[rc, cc])
+                if cand_poly_id != origin_poly_id or cand_poly_id <= 0:
+                    continue
+
+                # Guardrail 3: Canopy Integrity Check
+                if not canopy_3x3_valid[rc, cc]:
+                    continue
+
+                # Valid undisturbed sub-canopy strike-extension halo positive!
+                head_rasters[rank_head][rc, cc] = 1
+                if w_tonnage > tonnage_weights_grid[rc, cc]:
+                    tonnage_weights_grid[rc, cc] = np.float32(w_tonnage)
+                if parent_concession_grid[rc, cc] == 0:
+                    parent_concession_grid[rc, cc] = concession_id
+
+                halo_records.append(
+                    {
+                        "row": rc,
+                        "col": cc,
+                        "origin_row": r0,
+                        "origin_col": c0,
+                        "rim_row": r_rim,
+                        "rim_col": c_rim,
+                        "rim_step_cells": rim_step,
+                        "offset_cells": d,
+                        "direction_sign": int(sign),
+                        "strike_deg": theta_deg,
+                        "coal_rank_head": rank_head,
+                        "coal_rank_name": COAL_HEAD_NAMES[rank_head],
+                        "parent_concession_id": concession_id,
+                        "formation_polygon_id": cand_poly_id,
+                        "origin_formation_polygon_id": origin_poly_id,
+                        "tonnage_weight": w_tonnage,
+                        "ndvi_center": float(ndvi_arr[rc, cc]),
+                    }
+                )
+
+    halo_samples_df = pd.DataFrame(halo_records)
+    if len(halo_samples_df) == 0:
+        halo_samples_df = pd.DataFrame(
+            columns=[
+                "row",
+                "col",
+                "origin_row",
+                "origin_col",
+                "rim_row",
+                "rim_col",
+                "rim_step_cells",
+                "offset_cells",
+                "direction_sign",
+                "strike_deg",
+                "coal_rank_head",
+                "coal_rank_name",
+                "parent_concession_id",
+                "formation_polygon_id",
+                "origin_formation_polygon_id",
+                "tonnage_weight",
+                "ndvi_center",
+            ]
+        )
+
+    return {
+        "label_coal_k0_high_cv": label_k0,
+        "label_coal_k1_med_cv": label_k1,
+        "label_coal_k2_low_cv": label_k2,
+        "coal_k0_high_cv": label_k0,
+        "coal_k1_med_cv": label_k1,
+        "coal_k2_low_cv": label_k2,
+        "coal_tonnage_weights": tonnage_weights_grid,
+        "coal_parent_concession_id": parent_concession_grid,
+        "halo_samples_df": halo_samples_df,
+        "concessions_df": gdf_conc,
+        "rank_offset_config": dict(rank_offsets),
+    }
+
+
+def generate_rim_anchored_coal_labels(
+    concessions: gpd.GeoDataFrame | pd.DataFrame | Path | str | None = None,
+    ndvi: Optional[np.ndarray] = None,
+    active_mine_mask: Optional[np.ndarray] = None,
+    formation_polygon_id: Optional[np.ndarray] = None,
+    sar_bedding_strike_deg: np.ndarray | float | None = None,
+    gfw_forest_disturbance: np.ndarray | None = None,
+    sar_hh_db: np.ndarray | None = None,
+    transform: object | None = None,
+    bounds: tuple[float, float, float, float] = (108.5, -4.5, 119.5, 4.5),
+    canopy_ndvi_min: float = 0.25,
+    disturbance_ndvi_max: float = 0.20,
+    max_rim_search_cells: int = 40,
+    px_size_m: float = 250.0,
+    **kwargs: Any,
+) -> dict[str, object]:
+    """Generate rim-anchored K=3 coal labels parameterized in physical meters (D6, Bug 10).
+
+    Alias for build_k3_coal_rank_targets ensuring physical metric scaling.
+    """
+    return build_k3_coal_rank_targets(
+        concessions=concessions,
+        ndvi=ndvi,
+        active_mine_mask=active_mine_mask,
+        formation_polygon_id=formation_polygon_id,
+        sar_bedding_strike_deg=sar_bedding_strike_deg,
+        gfw_forest_disturbance=gfw_forest_disturbance,
+        sar_hh_db=sar_hh_db,
+        transform=transform,
+        bounds=bounds,
+        canopy_ndvi_min=canopy_ndvi_min,
+        disturbance_ndvi_max=disturbance_ndvi_max,
+        max_rim_search_cells=max_rim_search_cells,
+        px_size_m=px_size_m,
+        **kwargs,
+    )
+
+
+def build_pooled_exploration_footprint(
+    metallic_explored_footprint: np.ndarray,
+    coal_concessions: gpd.GeoDataFrame | pd.DataFrame | None = None,
+    active_mine_mask: np.ndarray | None = None,
+    gfw_forest_disturbance: np.ndarray | None = None,
+    bounds: tuple[float, float, float, float] = (108.5, -4.5, 119.5, 4.5),
+    buffer_cells: Optional[int] = None,
+    buffer_m: float = 2000.0,
+    px_size_m: float = 250.0,
+) -> np.ndarray:
+    """Build pooled exploration intensity target E_pooled in {0, 1} for Pass 2 Propensity Model.
+
+    Pools all documented geological exploration and extraction footprints across Kalimantan:
+      1. K=4 Metallic deposit and exploration footprints (`metallic_explored_footprint`)
+      2. All 850 ESDM coal concessions (`coal_concessions`) buffered by `buffer_m` (default 2,000 m)
+      3. Mapped active mining polygons (`active_mine_mask`) and severe GFW mining disturbances
+    """
+    from scipy.ndimage import binary_dilation
+
+    if buffer_cells is None:
+        buffer_cells = max(1, int(round(float(buffer_m) / max(1.0, float(px_size_m)))))
+
+    base_fp = (np.asarray(metallic_explored_footprint) > 0).copy()
+    H, W = base_fp.shape
+
+    coal_pts = np.zeros((H, W), dtype=bool)
+    if coal_concessions is not None and len(coal_concessions) > 0:
+        lon_min, lat_min, lon_max, lat_max = bounds
+        res_lon = (lon_max - lon_min) / float(W)
+        res_lat = (lat_max - lat_min) / float(H)
+
+        if "row" in coal_concessions.columns and "col" in coal_concessions.columns:
+            rows = coal_concessions["row"].to_numpy(dtype=np.int32)
+            cols = coal_concessions["col"].to_numpy(dtype=np.int32)
+        else:
+            rows = np.floor((lat_max - coal_concessions["latitude"].to_numpy(dtype=np.float64)) / res_lat).astype(np.int32)
+            cols = np.floor((coal_concessions["longitude"].to_numpy(dtype=np.float64) - lon_min) / res_lon).astype(np.int32)
+
+        valid = (rows >= 0) & (rows < H) & (cols >= 0) & (cols < W)
+        coal_pts[rows[valid], cols[valid]] = True
+
+        if buffer_cells > 0 and coal_pts.any():
+            y, x = np.ogrid[-buffer_cells : buffer_cells + 1, -buffer_cells : buffer_cells + 1]
+            struct = (x * x + y * y) <= (buffer_cells * buffer_cells)
+            coal_pts = binary_dilation(coal_pts, structure=struct)
+
+    pooled = base_fp | coal_pts
+    if active_mine_mask is not None:
+        pooled |= np.asarray(active_mine_mask) > 0
+    if gfw_forest_disturbance is not None:
+        pooled |= np.asarray(gfw_forest_disturbance) >= 0.75
+
+    return pooled.astype(np.int8)
+
 

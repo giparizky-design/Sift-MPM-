@@ -21,7 +21,7 @@ import shutil
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, List
 
 logger = logging.getLogger("training_run_manager")
 
@@ -29,6 +29,42 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 OUTPUTS_DIR = ROOT_DIR / "outputs"
 RUN_HISTORY_DIR = OUTPUTS_DIR / "run_history"
 CATALOG_PATH = RUN_HISTORY_DIR / "training_runs_catalog.json"
+
+
+class DiskSpaceError(OSError):
+    """Raised when available disk space is less than the required threshold to prevent [Errno 28]."""
+    pass
+
+
+def check_disk_space(
+    target_path: Union[str, Path] = Path("outputs"),
+    min_free_gb: float = 1.0,
+) -> bool:
+    """Ensure target filesystem volume has sufficient free disk space to prevent [Errno 28].
+
+    Args:
+        target_path: Path or directory on the target filesystem volume.
+        min_free_gb: Minimum free space required in gigabytes (default: 1.0 GB).
+
+    Returns:
+        True if free space is at or above min_free_gb.
+
+    Raises:
+        DiskSpaceError: If available free space is below min_free_gb.
+    """
+    p = Path(target_path).resolve()
+    # Resolve closest existing ancestor
+    while not p.exists() and p.parent != p:
+        p = p.parent
+
+    total, used, free = shutil.disk_usage(p)
+    free_gb = free / (1024 ** 3)
+    if free_gb < min_free_gb:
+        raise DiskSpaceError(
+            f"Pre-flight disk space check failed on '{p}': {free_gb:.2f} GB free, "
+            f"minimum required is {min_free_gb:.2f} GB. Aborting to prevent [Errno 28] No space left on device."
+        )
+    return True
 
 
 def _get_utc_timestamp() -> str:
@@ -57,6 +93,121 @@ def save_runs_catalog(catalog: dict[str, Any]) -> None:
     tmp_path = CATALOG_PATH.with_suffix(".tmp")
     tmp_path.write_text(json.dumps(catalog, indent=2), encoding="utf-8")
     tmp_path.replace(CATALOG_PATH)
+
+
+def prune_historical_runs(
+    region_name: str,
+    max_keep_runs: int = 2,
+    base_dir: Union[Path, str] = Path("outputs/run_history"),
+) -> list[Path]:
+    """Prune old run directories in base_dir / region_name.lower() retaining at most max_keep_runs.
+
+    Sorts historical runs chronologically descending, deletes older directories via
+    shutil.rmtree, and cleans up purged run records from training_runs_catalog.json.
+
+    Args:
+        region_name: Name of region (e.g. "BORNEO", "EAST_KALIMANTAN").
+        max_keep_runs: Number of most recent runs to keep (default: 2).
+        base_dir: Base directory containing regional run history subdirectories.
+
+    Returns:
+        List of Path objects for pruned directories.
+    """
+    p_base = Path(base_dir)
+    # If base_dir matches default Path("outputs/run_history") or relative path,
+    # use RUN_HISTORY_DIR so tests monkeypatching RUN_HISTORY_DIR are honored.
+    if p_base == Path("outputs/run_history") or p_base == Path("outputs") / "run_history":
+        history_base = RUN_HISTORY_DIR
+    else:
+        history_base = p_base
+
+    reg_clean = region_name.lower().strip()
+    history_region_dir = history_base / reg_clean
+    if not history_region_dir.exists():
+        return []
+
+    # Find all run subdirectories
+    run_dirs = [d for d in history_region_dir.iterdir() if d.is_dir() and not d.name.startswith(".")]
+
+    def _sort_key(p: Path) -> tuple[float, str]:
+        try:
+            mtime = p.stat().st_mtime
+        except Exception:
+            mtime = 0.0
+        return (mtime, p.name)
+
+    # Sort descending: newest runs first
+    run_dirs.sort(key=_sort_key, reverse=True)
+
+    pruned_paths: list[Path] = []
+    if len(run_dirs) > max_keep_runs:
+        to_prune = run_dirs[max_keep_runs:]
+
+        pruned_run_ids: set[str] = set()
+        pruned_abs_strs: set[str] = set()
+        pruned_rel_strs: set[str] = set()
+
+        for d in to_prune:
+            resolved_p = d.resolve()
+            pruned_abs_strs.add(str(resolved_p))
+            pruned_abs_strs.add(str(d))
+            try:
+                pruned_rel_strs.add(str(d.relative_to(ROOT_DIR)))
+            except Exception:
+                pass
+            try:
+                pruned_rel_strs.add(str(resolved_p.relative_to(ROOT_DIR.resolve())))
+            except Exception:
+                pass
+
+            manifest_f = d / "manifest.json"
+            if manifest_f.exists():
+                try:
+                    m = json.loads(manifest_f.read_text(encoding="utf-8"))
+                    if "run_id" in m:
+                        pruned_run_ids.add(m["run_id"])
+                except Exception:
+                    pass
+
+            logger.info("Pruning obsolete historical training run: %s", d)
+            shutil.rmtree(d, ignore_errors=True)
+            pruned_paths.append(d)
+
+        # Synchronize catalog: locate catalog file in history_base or CATALOG_PATH
+        catalog_targets: list[Path] = []
+        if (history_base / "training_runs_catalog.json").exists():
+            catalog_targets.append(history_base / "training_runs_catalog.json")
+        if CATALOG_PATH.exists() and CATALOG_PATH not in catalog_targets:
+            catalog_targets.append(CATALOG_PATH)
+
+        for cat_p in catalog_targets:
+            try:
+                cat = json.loads(cat_p.read_text(encoding="utf-8"))
+                runs_before = len(cat.get("runs", []))
+
+                def _is_pruned(r: dict[str, Any]) -> bool:
+                    if r.get("run_id") in pruned_run_ids:
+                        return True
+                    r_dir = r.get("run_dir")
+                    if r_dir:
+                        p_r = Path(r_dir)
+                        if str(p_r) in pruned_abs_strs or str(p_r.resolve()) in pruned_abs_strs or p_r in to_prune:
+                            return True
+                    r_rel = r.get("relative_path")
+                    if r_rel and (str(r_rel) in pruned_rel_strs or any(str(r_rel).endswith(d.name) for d in to_prune)):
+                        return True
+                    return False
+
+                cat["runs"] = [r for r in cat.get("runs", []) if not _is_pruned(r)]
+                if len(cat["runs"]) != runs_before:
+                    cat["updated_at"] = datetime.now(timezone.utc).isoformat()
+                    tmp_p = cat_p.with_suffix(".tmp")
+                    tmp_p.write_text(json.dumps(cat, indent=2), encoding="utf-8")
+                    tmp_p.replace(cat_p)
+            except Exception as e:
+                logger.warning("Failed to update catalog at %s: %s", cat_p, e)
+
+    return pruned_paths
 
 
 def archive_existing_run(
@@ -93,6 +244,9 @@ def archive_existing_run(
         logger.info("Skipping archival for '%s': prior run directory lacks completed maps or summary.", region_name)
         return None
 
+    # Pre-flight disk space check before creating archives (R5.3)
+    check_disk_space(RUN_HISTORY_DIR, min_free_gb=1.0)
+
     timestamp = _get_utc_timestamp()
     reg_clean = region_name.lower().strip()
     run_id = f"RUN_{region_name.upper()}_{timestamp}"
@@ -116,16 +270,23 @@ def archive_existing_run(
 
     # Copy targets directory
     if (out_p / "targets").exists():
-        shutil.copytree(out_p / "targets", archive_dir / "targets", dirs_exist_ok=True)
+        shutil.copytree(out_p / "targets", archive_dir / "targets", dirs_exist_ok=True, symlinks=True, ignore_dangling_symlinks=True)
 
     # Copy maps directory
     if maps_dir.exists():
-        shutil.copytree(maps_dir, archive_dir / "maps", dirs_exist_ok=True)
+        shutil.copytree(maps_dir, archive_dir / "maps", dirs_exist_ok=True, symlinks=True, ignore_dangling_symlinks=True)
 
-    # Copy models directory (preserves model checkpoints for comparison and rollback)
+    # Copy models directory (preserves model checkpoints for comparison and rollback, excluding heavy .pt fold checkpoints)
     models_dir = out_p / "models"
     if models_dir.exists():
-        shutil.copytree(models_dir, archive_dir / "models", dirs_exist_ok=True)
+        shutil.copytree(
+            models_dir,
+            archive_dir / "models",
+            dirs_exist_ok=True,
+            symlinks=True,
+            ignore_dangling_symlinks=True,
+            ignore=shutil.ignore_patterns("*.pt"),
+        )
 
     # Extract detected ore categories from site cards if available
     ore_categories: list[str] = []
@@ -168,6 +329,9 @@ def archive_existing_run(
     catalog = load_runs_catalog()
     catalog["runs"].append(manifest)
     save_runs_catalog(catalog)
+
+    # Automatically prune older historical runs (R5.1)
+    prune_historical_runs(region_name=region_name, max_keep_runs=2, base_dir=RUN_HISTORY_DIR)
 
     return manifest
 
@@ -249,9 +413,19 @@ def list_training_runs(region_name: Optional[str] = None) -> list[dict[str, Any]
     runs = catalog.get("runs", [])
     if region_name:
         reg_up = region_name.upper()
-        kal_regions = ("BORNEO", "KALIMANTAN", "EAST_KALIMANTAN", "KALTIM", "KALIMANTAN_TIMUR")
-        if reg_up in kal_regions:
-            runs = [r for r in runs if r.get("region") in kal_regions]
+        kal_regions = (
+            "BORNEO",
+            "KALIMANTAN",
+            "EAST_KALIMANTAN",
+            "KALTIM",
+            "KALIMANTAN_TIMUR",
+            "HOTSPOT_EAST_KALIMANTAN_50M",
+        )
+        if reg_up in kal_regions or reg_up.startswith("HOTSPOT_EK_"):
+            runs = [
+                r for r in runs
+                if r.get("region") in kal_regions or (r.get("region") or "").startswith("HOTSPOT_EK_")
+            ]
         else:
             runs = [r for r in runs if r.get("region") == reg_up]
     return sorted(runs, key=lambda r: r.get("created_at") or r.get("archived_at") or "", reverse=True)

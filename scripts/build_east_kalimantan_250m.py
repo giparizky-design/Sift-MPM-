@@ -11,10 +11,12 @@ import numpy as np
 import pandas as pd
 import rasterio
 from rasterio.transform import Affine
-from scipy.ndimage import zoom
+from scipy.ndimage import distance_transform_edt, gaussian_filter, zoom
 from pathlib import Path
 
 from src.features.feature_stack import FeatureStack
+from src.features.geophysics import load_and_compute_real_gravity_channels
+from src.features.structural import plan_curvature
 from src.labels.borneo_labels import build_k4_deposit_targets, rasterize_borneo_k4_labels
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -26,14 +28,14 @@ DEST_DIR = ROOT_DIR / "data" / "east_kalimantan" / "processed"
 
 
 def main() -> None:
-    logger.info("Loading 500m East Kalimantan feature stack...")
-    fs_500 = joblib.load(SRC_DIR / "feature_stack.joblib")
-    feature_names = fs_500.feature_names
-    C, H_500, W_500 = fs_500.array.shape
-    logger.info("Found %d channels on %dx%d 500m grid", C, H_500, W_500)
+    logger.info("Loading 250m/500m East Kalimantan feature stack...")
+    fs_in = joblib.load(SRC_DIR / "feature_stack.joblib")
+    feature_names = list(fs_in.feature_names)
+    C, H_in, W_in = fs_in.array.shape
+    logger.info("Found %d channels on %dx%d grid", C, H_in, W_in)
 
-    H_250 = H_500 * 2  # 2400
-    W_250 = W_500 * 2  # 2000
+    H_250 = 2400
+    W_250 = 2000
     new_transform = Affine(0.0025, 0.0, 114.50, 0.0, -0.0025, 3.20)
     profile_250 = {
         "driver": "GTiff",
@@ -46,15 +48,54 @@ def main() -> None:
         "transform": new_transform,
     }
 
-    logger.info("Interpolating 21 physical channels to 250m (%dx%d)...", H_250, W_250)
-    arr_250 = np.zeros((C, H_250, W_250), dtype=np.float32)
-    for ch in range(C):
-        arr_250[ch] = zoom(fs_500.array[ch], 2.0, order=1)
-        logger.info(" - Channel %2d/%2d: %s [min=%.2f, max=%.2f]", ch + 1, C, feature_names[ch], np.nanmin(arr_250[ch]), np.nanmax(arr_250[ch]))
+    if (H_in, W_in) == (H_250, W_250):
+        arr_250 = fs_in.array.astype(np.float32, copy=True)
+    else:
+        logger.info("Interpolating %d physical channels to 250m (%dx%d)...", C, H_250, W_250)
+        arr_250 = np.zeros((C, H_250, W_250), dtype=np.float32)
+        for ch in range(C):
+            arr_250[ch] = zoom(fs_in.array[ch], (H_250 / H_in, W_250 / W_in), order=1)
 
     valid_mask = np.isfinite(arr_250).all(axis=0) & (arr_250[0] > -9000.0)
     valid_count = int(valid_mask.sum())
     logger.info("Valid land cells at 250m: %d (%.1f%% of grid)", valid_count, (valid_count / (H_250 * W_250)) * 100.0)
+
+    # Recompute Evans (1980) plan curvature and real satellite Bouguer gravity / Parker-Oldenburg Moho
+    idx_dem = feature_names.index("dem_elevation")
+    dem_clean = np.where(valid_mask, arr_250[idx_dem], 0.0).astype(np.float32)
+
+    logger.info("Computing Evans (1980) plan curvature and topographic lineament distance at 250m...")
+    f_curv = plan_curvature(dem_clean, resolution_m=250.0).astype(np.float32)
+    curv_smooth = gaussian_filter(np.abs(f_curv), sigma=1.2)
+    lin_mask = curv_smooth >= np.percentile(curv_smooth[valid_mask], 86)
+    f_dist_topo_lin_km = (distance_transform_edt(~lin_mask) * 0.25).astype(np.float32)
+
+    logger.info("Ingesting real satellite gravity (Sandwell & Smith v33.1) and Parker-Oldenburg Moho inversion...")
+    f_bouguer, f_crustal, f_moho_step = load_and_compute_real_gravity_channels(
+        dem=dem_clean,
+        dst_crs="EPSG:4326",
+        dst_transform=new_transform,
+        res_m=250.0,
+    )
+
+    channel_updates = {
+        "dem_plan_curvature": f_curv,
+        "dist_topo_lineaments_km": f_dist_topo_lin_km,
+        "bouguer_gravity_mgal": f_bouguer,
+        "crustal_thickness_km": f_crustal,
+        "moho_gravity_step_mgal_km": f_moho_step,
+    }
+    for ch_name, ch_arr in channel_updates.items():
+        if ch_name in feature_names:
+            ch_idx = feature_names.index(ch_name)
+            arr_ch = np.where(valid_mask, ch_arr, np.nan).astype(np.float32)
+            arr_250[ch_idx] = arr_ch
+            logger.info(
+                " - Updated %s [min=%.4f, max=%.4f]",
+                ch_name,
+                float(np.nanmin(arr_ch)),
+                float(np.nanmax(arr_ch)),
+            )
 
     # 1. Save 250m Feature Stack
     new_stack_profile = dict(profile_250)

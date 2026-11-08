@@ -41,6 +41,7 @@ if str(ROOT) not in sys.path:
 
 from scripts.run_seven_pass_training import run_region_seven_pass
 from src.features.feature_stack import FeatureStack, flatten_to_dataframe
+from src.features.geophysics import load_and_compute_real_gravity_channels
 from src.features.structural import (
     aspect,
     dilation_tendency,
@@ -297,15 +298,16 @@ def build_clean_region_cube(
     f_dist_volcano_km = min_v_dist_km.astype(np.float32)
     f_volcanic_arc_halo = np.exp(-(f_dist_volcano_km ** 2) / (2.0 * (35.0 ** 2))).astype(np.float32)
 
-    # 5. Bouguer Gravity Anomaly & Subsurface 30 km Bouguer Moho Inversion
-    # Replaces synthetic Airy-Heiskanen DEM formula (30 + dem * 0.0065) with 30 km low-pass Bouguer slab inversion
-    f_bouguer_mgal = (
-        np.where(dem >= 0, -0.1119 * dem, -0.068 * dem)
-        + 35.0 * np.exp(-f_dist_plate_km / 120.0)
-    ).astype(np.float32)
-    bouguer_30km = gaussian_filter(f_bouguer_mgal, sigma=30000.0 / res_m)
-    f_crustal_thickness_km = np.clip(32.0 - (bouguer_30km / 16.76), 18.0, 45.0).astype(np.float32)
-    f_moho_gravity_step = gravity_gradient_step(f_bouguer_mgal, resolution_m=res_m).astype(np.float32)
+    # 5. Real Satellite Bouguer Gravity Anomaly & Parker-Oldenburg Moho Inversion
+    dst_transform = from_bounds(min_lon, min_lat, max_lon, max_lat, W, H)
+    f_bouguer_mgal, f_crustal_thickness_km, f_moho_gravity_step = (
+        load_and_compute_real_gravity_channels(
+            dem=dem,
+            dst_crs="EPSG:4326",
+            dst_transform=dst_transform,
+            res_m=res_m,
+        )
+    )
 
     # 6. Regolith Cover & Bedrock Outcrop Exposure
     land_elev_pos = np.maximum(dem, 0.0)

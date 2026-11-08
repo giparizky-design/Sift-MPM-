@@ -46,6 +46,13 @@ import numpy as np
 import pandas as pd
 import rasterio.transform
 
+from src.evaluation.spatial_cv import (
+    BufferedSpatialBlockKFold,
+    assemble_oof_prediction_cube,
+    compute_physical_buffer_m,
+    spatial_buffered_block_kfold,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -485,3 +492,17 @@ def enforce_cluster_integrity(
 
     logger.info("enforce_cluster_integrity: unified %d positive clusters", n_clusters)
     return out
+
+
+__all__ = [
+    "assign_spatial_blocks",
+    "spatial_block_kfold",
+    "ensure_camp_integrity",
+    "reserve_blind_holdout",
+    "blind_holdout_masks",
+    "enforce_cluster_integrity",
+    "spatial_buffered_block_kfold",
+    "BufferedSpatialBlockKFold",
+    "compute_physical_buffer_m",
+    "assemble_oof_prediction_cube",
+]

@@ -523,24 +523,53 @@ def compute_inverse_propensity_weights(
 # ---------------------------------------------------------------------------
 
 
+CANONICAL_PROPENSITY_COLS: list[str] = [
+    "dist_roads",
+    "dist_rivers",
+    "dist_ports",
+]
+
+FORBIDDEN_PROPENSITY_PATTERNS: tuple[str, ...] = (
+    "slope",
+    "elevation",
+    "dem",
+    "roughness",
+    "ruggedness",
+    "haul_road",
+    "haul_roads",
+    "disturbance",
+    "gfw",
+    "outcrop",
+    "regolith",
+)
+
+
 def fit_pooled_exploration_propensity(
-    accessibility_features: np.ndarray,
+    accessibility_features: Union[np.ndarray, Any],
     explored_footprint: np.ndarray,
+    feature_names: Optional[list[str]] = None,
     min_propensity: float = 0.05,
     max_propensity: float = 1.0,
     model_type: str = "logistic",
     random_state: int = 42,
 ) -> np.ndarray:
-    """Fit a single pooled observation propensity model on the exploration footprint.
+    """Fit a single pooled observation propensity model on pre-mining infrastructure (D10).
 
-    Enforces Task 1.3 Rule 1:
+    Enforces D10 & Reconciled Engineering Rule 1:
       Fits a single logistic or random forest propensity estimator on the pooled
-      exploration footprint (N ≈ 1,800) using accessibility covariates (distance to
-      navigable rivers, road tracks, coast, and DEM slope); clips predictions to [0.05, 1.0].
+      exploration footprint using pre-mining regional infrastructure and hydrological
+      access covariates:
+        - Distance to public road network ('dist_roads')
+        - Distance to major navigable rivers ('dist_rivers')
+        - Distance to coastal shipping ports ('dist_ports')
+      Strictly excludes topographic slope, elevation, roughness, mining clearance,
+      and post-discovery haul roads to prevent causal confounding and post-treatment bias.
+      Clips predictions to [0.05, 1.0].
 
     Args:
-        accessibility_features: 2-D array of shape (N, n_covariates).
+        accessibility_features: 2-D array or DataFrame of shape (N, n_covariates).
         explored_footprint: 1-D binary array of shape (N,) where 1 denotes explored.
+        feature_names: Optional list of covariate names if passing a raw NumPy array.
         min_propensity: Floor on observation propensity (default 0.05).
         max_propensity: Upper cap on observation propensity (default 1.0).
         model_type: 'logistic' or 'rf' (Random Forest). Defaults to 'logistic'.
@@ -556,7 +585,29 @@ def fit_pooled_exploration_propensity(
     if min_propensity <= 0.0 or min_propensity >= 1.0:
         raise ValueError(f"min_propensity must be in (0, 1), got {min_propensity}")
 
-    X_acc = np.asarray(accessibility_features, dtype=np.float64)
+    # Resolve dataframe columns or feature names to exclude forbidden post-discovery features
+    if hasattr(accessibility_features, "columns"):
+        col_names = [str(c) for c in accessibility_features.columns]
+        # Filter columns
+        allowed_cols = [
+            c for c in col_names
+            if not any(f in c.lower() for f in FORBIDDEN_PROPENSITY_PATTERNS)
+        ]
+        if not allowed_cols:
+            allowed_cols = col_names
+        X_acc = np.asarray(accessibility_features[allowed_cols], dtype=np.float64)
+    elif feature_names is not None:
+        valid_indices = [
+            i for i, c in enumerate(feature_names)
+            if not any(f in str(c).lower() for f in FORBIDDEN_PROPENSITY_PATTERNS)
+        ]
+        if not valid_indices:
+            valid_indices = list(range(len(feature_names)))
+        raw_arr = np.asarray(accessibility_features, dtype=np.float64)
+        X_acc = raw_arr[:, valid_indices] if raw_arr.ndim == 2 else raw_arr
+    else:
+        X_acc = np.asarray(accessibility_features, dtype=np.float64)
+
     if X_acc.ndim == 1:
         X_acc = X_acc[:, np.newaxis]
     if X_acc.ndim != 2:
@@ -718,35 +769,41 @@ def compute_k4_exclusion_mask(
     return M
 
 
-def compute_asymmetric_head_weights(
+def compute_asymmetric_pu_weights(
     labels_k: np.ndarray,
     e_logistics: np.ndarray,
-    exclusion_mask_k: np.ndarray,
+    exclusion_mask_k: Optional[np.ndarray] = None,
     min_propensity: float = 0.05,
+    hajek_normalize: bool = True,
 ) -> np.ndarray:
-    """Compute asymmetric 1D sample weights w_k for Head k.
+    """Compute Hájek self-normalized positive weights and neutral unlabeled weights (D3, D10).
 
-    Enforces Task 1.3 Rule 3 and Reconciled Engineering Rule 5:
-      - Positive cells (label_k == 1): receive inverse propensity weighting:
-            w_k[pos_mask] = 1.0 / np.clip(e_logistics[pos_mask], 0.05, 1.0)
-      - Unlabeled cells (label_k == -1): receive r_k* halo mask * exploration-confidence weight:
-            w_k[unl_mask] = M[unl_mask, k] * (0.25 + 0.75 * e_logistics[unl_mask])
-
-    Eliminates the double-division trap where unexplored jungle is penalised 20x relative
-    to roads.
+    Enforces D3 & Reconciled Engineering Rule 5 (eliminates SAR/SCAR double-correction):
+      - Positive cells (label_k == 1):
+            w_tilde_i = (1.0 / e(x_i)) / mean_{j in P_k}(1.0 / e(x_j))
+        ensuring E[w_tilde_i] = 1.0 over P_k when hajek_normalize is True.
+      - Unlabeled cells (label_k == -1 or 0):
+            w_unlab(x) = M[i, k] * 1.0
+        Outside exclusion zones (M == 1.0): neutral weight 1.0 (no double-division).
+        Inside exclusion zones (M == 0.0): weight 0.0 (masked from negative gradient).
 
     Args:
-        labels_k: 1-D array of shape (N,) with labels in {1, -1}.
-        e_logistics: 1-D array of shape (N,) of observation propensities e(s).
-        exclusion_mask_k: 1-D array of shape (N,) representing column k of M in {0.0, 1.0}.
+        labels_k: 1-D array of shape (N,) with labels in {1, -1, 0}.
+        e_logistics: 1-D array of shape (N,) of observation propensities e(s) in [0.05, 1.0].
+        exclusion_mask_k: Optional 1-D array of shape (N,) of exclusion buffer mask in {0.0, 1.0}.
         min_propensity: Floor on observation propensity for positive weighting (default 0.05).
+        hajek_normalize: Whether to apply Hájek self-normalization on positives (default True).
 
     Returns:
         1-D float64 array w_k of shape (N,).
     """
     labels = np.asarray(labels_k).ravel()
     e_prop = np.asarray(e_logistics, dtype=np.float64).ravel()
-    m_mask = np.asarray(exclusion_mask_k, dtype=np.float64).ravel()
+    m_mask = (
+        np.asarray(exclusion_mask_k, dtype=np.float64).ravel()
+        if exclusion_mask_k is not None
+        else np.ones_like(labels, dtype=np.float64)
+    )
 
     if len(labels) != len(e_prop) or len(labels) != len(m_mask):
         raise ValueError(
@@ -755,15 +812,48 @@ def compute_asymmetric_head_weights(
 
     w_k = np.zeros(len(labels), dtype=np.float64)
     pos_mask = (labels == 1)
-    unl_mask = (labels == -1)
+    unl_mask = (labels == -1) | (labels == 0)
 
-    # Positive cells (label_k == 1): inverse propensity weighting
-    w_k[pos_mask] = 1.0 / np.clip(e_prop[pos_mask], float(min_propensity), 1.0)
-
-    # Unlabeled cells (label_k == -1): r_k* halo masked + exploration-confidence weighted
-    w_k[unl_mask] = m_mask[unl_mask] * (0.25 + 0.75 * e_prop[unl_mask])
+    # Positive cells: inverse propensity
+    inv_e_pos = 1.0 / np.clip(e_prop[pos_mask], float(min_propensity), 1.0)
+    if hajek_normalize:
+        mean_inv_e = float(np.mean(inv_e_pos)) if len(inv_e_pos) > 0 else 1.0
+        w_k[pos_mask] = inv_e_pos / max(mean_inv_e, 1e-12)
+        # Unlabeled cells: neutral weights outside exclusion zone (eliminates SAR double-correction)
+        w_k[unl_mask] = m_mask[unl_mask] * 1.0
+    else:
+        w_k[pos_mask] = inv_e_pos
+        w_k[unl_mask] = m_mask[unl_mask] * (0.25 + 0.75 * e_prop[unl_mask])
 
     return w_k
+
+
+def compute_asymmetric_head_weights(
+    labels_k: np.ndarray,
+    e_logistics: np.ndarray,
+    exclusion_mask_k: np.ndarray,
+    min_propensity: float = 0.05,
+    hajek_normalize: bool = False,
+) -> np.ndarray:
+    """Compute asymmetric 1D sample weights w_k for Head k (Phase 1 legacy compatibility).
+
+    Args:
+        labels_k: 1-D array of shape (N,) with labels in {1, -1}.
+        e_logistics: 1-D array of shape (N,) of observation propensities e(s).
+        exclusion_mask_k: 1-D array of shape (N,) representing column k of M in {0.0, 1.0}.
+        min_propensity: Floor on observation propensity for positive weighting (default 0.05).
+        hajek_normalize: Whether to apply Hájek self-normalization (default False for Phase 1 tests).
+
+    Returns:
+        1-D float64 array w_k of shape (N,).
+    """
+    return compute_asymmetric_pu_weights(
+        labels_k=labels_k,
+        e_logistics=e_logistics,
+        exclusion_mask_k=exclusion_mask_k,
+        min_propensity=min_propensity,
+        hajek_normalize=hajek_normalize,
+    )
 
 
 class OUTMOGCGate:
@@ -808,9 +898,18 @@ class OUTMOGCGate:
         from sklearn.mixture import GaussianMixture
         from scipy.stats import chi2
 
-        X = np.asarray(X_positives, dtype=np.float64)
+        X = np.asarray(X_positives, dtype=np.float64).copy()
         if X.ndim != 2:
             raise ValueError(f"X_positives must be 2-D, got shape {X.shape}")
+
+        if np.isnan(X).any():
+            meds = np.nanmedian(X, axis=0)
+            meds = np.where(np.isnan(meds), 0.0, meds)
+            nan_r, nan_c = np.where(np.isnan(X))
+            X[nan_r, nan_c] = meds[nan_c]
+            self.feature_medians_ = meds
+        else:
+            self.feature_medians_ = np.nanmedian(X, axis=0)
 
         n_samples, n_features = X.shape
         actual_pca_comp = max(1, min(self.n_pca_components, n_samples - 1, n_features))
@@ -841,7 +940,11 @@ class OUTMOGCGate:
         if self.pca is None or self.gmm is None:
             raise RuntimeError("OUTMOGCGate is not fitted yet. Call fit() first.")
 
-        X_arr = np.asarray(X, dtype=np.float64)
+        X_arr = np.asarray(X, dtype=np.float64).copy()
+        if np.isnan(X_arr).any() and hasattr(self, "feature_medians_"):
+            nan_r, nan_c = np.where(np.isnan(X_arr))
+            X_arr[nan_r, nan_c] = self.feature_medians_[nan_c]
+
         Z = self.pca.transform(X_arr)
 
         d2_components = []

@@ -39,8 +39,9 @@ for new survey acquisition.
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import torch
@@ -48,15 +49,23 @@ import torch.nn as nn
 from scipy.ndimage import zoom
 from torch.utils.data import DataLoader, TensorDataset
 
+from src.models.fusion import precision_weighted_log_odds_fusion
+
 logger = logging.getLogger(__name__)
 
 
 def get_best_device() -> torch.device:
-    """Select the best available compute device (CUDA -> Apple Silicon MPS -> CPU)."""
+    """Select the best available compute device (CUDA -> CPU / MPS).
+
+    Allows override via SIFT_DEVICE environment variable ('cpu', 'cuda', 'mps').
+    Defaults to CPU on macOS to eliminate Apple Silicon Metal command buffer
+    synchronization stalls during micro-batch on-the-fly patch inference.
+    """
+    dev_env = os.environ.get("SIFT_DEVICE", "").strip().lower()
+    if dev_env in ("cpu", "cuda", "mps"):
+        return torch.device(dev_env)
     if torch.cuda.is_available():
         return torch.device("cuda")
-    if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-        return torch.device("mps")
     return torch.device("cpu")
 
 
@@ -318,17 +327,76 @@ class SpatialAttention(nn.Module):
         return x * scale
 
 
+class ASPPBottleneck(nn.Module):
+    """Resolution-adaptive 4-branch Atrous Spatial Pyramid Pooling (ASPP) bottleneck.
+
+    Applies parallel dilations corresponding to physical radii [0.5, 1.5, 3.0, 6.0] km:
+        dilation = max(1, round(radius_m / (16.0 * px_size_m)))
+    """
+
+    def __init__(
+        self,
+        in_channels: int = 1024,
+        out_channels: int = 1024,
+        px_size_m: float = 250.0,
+        dropout_p: float = 0.3,
+    ) -> None:
+        super().__init__()
+        radii_m = [500.0, 1500.0, 3000.0, 6000.0]
+        bottleneck_cell_m = 16.0 * float(px_size_m)
+        dilations = [max(1, int(round(r / bottleneck_cell_m))) for r in radii_m]
+        d1, d2, d3, d4 = dilations[0], dilations[1], dilations[2], dilations[3]
+        mid = out_channels // 4
+
+        self.b0 = nn.Sequential(
+            nn.Conv2d(in_channels, mid, kernel_size=1, bias=False),
+            nn.GroupNorm(num_groups=16, num_channels=mid),
+            nn.GELU(),
+        )
+        self.b1 = nn.Sequential(
+            nn.Conv2d(in_channels, mid, kernel_size=3, padding=d1, dilation=d1, bias=False),
+            nn.GroupNorm(num_groups=16, num_channels=mid),
+            nn.GELU(),
+        )
+        self.b2 = nn.Sequential(
+            nn.Conv2d(in_channels, mid, kernel_size=3, padding=d2, dilation=d2, bias=False),
+            nn.GroupNorm(num_groups=16, num_channels=mid),
+            nn.GELU(),
+        )
+        self.b3 = nn.Sequential(
+            nn.Conv2d(in_channels, mid, kernel_size=3, padding=d3, dilation=d3, bias=False),
+            nn.GroupNorm(num_groups=16, num_channels=mid),
+            nn.GELU(),
+        )
+        self.project = nn.Sequential(
+            nn.Conv2d(mid * 4, out_channels, kernel_size=1, bias=False),
+            nn.GroupNorm(num_groups=32, num_channels=out_channels),
+            nn.GELU(),
+            nn.Dropout2d(p=dropout_p),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out0 = self.b0(x)
+        out1 = self.b1(x)
+        out2 = self.b2(x)
+        out3 = self.b3(x)
+        out = torch.cat([out0, out1, out2, out3], dim=1)
+        return self.project(out)
+
+
 class DistrictDAEUNet(nn.Module):
     """District-scale Deep Autoencoder U-Net (DAE-U-Net) with K=4 heads.
 
-    Enforces Task 2.1:
+    Enforces Task 2.1 & v4.0 upgrades (D4, D6, Bug 8):
       1. Evaluated on decimated 250 m or 500 m spatial grids to span 16-32 km
          district-scale plumbing within a 16 GB RAM budget.
       2. 15% random-drop channel augmentation during training.
-      3. Unsupervised Deep Autoencoder (DAE) Reconstruction Decoder Head connected
+      3. Resolution-adaptive 4-branch ASPP bottleneck ([0.5, 1.5, 3.0, 6.0] km).
+      4. Unsupervised Deep Autoencoder (DAE) Reconstruction Decoder Head connected
          strictly to the bottleneck WITHOUT skip connections (preventing identity copying).
-      4. K=4 spatial attention heads with spatial attention gating.
-      5. Generates pixel-wise reconstruction error (dae_recon_err) and spatial context
+      5. K=4 spatial attention heads with spatial attention gating and output bias
+         initialization to logit(pi_k).
+      6. Generates pixel-wise reconstruction error (dae_recon_err) and spatial context
          embeddings (unet_ctx_*).
     """
 
@@ -338,11 +406,15 @@ class DistrictDAEUNet(nn.Module):
         n_classes: int = 4,
         dropout_p: float = 0.3,
         channel_drop_p: float = 0.15,
+        px_size_m: float = 250.0,
+        pi_p: Union[float, Sequence[float]] = 0.05,
     ) -> None:
         super().__init__()
         self.in_channels = in_channels
         self.n_classes = n_classes
         self.channel_drop_p = channel_drop_p
+        self.px_size_m = float(px_size_m)
+        self.pi_p = pi_p
 
         # ── Encoder ──────────────────────────────────────────────────────────
         self.inc = DoubleConv(in_channels, 64)
@@ -350,8 +422,9 @@ class DistrictDAEUNet(nn.Module):
         self.down2 = Down(128, 256)
         self.down3 = Down(256, 512)
 
-        # ── Bottleneck ───────────────────────────────────────────────────────
+        # ── Bottleneck with Resolution-Adaptive 4-Branch ASPP (D6, Bug 8) ─────
         self.down4 = Down(512, 1024)
+        self.aspp = ASPPBottleneck(1024, 1024, px_size_m=self.px_size_m, dropout_p=dropout_p)
         self.bottleneck_drop = nn.Dropout2d(p=dropout_p)
 
         # ── Supervised Decoder (K=4 heads with skip connections & spatial attention) ──
@@ -361,6 +434,19 @@ class DistrictDAEUNet(nn.Module):
         self.up4 = Up(128 + 64, 64)
         self.sa = SpatialAttention(kernel_size=7)
         self.out_heads = nn.Conv2d(64, n_classes, kernel_size=1)
+
+        # Output bias initialization matching logit(pi_k) (D4)
+        if isinstance(pi_p, (int, float)):
+            p_val = float(np.clip(float(pi_p), 1e-4, 1.0 - 1e-4))
+            init_b = float(np.log(p_val / (1.0 - p_val)))
+            nn.init.constant_(self.out_heads.bias, init_b)
+        else:
+            p_seq = list(pi_p)
+            for k in range(n_classes):
+                pk = float(p_seq[k]) if k < len(p_seq) else float(p_seq[0])
+                pk = float(np.clip(pk, 1e-4, 1.0 - 1e-4))
+                init_b = float(np.log(pk / (1.0 - pk)))
+                nn.init.constant_(self.out_heads.bias[k], init_b)
         self.sigmoid = nn.Sigmoid()
 
         # ── Unsupervised DAE Reconstruction Decoder (Bottleneck ONLY, NO skips) ─
@@ -409,7 +495,9 @@ class DistrictDAEUNet(nn.Module):
         x2 = self.down1(x1)
         x3 = self.down2(x2)
         x4 = self.down3(x3)
-        x5 = self.bottleneck_drop(self.down4(x4))
+
+        # Bottleneck with ASPP multi-scale receptive field (D6, Bug 8)
+        x5 = self.aspp(self.down4(x4))
 
         # Supervised Decoder (K=4 heads with skip connections & spatial attention)
         d1 = self.up1(x5, x4)
@@ -436,6 +524,7 @@ def decimate_spatial_grid(
     grid: np.ndarray,
     target_res_m: float = 250.0,
     native_res_m: float = 50.0,
+    order: int = 1,
 ) -> np.ndarray:
     """Decimate spatial feature grid to 250 m or 500 m prior to neural evaluation.
 
@@ -443,6 +532,8 @@ def decimate_spatial_grid(
         grid: 2-D, 3-D, or 4-D numpy array.
         target_res_m: Decimated resolution in metres (e.g. 250.0 or 500.0).
         native_res_m: Native resolution in metres (e.g. 50.0).
+        order: Interpolation order (1 = bilinear for continuous features,
+               0 = nearest-neighbor for categorical fold IDs / binary labels).
 
     Returns:
         Decimated grid array.
@@ -451,15 +542,20 @@ def decimate_spatial_grid(
     if np.isclose(scale, 1.0):
         return grid
 
-    arr = np.asarray(grid, dtype=np.float32)
+    arr = np.asarray(grid, dtype=np.int32 if order == 0 and np.issubdtype(np.asarray(grid).dtype, np.integer) else np.float32)
     if arr.ndim == 2:
-        return zoom(arr, zoom=scale, order=1)
+        out = zoom(arr, zoom=scale, order=order, mode="nearest")
     elif arr.ndim == 3:
-        return zoom(arr, zoom=(1.0, scale, scale), order=1)
+        out = zoom(arr, zoom=(1.0, scale, scale), order=order, mode="nearest")
     elif arr.ndim == 4:
-        return zoom(arr, zoom=(1.0, 1.0, scale, scale), order=1)
+        out = zoom(arr, zoom=(1.0, 1.0, scale, scale), order=order, mode="nearest")
     else:
         raise ValueError(f"Unsupported grid dimension {arr.ndim}")
+    if order == 0 and np.issubdtype(np.asarray(grid).dtype, np.integer):
+        assert set(np.unique(out)).issubset(set(np.unique(grid))), (
+            "FATAL: Interpolated fold IDs detected in decimated categorical grid!"
+        )
+    return out
 
 
 def project_spatial_grid(
@@ -528,14 +624,27 @@ class nnPULoss(nn.Module):
 
     def __init__(
         self,
-        pi_p: float = 0.05,
+        pi_p: Union[float, Sequence[float], torch.Tensor] = 0.05,
         gamma: float = 1.0,
         beta: float = 0.0,
     ) -> None:
         super().__init__()
-        if not (0.0 < pi_p < 1.0):
-            raise ValueError(f"pi_p must be in (0, 1), got {pi_p}")
-        self.pi_p: float = float(pi_p)
+        if isinstance(pi_p, (int, float)):
+            if not (0.0 < float(pi_p) < 1.0):
+                raise ValueError(f"pi_p must be in (0, 1), got {pi_p}")
+            self.pi_p: float = float(pi_p)
+            self.pi_p_list: Optional[list[float]] = None
+        else:
+            if isinstance(pi_p, torch.Tensor):
+                p_list = [float(x) for x in pi_p.detach().cpu().numpy().ravel()]
+            else:
+                p_list = [float(x) for x in pi_p]
+            for p_val in p_list:
+                if not (0.0 < p_val < 1.0):
+                    raise ValueError(f"All per-head priors must be in (0, 1), got {p_val}")
+            self.pi_p: float = float(p_list[0]) if len(p_list) > 0 else 0.05
+            self.pi_p_list: Optional[list[float]] = p_list
+
         self.gamma: float = float(gamma)
         self.beta: float = float(beta)
         self.last_clamped: bool = False
@@ -547,17 +656,17 @@ class nnPULoss(nn.Module):
         targets: torch.Tensor,
         sample_weights: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
-        """Compute nnPU risk loss on sigmoid probabilities ``preds``.
+        """Compute nnPU risk loss independently per class channel k.
 
         Args:
-            preds: Predicted probabilities in $[0, 1]$, shape ``(B, ...)``.
+            preds: Predicted probabilities in $[0, 1]$, shape ``(B, ...)`` or ``(B, K, ...)``.
             targets: Binary/PU labels where ``1`` = positive ($P$) and ``0`` or
                 ``-1`` = unlabeled ($U$), broadcastable to ``preds``.
             sample_weights: Optional inverse propensity weights $w_i = 1 / e(x_i)$,
                 broadcastable to ``preds``.
 
         Returns:
-            Scalar nnPU loss tensor.
+            Scalar nnPU loss tensor averaged across class heads.
         """
         eps = 1e-7
         p = torch.clamp(preds, eps, 1.0 - eps)
@@ -568,52 +677,83 @@ class nnPULoss(nn.Module):
         else:
             w = torch.ones_like(p)
 
-        pos_mask = (t > 0.5).float()
-        unl_mask = 1.0 - pos_mask
+        if p.ndim == 1:
+            n_heads = 1
+            p_heads = [p]
+            t_heads = [t]
+            w_heads = [w]
+        elif p.ndim >= 2:
+            n_heads = p.shape[1]
+            p_heads = [p[:, k] for k in range(n_heads)]
+            t_heads = [t[:, k] for k in range(n_heads)]
+            w_heads = [w[:, k] for k in range(n_heads)]
 
-        # Surrogate loss: binary cross-entropy l(p, +1) = -log(p), l(p, -1) = -log(1 - p)
-        loss_pos = -torch.log(p)
-        loss_neg = -torch.log(1.0 - p)
+        head_losses: list[torch.Tensor] = []
+        clamped_heads: list[bool] = []
+        r_neg_heads: list[float] = []
 
-        pos_denom = torch.clamp(torch.sum(pos_mask * w), min=eps)
-        unl_denom = torch.clamp(torch.sum(unl_mask * w), min=eps)
+        for k in range(n_heads):
+            pk = p_heads[k]
+            tk = t_heads[k]
+            wk = w_heads[k]
 
-        has_pos = torch.sum(pos_mask) > 0
-        has_unl = torch.sum(unl_mask) > 0
+            pos_mask_k = (tk > 0.5).float()
+            unl_mask_k = 1.0 - pos_mask_k
 
-        r_p_plus = (
-            torch.sum(pos_mask * w * loss_pos) / pos_denom
-            if has_pos
-            else torch.zeros((), device=p.device, dtype=p.dtype)
-        )
-        r_p_minus = (
-            torch.sum(pos_mask * w * loss_neg) / pos_denom
-            if has_pos
-            else torch.zeros((), device=p.device, dtype=p.dtype)
-        )
-        r_u_minus = (
-            torch.sum(unl_mask * w * loss_neg) / unl_denom
-            if has_unl
-            else torch.zeros((), device=p.device, dtype=p.dtype)
-        )
+            has_pos_k = (torch.sum(pos_mask_k) > 0)
+            if not has_pos_k:
+                # Bug 3: Mask zero-positive heads from loss updates
+                continue
 
-        r_neg = r_u_minus - self.pi_p * r_p_minus
-        self.last_unlabeled_risk = float(r_neg.detach().cpu().item())
+            pi_k = (
+                self.pi_p_list[k]
+                if (self.pi_p_list is not None and k < len(self.pi_p_list))
+                else self.pi_p
+            )
 
-        if r_neg.item() < -self.beta:
-            self.last_clamped = True
-            clamped_forward = self.pi_p * r_p_plus
-            if self.gamma > 0.0:
-                # Forward value is strictly clamped at pi_p * R_p^+ (>= 0),
-                # while backward gradient is -gamma * d(r_neg)/d(theta) (gradient reversal)
-                reversed_grad_term = -self.gamma * r_neg
-                return clamped_forward.detach() + (
-                    reversed_grad_term - reversed_grad_term.detach()
-                )
-            return clamped_forward
-        else:
-            self.last_clamped = False
-            return self.pi_p * r_p_plus + r_neg
+            loss_pos_k = -torch.log(pk)
+            loss_neg_k = -torch.log(1.0 - pk)
+
+            # Hájek self-normalized inverse-propensity weights (D4)
+            pos_denom_k = torch.clamp(torch.sum(pos_mask_k), min=1.0)
+            unl_denom_k = torch.clamp(torch.sum(unl_mask_k), min=1.0)
+
+            pos_w_sum = torch.sum(pos_mask_k * wk)
+            mean_pos_w = torch.clamp(pos_w_sum / pos_denom_k, min=1e-6)
+            w_pos_hajek = wk / mean_pos_w
+
+            r_p_plus_k = torch.sum(pos_mask_k * w_pos_hajek * loss_pos_k) / pos_denom_k
+            r_p_minus_k = torch.sum(pos_mask_k * w_pos_hajek * loss_neg_k) / pos_denom_k
+            r_u_minus_k = torch.sum(unl_mask_k * loss_neg_k) / unl_denom_k
+
+            r_neg_k = r_u_minus_k - pi_k * r_p_minus_k
+            r_neg_val = float(r_neg_k.detach().cpu().item())
+            r_neg_heads.append(r_neg_val)
+
+            if r_neg_val < -self.beta:
+                clamped_heads.append(True)
+                clamped_forward_k = pi_k * r_p_plus_k
+                if self.gamma > 0.0:
+                    reversed_grad_term_k = -self.gamma * r_neg_k
+                    loss_k = clamped_forward_k.detach() + (
+                        reversed_grad_term_k - reversed_grad_term_k.detach()
+                    )
+                else:
+                    loss_k = clamped_forward_k
+            else:
+                clamped_heads.append(False)
+                loss_k = pi_k * r_p_plus_k + r_neg_k
+
+            head_losses.append(loss_k)
+
+        self.last_clamped = any(clamped_heads)
+        self.last_unlabeled_risk = float(np.mean(r_neg_heads)) if r_neg_heads else 0.0
+
+        if len(head_losses) == 0:
+            return torch.zeros((), device=p.device, dtype=p.dtype, requires_grad=True)
+        if len(head_losses) == 1:
+            return head_losses[0]
+        return torch.mean(torch.stack(head_losses))
 
 
 
@@ -770,7 +910,7 @@ class MPMUNet:
         ).to(self.device)
 
         active_nnpu = self.use_nnpu if use_nnpu is None else bool(use_nnpu)
-        active_pi_p = self.pi_p if pi_p is None else float(pi_p)
+        active_pi_p = self.pi_p if pi_p is None else pi_p
 
         # Positive class weight for imbalanced BCE fallback
         pos_weight = self._compute_pos_weight(np.asarray(y))
@@ -1030,7 +1170,9 @@ class MPMDistrictDAEUNet:
         dropout_p: float = 0.3,
         channel_drop_p: float = 0.15,
         recon_weight: float = 0.5,
-        pi_p: float = 0.05,
+        pi_p: Union[float, Sequence[float]] = 0.05,
+        px_size_m: float = 250.0,
+        subcanopy_indices: Optional[Sequence[int]] = None,
     ) -> None:
         self.in_channels = in_channels
         self.n_classes = n_classes
@@ -1040,6 +1182,8 @@ class MPMDistrictDAEUNet:
         self.channel_drop_p = channel_drop_p
         self.recon_weight = recon_weight
         self.pi_p = pi_p
+        self.px_size_m = float(px_size_m)
+        self.subcanopy_indices = [int(i) for i in subcanopy_indices] if subcanopy_indices is not None else None
 
         self.device = get_best_device()
         self.model: Optional[DistrictDAEUNet] = None
@@ -1059,6 +1203,8 @@ class MPMDistrictDAEUNet:
             n_classes=self.n_classes,
             dropout_p=self.dropout_p,
             channel_drop_p=self.channel_drop_p,
+            px_size_m=self.px_size_m,
+            pi_p=self.pi_p,
         ).to(self.device)
 
         X_t = torch.tensor(X_windows, dtype=torch.float32)
@@ -1108,7 +1254,14 @@ class MPMDistrictDAEUNet:
                     preds_target = preds
 
                 loss_pu = self.criterion(preds_target, yb, sample_weights=wb)
-                loss_recon = nn.functional.mse_loss(recon, xb)
+                if self.subcanopy_indices is not None and len(self.subcanopy_indices) > 0:
+                    valid_sub = [i for i in self.subcanopy_indices if i < self.in_channels]
+                    if len(valid_sub) > 0:
+                        loss_recon = nn.functional.mse_loss(recon[:, valid_sub], xb[:, valid_sub])
+                    else:
+                        loss_recon = nn.functional.mse_loss(recon, xb)
+                else:
+                    loss_recon = nn.functional.mse_loss(recon, xb)
                 loss = loss_pu + self.recon_weight * loss_recon
 
                 loss.backward()
@@ -1175,9 +1328,11 @@ class MPMDistrictDAEUNet:
             n_classes=self.n_classes,
             dropout_p=self.dropout_p,
             channel_drop_p=self.channel_drop_p,
+            px_size_m=self.px_size_m,
+            pi_p=self.pi_p,
         ).to(self.device)
         state = torch.load(str(path), map_location=self.device)
-        self.model.load_state_dict(state)
+        self.model.load_state_dict(state, strict=False)
         return self
 
     def predict(
@@ -1195,54 +1350,94 @@ class MPMDistrictDAEUNet:
         epochs: int = 15,
         lr: float = 1e-4,
         checkpoints_dir: Optional[Union[Path, str]] = None,
+        checkpoint_prefix: str = "dae_unet",
+        propensity_weights_2d: Optional[np.ndarray] = None,
     ) -> dict[str, np.ndarray]:
-        """Train across 5 spatially buffered blocks and project OOF context and error onto 50 m grid.
+        """Train across 5 spatially buffered blocks and project OOF context and error onto native grid.
 
-        Enforces Task 2.1 Rule 3. Supports continuous warm-starting from checkpoints_dir.
+        Enforces Task 2.1 Rule 3. Supports continuous warm-starting from checkpoints_dir
+        and supports both K=4 Metallic and K=3 Coal multi-label heads.
 
         Args:
-            X_grid_50m: (C, H_50m, W_50m) native resolution feature cube.
-            y_grid_k4: (4, H_50m, W_50m) binary K=4 label grids.
-            block_ids_50m: (H_50m, W_50m) spatial block assignments.
-            decimate_factor: Decimation factor (default 5, 50 m -> 250 m).
+            X_grid_50m: (C, H, W) native resolution feature cube.
+            y_grid_k4: (K, H, W) binary K-head label grids (K=4 for metals, K=3 for coal).
+            block_ids_50m: (H, W) spatial block assignments.
+            decimate_factor: Decimation factor (default 5).
             epochs: Training epochs per fold.
             lr: Learning rate.
             checkpoints_dir: Optional directory to load/save fold model weights for incremental learning.
+            checkpoint_prefix: Prefix for saved fold checkpoints (e.g. 'dae_metals' or 'dae_coal').
+            propensity_weights_2d: Optional (H, W) array of Pass 2 observation propensity weights.
 
         Returns:
-            Dictionary with 50 m projected out-of-fold channels:
-              - 'dae_recon_err': (H_50m, W_50m)
-              - 'unet_ctx_0', 'unet_ctx_1', 'unet_ctx_2', 'unet_ctx_3': (H_50m, W_50m)
-              - 'oof_prob_k0', 'oof_prob_k1', 'oof_prob_k2', 'oof_prob_k3': (H_50m, W_50m)
+            Dictionary with native-grid projected out-of-fold channels:
+              - 'dae_recon_err': (H, W)
+              - 'unet_ctx_0' .. 'unet_ctx_3': (H, W)
+              - 'oof_prob_k0' .. 'oof_prob_k{K-1}': (H, W)
         """
         C, H_orig, W_orig = X_grid_50m.shape
         target_shape = (H_orig, W_orig)
+        n_cls = int(y_grid_k4.shape[0])
+        self.n_classes = n_cls
+        self.in_channels = int(C)
 
-        # 1. Decimate spatial feature grid to 250 m (or 500 m)
-        X_coarse = decimate_spatial_grid(X_grid_50m, target_res_m=50.0 * decimate_factor, native_res_m=50.0)
-        y_coarse = decimate_spatial_grid(y_grid_k4, target_res_m=50.0 * decimate_factor, native_res_m=50.0)
-        blocks_coarse = decimate_spatial_grid(block_ids_50m.astype(np.float32), target_res_m=50.0 * decimate_factor, native_res_m=50.0)
-        blocks_coarse = np.round(blocks_coarse).astype(int)
+        # 1. Decimate spatial feature grid
+        X_coarse = decimate_spatial_grid(
+            X_grid_50m, target_res_m=50.0 * decimate_factor, native_res_m=50.0, order=1
+        )
+        y_coarse = decimate_spatial_grid(
+            y_grid_k4, target_res_m=50.0 * decimate_factor, native_res_m=50.0, order=0
+        )
+        blocks_coarse = decimate_spatial_grid(
+            block_ids_50m.astype(np.int32),
+            target_res_m=50.0 * decimate_factor,
+            native_res_m=50.0,
+            order=0,
+        ).astype(np.int32)
+        assert set(np.unique(blocks_coarse)).issubset(set(np.unique(block_ids_50m))), (
+            "FATAL: Interpolated fold IDs detected in blocks_coarse!"
+        )
 
         C_c, H_c, W_c = X_coarse.shape
-        unique_blocks = np.unique(blocks_coarse)
-        # Enforce strict 5-fold spatial cross-validation limit as per spec
-        if len(unique_blocks) > 5:
-            fold_map = {int(b): int(i % 5) for i, b in enumerate(unique_blocks)}
-            blocks_coarse = np.vectorize(lambda x: fold_map.get(int(x), 0))(blocks_coarse)
-            unique_blocks = np.unique(blocks_coarse)
+        valid_blocks = np.unique(blocks_coarse[blocks_coarse >= 0])
+        # Enforce strict 5-fold spatial cross-validation limit as per spec while preserving -1 unassigned cells
+        if len(valid_blocks) > 5:
+            fold_map = {int(b): int(i % 5) for i, b in enumerate(valid_blocks)}
+            fold_map[-1] = -1
+            blocks_coarse = np.vectorize(lambda x: fold_map.get(int(x), -1))(blocks_coarse)
+            unique_blocks = np.unique(blocks_coarse[blocks_coarse >= 0])
+        else:
+            unique_blocks = valid_blocks
 
         oof_recon_err_coarse = np.zeros((H_c, W_c), dtype=np.float32)
         oof_ctx_coarse = np.zeros((4, H_c, W_c), dtype=np.float32)
-        oof_preds_coarse = np.zeros((4, H_c, W_c), dtype=np.float32)
+        oof_preds_coarse = np.zeros((n_cls, H_c, W_c), dtype=np.float32)
+        # Decimate 2D observation propensity weights if provided
+        if propensity_weights_2d is not None:
+            w_coarse = decimate_spatial_grid(
+                propensity_weights_2d,
+                target_res_m=50.0 * decimate_factor,
+                native_res_m=50.0,
+                order=1,
+            )
+            if w_coarse.ndim == 2:
+                # Shape (H_c, W_c) -> broadcast across n_cls (H_c * W_c, n_cls)
+                w_flat = np.repeat(w_coarse.ravel()[:, np.newaxis], n_cls, axis=1)
+            elif w_coarse.ndim == 3:
+                w_flat = w_coarse.reshape(w_coarse.shape[0], -1).T
+                if w_flat.shape[1] != n_cls:
+                    w_flat = np.repeat(w_flat[:, :1], n_cls, axis=1)
+            else:
+                w_flat = None
+        else:
+            w_flat = None
 
         # 2. Setup padding for on-the-fly window extraction (avoids 44GB dense pre-stacking)
-        # Window size 16 or 32 on coarse grid covers 16 km to 32 km district footprint!
         win_size = min(max(16, self.window_px), H_c, W_c)
         pad = win_size // 2
         X_padded = np.pad(X_coarse, ((0, 0), (pad, pad), (pad, pad)), mode="reflect")
 
-        y_flat = y_coarse.reshape(4, -1).T  # (H_c * W_c, 4)
+        y_flat = y_coarse.reshape(n_cls, -1).T  # (H_c * W_c, n_cls)
         block_flat = blocks_coarse.ravel()
 
         class _OnTheFlyPatchDataset(torch.utils.data.Dataset):
@@ -1253,12 +1448,14 @@ class MPMDistrictDAEUNet:
                 stride_w: int,
                 window_size: int,
                 y_arr: Optional[np.ndarray] = None,
+                w_arr: Optional[np.ndarray] = None,
             ):
                 self.padded = torch.from_numpy(padded_arr).float()
                 self.indices = indices
                 self.stride_w = stride_w
                 self.window_size = window_size
                 self.y_arr = torch.from_numpy(y_arr).float() if y_arr is not None else None
+                self.w_arr = torch.from_numpy(w_arr).float() if w_arr is not None else None
 
             def __len__(self) -> int:
                 return len(self.indices)
@@ -1270,13 +1467,20 @@ class MPMDistrictDAEUNet:
                 patch = self.padded[:, r : r + self.window_size, c : c + self.window_size]
                 if self.y_arr is not None:
                     y = self.y_arr[idx]
-                    w = torch.ones_like(y)
+                    if self.w_arr is not None:
+                        w = self.w_arr[idx]
+                        if w.shape != y.shape:
+                            w = w.expand_as(y)
+                    else:
+                        w = torch.ones_like(y)
                     return patch, y, w
                 return patch
 
         # 3. Train across spatial CV blocks
         for b_id in unique_blocks:
-            train_mask = (block_flat != b_id)
+            if b_id < 0:
+                continue
+            train_mask = (block_flat >= 0) & (block_flat != b_id)
             val_mask = (block_flat == b_id)
 
             if not np.any(val_mask) or not np.any(train_mask):
@@ -1288,19 +1492,27 @@ class MPMDistrictDAEUNet:
             pos_idx = train_indices[is_pos]
             unlabeled_idx = train_indices[~is_pos]
 
-            target_u_count = 3 * max(len(pos_idx), 200)
-            if len(unlabeled_idx) > target_u_count:
-                rng = np.random.default_rng(42)
-                sub_u = rng.choice(unlabeled_idx, size=target_u_count, replace=False)
-                sub_train_idx = np.concatenate([pos_idx, sub_u])
+            rng = np.random.default_rng(42 + int(b_id))
+            max_pos = 1500
+            if len(pos_idx) > max_pos:
+                sub_pos = rng.choice(pos_idx, size=max_pos, replace=False)
             else:
-                sub_train_idx = train_indices
+                sub_pos = pos_idx
+
+            target_u_count = min(3000, 2 * max(len(sub_pos), 200))
+            if len(unlabeled_idx) > target_u_count:
+                sub_u = rng.choice(unlabeled_idx, size=target_u_count, replace=False)
+            else:
+                sub_u = unlabeled_idx
+            sub_train_idx = np.concatenate([sub_pos, sub_u])
 
             fold_model = DistrictDAEUNet(
                 in_channels=self.in_channels,
                 n_classes=self.n_classes,
                 dropout_p=self.dropout_p,
                 channel_drop_p=self.channel_drop_p,
+                px_size_m=float(self.px_size_m) if self.px_size_m is not None else float(50.0 * decimate_factor),
+                pi_p=self.pi_p,
             ).to(self.device)
 
             # Continuous / Incremental Weight Updates (Warm-Starting):
@@ -1308,27 +1520,34 @@ class MPMDistrictDAEUNet:
             if checkpoints_dir is not None:
                 ckpt_dir_path = Path(checkpoints_dir)
                 ckpt_dir_path.mkdir(parents=True, exist_ok=True)
-                fold_ckpt = ckpt_dir_path / f"dae_unet_fold_{b_id}.pt"
+                fold_ckpt = ckpt_dir_path / f"{checkpoint_prefix}_fold_{b_id}.pt"
                 if fold_ckpt.exists():
                     try:
                         state_dict = torch.load(fold_ckpt, map_location=self.device)
-                        fold_model.load_state_dict(state_dict)
+                        fold_model.load_state_dict(state_dict, strict=False)
                         logger.info("Warm-started DAE-U-Net fold %s weights from %s", b_id, fold_ckpt)
                     except Exception as e:
                         logger.warning("Could not warm-start fold %s checkpoint: %s", b_id, e)
 
+            w_sub = (
+                w_flat[sub_train_idx, :, np.newaxis, np.newaxis]
+                if w_flat is not None
+                else None
+            )
             train_ds = _OnTheFlyPatchDataset(
                 padded_arr=X_padded,
                 indices=sub_train_idx,
                 stride_w=W_c,
                 window_size=win_size,
                 y_arr=y_flat[sub_train_idx, :, np.newaxis, np.newaxis],
+                w_arr=w_sub,
             )
+            eff_train_batch = max(int(self.batch_size), 64)
             loader = DataLoader(
                 train_ds,
-                batch_size=self.batch_size,
+                batch_size=eff_train_batch,
                 shuffle=True,
-                drop_last=(len(train_ds) > self.batch_size),
+                drop_last=(len(train_ds) > eff_train_batch),
             )
             optimiser = torch.optim.AdamW(fold_model.parameters(), lr=lr, weight_decay=1e-4)
 
@@ -1343,7 +1562,16 @@ class MPMDistrictDAEUNet:
                     if p.shape[-2:] != (1, 1):
                         hc, wc = p.shape[-2] // 2, p.shape[-1] // 2
                         p = p[:, :, hc : hc + 1, wc : wc + 1]
-                    loss = self.criterion(p, yb, sample_weights=wb) + self.recon_weight * nn.functional.mse_loss(recon, xb)
+                    loss_pu = self.criterion(p, yb, sample_weights=wb)
+                    if self.subcanopy_indices is not None and len(self.subcanopy_indices) > 0:
+                        valid_sub = [i for i in self.subcanopy_indices if i < self.in_channels]
+                        if len(valid_sub) > 0:
+                            loss_recon = nn.functional.mse_loss(recon[:, valid_sub], xb[:, valid_sub])
+                        else:
+                            loss_recon = nn.functional.mse_loss(recon, xb)
+                    else:
+                        loss_recon = nn.functional.mse_loss(recon, xb)
+                    loss = loss_pu + self.recon_weight * loss_recon
                     loss.backward()
                     optimiser.step()
 
@@ -1355,57 +1583,48 @@ class MPMDistrictDAEUNet:
                 except Exception as e:
                     logger.warning("Could not save fold %s checkpoint: %s", b_id, e)
 
-            # Predict on validation block in mini-batches on-the-fly
+            # Dense whole-grid inference on coarse feature grid (vectorized OOF projection)
             fold_model.eval()
-            val_indices = np.where(val_mask)[0]
-            val_ds = _OnTheFlyPatchDataset(
-                padded_arr=X_padded,
-                indices=val_indices,
-                stride_w=W_c,
-                window_size=win_size,
-            )
-            val_batch_size = 128
-            val_loader = DataLoader(val_ds, batch_size=val_batch_size, shuffle=False, num_workers=0)
-
-            n_val = len(val_indices)
-            val_p = np.empty((n_val, 4), dtype=np.float32)
-            val_err = np.empty(n_val, dtype=np.float32)
-            val_ctx = np.empty((n_val, 4), dtype=np.float32)
-
+            pad_h = (16 - (H_c % 16)) % 16
+            pad_w = (16 - (W_c % 16)) % 16
+            X_c_pad = np.pad(X_coarse, ((0, 0), (0, pad_h), (0, pad_w)), mode="reflect")
             with torch.no_grad():
-                ptr = 0
-                for xb in val_loader:
-                    xb = xb.to(self.device)
-                    p, recon, err, ctx = fold_model(xb)
-                    hc, wc = p.shape[-2] // 2, p.shape[-1] // 2
-                    bsz = p.shape[0]
-                    val_p[ptr : ptr + bsz] = p[:, :, hc, wc].cpu().numpy()
-                    val_err[ptr : ptr + bsz] = err[:, 0, hc, wc].cpu().numpy()
-                    val_ctx[ptr : ptr + bsz] = ctx[:, :4, hc, wc].cpu().numpy()
-                    ptr += bsz
+                x_tensor = torch.from_numpy(X_c_pad).unsqueeze(0).float().to(self.device)
+                p_full, recon_full, err_full, ctx_full = fold_model(x_tensor)
+                p_full = p_full[0, :n_cls, :H_c, :W_c].detach().cpu().numpy()
+                err_full = err_full[0, 0, :H_c, :W_c].detach().cpu().numpy()
+                ctx_full = ctx_full[0, :4, :H_c, :W_c].detach().cpu().numpy()
 
-            val_rows = val_indices // W_c
-            val_cols = val_indices % W_c
-
-            oof_recon_err_coarse[val_rows, val_cols] = val_err
+            val_mask_2d = (blocks_coarse == b_id)
+            oof_recon_err_coarse[val_mask_2d] = err_full[val_mask_2d]
+            for k in range(n_cls):
+                oof_preds_coarse[k, val_mask_2d] = p_full[k, val_mask_2d]
             for k in range(4):
-                oof_preds_coarse[k, val_rows, val_cols] = val_p[:, k]
-                oof_ctx_coarse[k, val_rows, val_cols] = val_ctx[:, k]
+                oof_ctx_coarse[k, val_mask_2d] = ctx_full[k, val_mask_2d]
 
-            del fold_model, optimiser, val_loader, train_ds, val_ds, val_p, val_err, val_ctx
+            del fold_model, optimiser, train_ds
             import gc
             gc.collect()
 
-        # 4. Project out-of-fold spatial context embeddings and reconstruction error back to 50 m grid
+        # Zero-positive head handling across entire grid (Bug 3)
+        zero_pos_heads = [k for k in range(n_cls) if np.sum(y_grid_k4[k] == 1) == 0]
+        for k in zero_pos_heads:
+            oof_preds_coarse[k, :] = 0.0
+
+        # 4. Project out-of-fold spatial context embeddings and reconstruction error back to native grid
         proj_err_50m = project_spatial_grid(oof_recon_err_coarse, target_shape=target_shape, order=1)
         proj_ctx_50m = project_spatial_grid(oof_ctx_coarse, target_shape=target_shape, order=1)
         proj_preds_50m = project_spatial_grid(oof_preds_coarse, target_shape=target_shape, order=1)
+
+        for k in zero_pos_heads:
+            proj_preds_50m[k] = np.zeros(target_shape, dtype=np.float32)
 
         result: dict[str, np.ndarray] = {
             "dae_recon_err": proj_err_50m,
         }
         for k in range(4):
             result[f"unet_ctx_{k}"] = proj_ctx_50m[k]
+        for k in range(n_cls):
             result[f"oof_prob_k{k}"] = proj_preds_50m[k]
 
         return result
