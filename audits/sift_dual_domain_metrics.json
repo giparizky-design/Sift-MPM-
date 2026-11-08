@@ -1,0 +1,215 @@
+{
+  "domain": "coal",
+  "runs": [
+    {
+      "region": "EAST_KALIMANTAN",
+      "domain": "coal",
+      "n_cells": 117196,
+      "n_positives": 4160,
+      "n_metal_positives": 1935,
+      "n_coal_positives": 2225,
+      "pr_auc_xgb": 0.0261,
+      "pr_auc_unet": 0.0517,
+      "pr_auc_fused": 0.0504,
+      "pr_auc_heads": {
+        "porphyry_cu": null,
+        "skarn_fe_cu": null,
+        "epithermal_au": null,
+        "laterite_fe_ni": null
+      },
+      "pr_auc_xgb_heads": {
+        "porphyry_cu": null,
+        "skarn_fe_cu": null,
+        "epithermal_au": null,
+        "laterite_fe_ni": null
+      },
+      "coal_k3_metrics": {
+        "n_coal_positives_total": 2225,
+        "n_coal_positives_per_head": {
+          "coal_k0_high_cv": 621,
+          "coal_k1_med_cv": 514,
+          "coal_k2_low_cv": 1096
+        },
+        "pr_auc_coal_xgb": 0.0261,
+        "pr_auc_coal_unet": 0.0517,
+        "pr_auc_coal_fused": 0.0504,
+        "pr_auc_coal_heads": {
+          "coal_k0_high_cv": 0.0167,
+          "coal_k1_med_cv": 0.0187,
+          "coal_k2_low_cv": 0.1158
+        },
+        "pr_auc_coal_xgb_heads": {
+          "coal_k0_high_cv": 0.0073,
+          "coal_k1_med_cv": 0.0124,
+          "coal_k2_low_cv": 0.0586
+        },
+        "elkan_noto_c_hat_coal_per_head": [
+          0.1963,
+          0.1,
+          0.249
+        ],
+        "conformal_q_hat_90_coal_per_head": [
+          0.8819,
+          0.8548,
+          0.8767
+        ],
+        "p_coal_any_mean": 0.285,
+        "p_coal_any_max": 0.9257,
+        "prospectivity_k3_coal_tif": "outputs/seven_pass_east_kalimantan/maps/prospectivity_k3_coal.tif"
+      },
+      "w_xgb": 0.3351,
+      "w_unet": 0.6649,
+      "elkan_noto_c_hat": 0.5,
+      "elkan_noto_c_hat_mean": 0.5,
+      "elkan_noto_c_hat_per_head": [
+        0.5,
+        0.5,
+        0.5,
+        0.5
+      ],
+      "conformal_q_hat_90": 0.5,
+      "conformal_q_hat_90_per_head": [
+        0.5,
+        0.5,
+        0.5,
+        0.5
+      ],
+      "rejected_warm_start_heads": {},
+      "propensity_min": 0.05,
+      "propensity_median": 0.3924,
+      "n_ranked_targets": 3,
+      "top_target_card": {
+        "target_id": "EAST_KALIMANTAN_COAL_TGT_0001",
+        "rank": 1,
+        "rank_score": 0.694,
+        "conformal_90pct_target_set": [
+          "coal_k0_high_cv"
+        ],
+        "telescoped_system_flag": false,
+        "outmogc_boundary_gate": null,
+        "exploration_logistics_propensity": 0.4095,
+        "mineral_systems_shap_attribution": {
+          "coal_k0_high_cv": {
+            "1_energy_and_metal_sources": {
+              "total_shap": 0,
+              "mean_abs_shap": 0.0,
+              "n_features": 0,
+              "top_features": []
+            },
+            "2_crustal_conduits": {
+              "total_shap": 0.284,
+              "mean_abs_shap": 0.1431,
+              "n_features": 2,
+              "top_features": [
+                {
+                  "feature": "active_fault_density",
+                  "shap_value": 0.2851,
+                  "feature_value": 0.006
+                },
+                {
+                  "feature": "dist_active_faults_m",
+                  "shap_value": -0.0011,
+                  "feature_value": 9438.0625
+                }
+              ]
+            },
+            "3_physicochemical_traps": {
+              "total_shap": 0,
+              "mean_abs_shap": 0.0,
+              "n_features": 0,
+              "top_features": []
+            },
+            "4_alteration_and_anomaly": {
+              "total_shap": -0.0192,
+              "mean_abs_shap": 0.1563,
+              "n_features": 7,
+              "top_features": [
+                {
+                  "feature": "dem_elevation",
+                  "shap_value": 0.4354,
+                  "feature_value": 5.9147
+                },
+                {
+                  "feature": "terrain_ruggedness_tri",
+                  "shap_value": -0.3313,
+                  "feature_value": 4.6448
+                },
+                {
+                  "feature": "dem_slope",
+                  "shap_value": -0.1919,
+                  "feature_value": 0.3357
+                },
+                {
+                  "feature": "dem_tpi_regional",
+                  "shap_value": 0.0942,
+                  "feature_value": -10.6274
+                },
+                {
+                  "feature": "dem_tpi_local",
+                  "shap_value": -0.0278,
+                  "feature_value": -5.2922
+                }
+              ]
+            }
+          }
+        },
+        "macro_basin_sequence_gate": 1.0,
+        "basin_gate": 1.0,
+        "geometry": {
+          "centroid_lat_lon": [
+            -0.3152,
+            116.9572
+          ],
+          "area_sq_km": 0.387,
+          "window_footprint_km": 3.2
+        },
+        "probabilities": {
+          "fused_raw_score": 0.149,
+          "elkan_noto_c_hat": 0.182,
+          "calibrated_deposit_prob": 0.813,
+          "conformal_90_ci": {
+            "lower_bound_L": 0.416,
+            "upper_bound_U": 0.778
+          },
+          "exploration_propensity_e_x": 0.41,
+          "propensity_weight_w": 0.0
+        },
+        "physics_and_geology_summary": {
+          "alteration": {
+            "sensor_source": "not_available",
+            "al_oh_crystallinity_2200nm": null,
+            "kaolinite_alunite_doublet": null,
+            "fe_mg_carbonate_shift_nm": null,
+            "fe_oxide_intensity": 0.0
+          },
+          "geomechanics_and_structure": {
+            "slip_tendency_Ts_mean": null,
+            "dilation_tendency_Td_max": 0.252,
+            "sar_cloude_pottier_alpha_deg": null,
+            "moho_gravity_gradient_step_mGal_km": null
+          },
+          "cover_and_conductivity": {
+            "regolith_cover_depth_m": 86.7,
+            "aem_conductance_0_300m_S": null,
+            "reductant_trap_inferred": null
+          }
+        }
+      },
+      "training_mode": "standard",
+      "is_warm_started": true,
+      "scan_only": false,
+      "base_model_dir": "/Users/gip/Geospatials/outputs/seven_pass_east_kalimantan/models",
+      "round_idx": 1,
+      "total_rounds": 1,
+      "n_estimators": 50,
+      "n_bag": 3,
+      "dae_epochs": 2,
+      "learning_rate": 0.05,
+      "max_depth": 6,
+      "l_threshold": 0.5,
+      "min_area_ha": 5.0,
+      "block_size_m": 10000.0,
+      "resolution_m": 278.3
+    }
+  ]
+}
