@@ -1,0 +1,371 @@
+{
+  "version": "1.0",
+  "domains": {
+    "stratigraphic_laws": {
+      "subagent_name": "Subagent-Stratigraphy-Sedimentology",
+      "description": "Stratigraphic laws, chronostratigraphy, sedimentary basins, and facies architecture",
+      "subdomains": {
+        "Original_Horizontality": {
+          "topic": "Principle of Original Horizontality",
+          "tier1_queries": [
+            "Principle of Original Horizontality sedimentary basin tilt",
+            "paleoslope reconstruction depositional dip syn-sedimentary"
+          ],
+          "tier2_queries": [
+            "synsedimentary folding ore deposit paleotilt basin floor geometry",
+            "stratiform mineralization original horizontality tilting"
+          ],
+          "tier3_queries": [
+            "dip slope remote sensing strike dip satellite DEM extraction",
+            "bedding plane attitude automated extraction LiDAR DEM"
+          ]
+        },
+        "Superposition": {
+          "topic": "Law of Superposition",
+          "tier1_queries": [
+            "Law of Superposition chronostratigraphic stacking way-up structures",
+            "graded bedding cross bedding geopetal indicators overturned strata"
+          ],
+          "tier2_queries": [
+            "tectonic inversion stratiform ore horizons superposition overthrusting",
+            "footwall hanging wall mineralized horizons way up sedimentary"
+          ],
+          "tier3_queries": [
+            "hyperspectral stratigraphy mapping ASTER Sentinel-2 bedding",
+            "gamma ray spectrometry stratigraphic column lithological logging"
+          ]
+        },
+        "Lateral_Continuity": {
+          "topic": "Principle of Lateral Continuity",
+          "tier1_queries": [
+            "Principle of Lateral Continuity sedimentary basin pinch out facies wedging",
+            "basin margin onlap offlap stratigraphic correlation sequence stratigraphy"
+          ],
+          "tier2_queries": [
+            "laterally continuous ore horizons banded iron formation Kupferschiefer",
+            "Witwatersrand gold reefs stratiform lateral continuity basin scale"
+          ],
+          "tier3_queries": [
+            "regional continuous marker beds hyperspectral remote sensing",
+            "multispectral satellite mapping lateral marker beds ASTER"
+          ]
+        },
+        "Cross_Cutting_Relationships": {
+          "topic": "Principle of Cross-Cutting Relationships",
+          "tier1_queries": [
+            "Principle of Cross Cutting Relationships relative timing faults dikes sills",
+            "hydrothermal veins cross-cutting breccia pipes unconformity timing"
+          ],
+          "tier2_queries": [
+            "epithermal vein paragenesis cross cutting mineralization stages",
+            "porphyry copper stockwork cross cutting vein generations A B D veins"
+          ],
+          "tier3_queries": [
+            "cross-cutting structural lineament extraction SAR aeromagnetics",
+            "satellite structural lineaments dike swarm detection radar"
+          ]
+        },
+        "Faunal_Succession": {
+          "topic": "Principle of Faunal Succession",
+          "tier1_queries": [
+            "Principle of Faunal Succession biostratigraphic zonation index fossils",
+            "conodont ammonite foraminifera biostratigraphy sedimentary basin correlation"
+          ],
+          "tier2_queries": [
+            "biostratigraphic dating host rocks Mississippi Valley Type SEDEX deposits",
+            "paleoenvironmental markers organic rich host shales ore deposition"
+          ],
+          "tier3_queries": [
+            "biostratigraphic units remote sensing lithological discrimination",
+            "spectroradiometry fossiliferous limestone vs dolomite discrimination"
+          ]
+        },
+        "Inclusions_Components": {
+          "topic": "Principle of Inclusions and Components",
+          "tier1_queries": [
+            "Principle of Inclusions xenoliths igneous intrusions relative age",
+            "intraformational conglomerates basal rip up clasts provenance"
+          ],
+          "tier2_queries": [
+            "mineralized clasts paleoplacer gold Witwatersrand conglomerate",
+            "fluid inclusion microthermometry melt inclusions ore genesis P-T"
+          ],
+          "tier3_queries": [
+            "conglomerate reef remote sensing radiometric potassium thorium",
+            "spectroscopic identification xenolith alteration halo"
+          ]
+        },
+        "Walthers_Law": {
+          "topic": "Walther's Law of Facies",
+          "tier1_queries": [
+            "Walther's Law of Facies vertical sequence lateral depositional environment",
+            "marine transgression regression sequence stratigraphy parasequence stacking"
+          ],
+          "tier2_queries": [
+            "Walther's Law sedimentary ore traps redox boundary migration SEDEX",
+            "Kupferschiefer redox front transgressive shale Walther facies"
+          ],
+          "tier3_queries": [
+            "sequence stratigraphy remote sensing coastal facies tracking",
+            "multispectral facies mapping transgressive regressive systems tracts"
+          ]
+        },
+        "Sedimentary_Basin_Diagenesis": {
+          "topic": "Sedimentary Rocks & Basin Diagenesis",
+          "tier1_queries": [
+            "sedimentary basin diagenesis clastic carbonate porosity permeability evolution",
+            "connate basinal brines fluid rock interaction burial diagenesis"
+          ],
+          "tier2_queries": [
+            "carbonaceous shale reductant basinal brine sediment hosted copper zinc",
+            "evaporite caprock seal basinal brine expulsion MVT mineralization"
+          ],
+          "tier3_queries": [
+            "carbonate alteration dolomitization mapping ASTER SWIR 2.32 um",
+            "clay diagenesis illite crystallinity hyperspectral remote sensing"
+          ]
+        }
+      }
+    },
+    "structural_faults_vaults": {
+      "subagent_name": "Subagent-Faults-Vaults-Structure",
+      "description": "Fault mechanics, structural conduits, shear zones, and structural vaults/traps",
+      "subdomains": {
+        "Fault_Mechanics_Conduits": {
+          "topic": "Fault Mechanics & Hydrothermal Conduits",
+          "tier1_queries": [
+            "Sibson fault valve behavior seismic pumping earthquake rupture fluid flow",
+            "dilational fault jogs Riedel shear pull apart basin fault zone permeability"
+          ],
+          "tier2_queries": [
+            "fault valve mechanism orogenic gold lode vein formation episodic fluid flow",
+            "damage zone permeability fault core gouge seal hydrothermal fluid conduit"
+          ],
+          "tier3_queries": [
+            "SAR interferometry InSAR fault zone lineaments lineament density",
+            "aeromagnetic fault lineament extraction tilt derivative mineralized shears"
+          ]
+        },
+        "Structural_Vaults_Traps": {
+          "topic": "Structural Vaults, Domes & Traps",
+          "tier1_queries": [
+            "anticlinal vaults saddle reef structural domes doubly plunging anticline",
+            "impermeable caprock seal hydrothermal fluid accumulation anticlinal trap"
+          ],
+          "tier2_queries": [
+            "Bendigo saddle reef gold anticlinal vault hinge dilation fluid ponding",
+            "breccia pipe collapse structural dome Carlin gold structural trap"
+          ],
+          "tier3_queries": [
+            "structural dome anticlinal vault extraction DEM LiDAR curvature",
+            "satellite gravity airborne magnetics dome structure prospectivity"
+          ]
+        }
+      }
+    },
+    "crustal_architecture": {
+      "subagent_name": "Subagent-Crustal-Architecture",
+      "description": "Continental/oceanic crust, Moho, BDTZ, cratonic roots, and trans-lithospheric plumbing",
+      "subdomains": {
+        "Crustal_Evolution_Moho_BDTZ": {
+          "topic": "Continental & Oceanic Crust Evolution",
+          "tier1_queries": [
+            "brittle ductile transition zone BDTZ continental crust rheology Moho depth",
+            "subcontinental lithospheric mantle SCLM cratonic root seismic tomography"
+          ],
+          "tier2_queries": [
+            "brittle ductile transition gold quartz vein deposition mesozonal orogenic",
+            "magmatic underplating crustal melting granite porphyry generation"
+          ],
+          "tier3_queries": [
+            "satellite gravity Moho depth inversion GRACE GOCE crustal thickness",
+            "crustal boundary mapping regional aeromagnetics Bouguer anomaly"
+          ]
+        },
+        "Lithospheric_Controls_Giant_Deposits": {
+          "topic": "Lithospheric Controls on Giant Ore Deposits",
+          "tier1_queries": [
+            "craton margin paleosuture trans-lithospheric fault zone fluid pathway",
+            "crustal thickening delamination porphyry copper Sr/Y La/Yb fertile arcs"
+          ],
+          "tier2_queries": [
+            "deep lithospheric architecture giant porphyry IOCG deposits mantle input",
+            "flat slab subduction slab rollback orogenic gold porphyry metallogeny"
+          ],
+          "tier3_queries": [
+            "deep crustal seismic reflection magnetotelluric plumbing trans-crustal",
+            "regional geophysical prospectivity mantle lithosphere boundary"
+          ]
+        }
+      }
+    },
+    "ore_genesis": {
+      "subagent_name": "Subagent-Ore-Genesis-Processes",
+      "description": "Physicochemical ore genesis, fluid complexation, and major deposit genetic models",
+      "subdomains": {
+        "Hydrothermal_Magmatic_Chemistry": {
+          "topic": "Hydrothermal & Magmatic Chemistry",
+          "tier1_queries": [
+            "metal complexation gold bisulfide Au(HS)2- copper chloride CuCl2- ZnCl4",
+            "phase separation boiling hydrothermal fluid mixing wall-rock sulfidation fO2 pH"
+          ],
+          "tier2_queries": [
+            "magmatic volatile exsolution porphyry copper supercritical fluid brine vapor",
+            "sulfide melt immiscibility Ni-Cu-PGE magmatic conduit deposit"
+          ],
+          "tier3_queries": [
+            "hydrothermal alteration vectoring SWIR illite white mica wavelength shift",
+            "spectral halo mineral chemistry vectoring porphyry epithermal"
+          ]
+        },
+        "Porphyry_Epithermal_Systems": {
+          "topic": "Porphyry Cu-Au-Mo & Epithermal Au-Ag Systems",
+          "tier1_queries": [
+            "porphyry copper deposit model potassic phyllic argillic propylitic alteration",
+            "high low sulfidation epithermal gold silver deposit boiling zone steam heated"
+          ],
+          "tier2_queries": [
+            "porphyry epithermal transition telescoping fluid inclusion P-T evolution",
+            "anhydrite quartz stockwork bornite chalcopyrite zoning porphyry"
+          ],
+          "tier3_queries": [
+            "ASTER SWIR phyllic advanced argillic alunite pyrophyllite kaolinite mapping",
+            "PRISMA EnMAP hyperspectral porphyry alteration footprint mapping"
+          ]
+        },
+        "Orogenic_Carlin_Gold": {
+          "topic": "Orogenic Lode Gold & Carlin-type Gold Systems",
+          "tier1_queries": [
+            "orogenic gold deposit metamorphic devolatilization shear zone hosted lode",
+            "Carlin type gold deposit decarbonatization jasperoid arsenian pyrite invisible gold"
+          ],
+          "tier2_queries": [
+            "fluid rock sulfidation iron rich wallrock gold bisulfide precipitation",
+            "deep sourced metamorphic hydrothermal fluid orogenic gold quartz vein"
+          ],
+          "tier3_queries": [
+            "iron oxide carbonate alteration ASTER Sentinel-2 ratio band index",
+            "radiometric potassium alteration shear zone orogenic gold mapping"
+          ]
+        },
+        "VMS_SEDEX_MVT_SedimentHosted": {
+          "topic": "VMS, SEDEX, MVT & Sediment-Hosted Stratiform Copper",
+          "tier1_queries": [
+            "volcanogenic massive sulfide VMS seafloor hydrothermal black smoker stringer",
+            "sedimentary exhalative SEDEX zinc lead Mississippi Valley type MVT basinal brine"
+          ],
+          "tier2_queries": [
+            "sediment hosted stratiform copper Central African Copperbelt Kupferschiefer redox",
+            "subseafloor boiling hydrothermal vent chimney VMS chimney mineralization"
+          ],
+          "tier3_queries": [
+            "barite silica gossan remote sensing VNIR SWIR VMS exploration",
+            "gravity airborne EM VMS sulfide conductor detection"
+          ]
+        },
+        "IOCG_Skarn_NiCuPGE_Pegmatites": {
+          "topic": "IOCG, Skarn, Ni-Cu-PGE, Pegmatite & Laterite Systems",
+          "tier1_queries": [
+            "iron oxide copper gold IOCG Olympic Dam hydrothermal breccia hematite magnetite",
+            "skarn deposit prograde retrograde garnet pyroxene wollastonite replacement"
+          ],
+          "tier2_queries": [
+            "lithium cesium tantalum LCT pegmatite rare metal fractionation spodumene",
+            "nickel laterite supergene weathering profile limonite saprolite cobalt"
+          ],
+          "tier3_queries": [
+            "radiometric K-U-Th iron oxide hematite magnetite remote sensing",
+            "hyperspectral pegmatite lithium exploration white mica TIR quartz"
+          ]
+        }
+      }
+    },
+    "remote_sensing": {
+      "subagent_name": "Subagent-Remote-Sensing-Exploration",
+      "description": "VNIR/SWIR/TIR multispectral, hyperspectral, radar, LiDAR, and potential fields",
+      "subdomains": {
+        "Multispectral_Hyperspectral_Alteration": {
+          "topic": "Multispectral & Hyperspectral Alteration Mapping (VNIR-SWIR-TIR)",
+          "tier1_queries": [
+            "ASTER Sentinel-2 EnMAP SWIR absorption 2.2 um Al-OH white mica illite kaolinite",
+            "Fe-Mg-OH 2.35 um chlorite epidote carbonate absorption feature mineral mapping"
+          ],
+          "tier2_queries": [
+            "hydrothermal alteration zoning vectoring ASTER band ratios Crosta technique",
+            "thermal infrared TIR quartz silicification index emissivity 8 to 12 um"
+          ],
+          "tier3_queries": [
+            "PRISMA EnMAP AVIRIS hyperspectral feature extraction machine learning geology",
+            "subpixel mineral unmixing spectral angle mapper matched filtering"
+          ]
+        },
+        "Radar_LiDAR_Canopy_Penetration": {
+          "topic": "Radar, LiDAR & Tropical Canopy Penetration",
+          "tier1_queries": [
+            "Synthetic Aperture Radar SAR Sentinel-1 ALOS PALSAR geological lineament mapping",
+            "LiDAR bare earth DEM canopy penetration GEDI fault scarp geomorphology"
+          ],
+          "tier2_queries": [
+            "structural vault dome detection tropical canopy LiDAR DEM curvature",
+            "InSAR ground deformation volcanic geothermal active fault monitoring"
+          ],
+          "tier3_queries": [
+            "polarimetric SAR decomposition lithological discrimination roughness",
+            "automated lineament extraction Hough transform directional filtering"
+          ]
+        },
+        "Potential_Fields_Geophysics": {
+          "topic": "Satellite & Airborne Potential Fields",
+          "tier1_queries": [
+            "aeromagnetic reduction to pole RTP tilt derivative analytic signal magnetic basement",
+            "airborne gravity gradiometry Bouguer anomaly density contrast buried intrusive"
+          ],
+          "tier2_queries": [
+            "gamma ray spectrometry K-Th-U ternary radioelement potassic alteration footprint",
+            "deep crustal intrusive magnetic signature IOCG porphyry target generation"
+          ],
+          "tier3_queries": [
+            "ESA SWARM satellite magnetic anomaly lithospheric field mineral systems",
+            "joint inversion gravity magnetic data 3D subsurface geology"
+          ]
+        }
+      }
+    },
+    "ore_prospectivity_ml": {
+      "subagent_name": "Subagent-Ore-Prospectivity-ML",
+      "description": "Mineral Prospectivity Mapping (MPM), GeoAI, spatial machine learning, and feature engineering",
+      "subdomains": {
+        "Mineral_Systems_Feature_Engineering": {
+          "topic": "Mineral Systems Feature Engineering",
+          "tier1_queries": [
+            "mineral systems approach source conduit trap preservation spatial proxy",
+            "fault distance fault density dilational jog proximity raster feature engineering"
+          ],
+          "tier2_queries": [
+            "geochemical anomaly recognition catchment basin analysis compositional data ilr clr",
+            "hydrothermal alteration index fuzzy membership structural trap spatial layer"
+          ],
+          "tier3_queries": [
+            "multi-source geodata fusion remote sensing geophysics geochemistry GIS",
+            "evidential belief functions weights of evidence fuzzy logic MPM"
+          ]
+        },
+        "Machine_Learning_GeoAI_Architectures": {
+          "topic": "ML & Deep Learning Architectures for Prospectivity",
+          "tier1_queries": [
+            "Random Forest XGBoost mineral prospectivity mapping spatial cross validation",
+            "positive unlabeled learning PU learning scarce mineral deposit labels"
+          ],
+          "tier2_queries": [
+            "convolutional neural network CNN U-Net mineral prospectivity spatial pattern",
+            "graph neural network GNN geological fault network connectivity prospectivity"
+          ],
+          "tier3_queries": [
+            "spatial autocorrelation spatial block cross-validation leakage mitigation",
+            "SHAP explainable AI feature importance geological prospectivity uncertainty"
+          ]
+        }
+      }
+    }
+  }
+}

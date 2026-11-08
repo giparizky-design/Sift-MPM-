@@ -1,0 +1,15 @@
+# Core MCP & Networking
+mcp[cli]<2
+httpx>=0.28.0
+
+# Document Parsing & RAG
+pymupdf>=2.0.0
+pymupdf4llm>=2.0.0
+lancedb>=0.17.0
+sentence-transformers>=3.0.0
+torch>=2.2.0
+pydantic>=2.7.0
+
+# CLI & Visualization
+rich>=13.7.0
+typer>=0.12.0
