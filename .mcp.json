@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "geology-rag-mcp": {
+      "command": "./.venv/bin/python",
+      "args": ["mcp_server/geology_mcp_server.py"],
+      "env": {
+        "PYTHONUNBUFFERED": "1",
+        "TOKENIZERS_PARALLELISM": "false"
+      }
+    }
+  }
+}
