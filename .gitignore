@@ -30,10 +30,18 @@ data/**/*.tif
 # data/raw_real/, data/borneo/ (*.csv, *.gpkg), outputs/seven_pass_*/, outputs/reports/
 outputs/reports/*.log
 outputs/models/
-outputs/borneo/models/
+outputs/**/models/
+outputs/run_history/**/models/
+outputs/run_history/**/maps/*.tif
+outputs/run_history/**/maps/*.vrt
+data/lancedb_store/
+data/manifest.sqlite
+data/markdown/
+data/pdfs/
 *.pkl
 *.pt
 *.pth
+*.joblib
 
 # Notebooks checkpoints
 .ipynb_checkpoints/
