@@ -81,6 +81,7 @@ from src.models.unet_model import MPMDistrictDAEUNet
 from src.outputs.prospectivity_map import (
     emit_site_cards_json,
     polygonize_and_rank_targets,
+    split_targets_by_known_ground,
     resolve_physical_layers,
     save_conformal_bounds_geotiff,
     save_prospectivity_geotiff,
@@ -224,6 +225,42 @@ def _apply_border_taper(arr: np.ndarray, margin: int = 4) -> np.ndarray:
     return out
 
 
+# v4.8 "find new ground" settings. Each one was accepted or rejected with the
+# deposit-level harness (scripts/run_deposit_cv.py, 15 km buffer); see audit v4.8.
+# The legacy (v4.7) behaviour of every switch stays available through the CLI.
+# Smooth regional fields that act as location surrogates for the metals heads (audit v4.8:
+# dropping them raised held-out any-metal AUC by ~0.05; for coal they help and are kept).
+METALS_REGIONAL_PROXY_FEATURES: tuple[str, ...] = (
+    "bouguer_gravity_mgal", "crustal_thickness_km", "moho_gravity_step_mgal_km",
+    "dist_plate_boundary_km", "dist_volcanic_arc_km", "volcanic_arc_halo", "coastal_shelf_dist_km",
+)
+GENERALISATION_DEFAULTS: dict[str, Any] = {
+    "weight_scheme": "hajek_neutral",     # legacy: "production"
+    "gate_mode": "standardized",          # legacy: "production"; also "off"
+    "head0_stacking": True,               # no measurable effect either way (kept)
+    "min_child_weight_metals": 10.0,      # legacy: 0 = per-head defaults (1.0 stage-1, 3.0 porphyry)
+    "coal_disk_mode": "exclude",          # legacy: "production_keep"
+    "coal_buffer_m": 3500.0,              # legacy: 0.0
+    "drop_features": (),                  # dropped for BOTH domains
+    "drop_features_metals": METALS_REGIONAL_PROXY_FEATURES,  # legacy: ()
+    "k4_exclusion_scale": 1.0,            # 0 / 0.5 / 2 made no difference (kept)
+}
+
+
+GENERALISATION_LEGACY_V47: dict[str, Any] = {
+    "weight_scheme": "production", "gate_mode": "production", "head0_stacking": True,
+    "min_child_weight_metals": 0.0, "coal_disk_mode": "production_keep", "coal_buffer_m": 0.0,
+    "drop_features": (), "drop_features_metals": (), "k4_exclusion_scale": 1.0,
+}
+GREENFIELD_KM = 5.0  # targets farther than this from any known deposit are "greenfield"
+
+
+def _prob_to_logit(p: np.ndarray, eps: float = 1e-6) -> np.ndarray:
+    """Logit of a probability array; the rank softmax needs logits, not probabilities."""
+    q = np.clip(np.asarray(p, dtype=np.float64), eps, 1.0 - eps)
+    return np.log(q / (1.0 - q))
+
+
 def execute_full_raster_chunked_inference(
     parquet_path: Path,
     feature_cols: list[str],
@@ -332,7 +369,10 @@ def execute_full_raster_chunked_inference(
                     chunk_df[c] = np.clip(chunk_df[c].to_numpy(dtype=np.float32), 0.0, 15000.0)
                 else:
                     chunk_df[c] = np.clip(chunk_df[c].to_numpy(dtype=np.float32), 0.0, 15.0)
-        X_ch = np.nan_to_num(chunk_df[feature_cols].to_numpy(dtype=np.float32), nan=0.0)
+        # v4.8: keep NaN, as the in-memory path does (XGBoost routes missing values natively,
+        # the OUTMOGC gate and basin gate impute their own defaults). nan_to_num(0) used to
+        # send missing cells down the "value = 0" branches.
+        X_ch = chunk_df[feature_cols].to_numpy(dtype=np.float32)
 
         # Propensity scoring
         if prop_pipe is not None:
@@ -348,14 +388,20 @@ def execute_full_raster_chunked_inference(
             ex_2d[r_ch, c_ch] = 0.20
 
         # Metals scoring
-        if k4_ensemble is not None and dae_out is not None:
+        # v4.8: metals/coal maps are scored even when the U-Net is disabled (its weight is 0 then);
+        # previously the whole block was skipped and the maps stayed NaN.
+        if k4_ensemble is not None:
             s_xgb_m = k4_ensemble.predict_proba(X_ch)
             std_xgb_m = k4_ensemble.predict_std(X_ch)
 
-            r_cm = np.clip(r_ch // scale_r_m, 0, H_c_m - 1)
-            c_cm = np.clip(c_ch // scale_c_m, 0, W_c_m - 1)
-            s_unet_m = np.column_stack([dae_out[f"oof_prob_k{k}"][r_cm, c_cm] for k in range(4)])
-            err_m = dae_out["dae_recon_err"][r_cm, c_cm]
+            if dae_out is not None:
+                r_cm = np.clip(r_ch // scale_r_m, 0, H_c_m - 1)
+                c_cm = np.clip(c_ch // scale_c_m, 0, W_c_m - 1)
+                s_unet_m = np.column_stack([dae_out[f"oof_prob_k{k}"][r_cm, c_cm] for k in range(4)])
+                err_m = dae_out["dae_recon_err"][r_cm, c_cm]
+            else:
+                s_unet_m = s_xgb_m.copy()
+                err_m = np.full(len(X_ch), np.nan, dtype=np.float32)
 
             epistemic_m = np.sqrt(0.5 * (std_xgb_m ** 2) + 0.5 * ((s_xgb_m - s_unet_m) ** 2) + 1e-4)
 
@@ -363,6 +409,8 @@ def execute_full_raster_chunked_inference(
             for k in range(4):
                 w_x = w_xgb_k4[k] if (w_xgb_k4 is not None and len(w_xgb_k4) > k) else 1.0
                 w_u = w_unet_k4[k] if (w_unet_k4 is not None and len(w_unet_k4) > k) else 0.0
+                if dae_out is None:
+                    w_x, w_u = 1.0, 0.0
                 fused_m[:, k] = w_x * s_xgb_m[:, k] + w_u * s_unet_m[:, k]
 
             cal_m = np.zeros_like(fused_m)
@@ -395,7 +443,7 @@ def execute_full_raster_chunked_inference(
                 cal_k4_bands_2d[k][r_ch, c_ch] = cal_m[:, k]
 
         # Coal scoring
-        if k3_coal_ensemble is not None and dae_coal_out is not None:
+        if k3_coal_ensemble is not None:
             if "w_canopy" in chunk_df.columns:
                 w_c_ch = chunk_df["w_canopy"].to_numpy(dtype=np.float64)
             elif "spec_ndvi" in chunk_df.columns:
@@ -409,17 +457,24 @@ def execute_full_raster_chunked_inference(
             s_xgb_c = coal_out_ch["probs_raw_k3"]  # Uncalibrated observation probabilities!
             std_xgb_c = coal_out_ch["std_k3"]
 
-            r_cc = np.clip(r_ch // scale_r_c, 0, H_c_c - 1)
-            c_cc = np.clip(c_ch // scale_c_c, 0, W_c_c - 1)
-            s_unet_c = np.column_stack([dae_coal_out[f"oof_prob_k{c}"][r_cc, c_cc] for c in range(3)])
-            err_c = dae_coal_out["dae_recon_err"][r_cc, c_cc]
+            if dae_coal_out is not None:
+                r_cc = np.clip(r_ch // scale_r_c, 0, H_c_c - 1)
+                c_cc = np.clip(c_ch // scale_c_c, 0, W_c_c - 1)
+                s_unet_c = np.column_stack([dae_coal_out[f"oof_prob_k{c}"][r_cc, c_cc] for c in range(3)])
+                err_c = dae_coal_out["dae_recon_err"][r_cc, c_cc]
+            else:
+                s_unet_c = s_xgb_c.copy()
+                err_c = np.full(len(X_ch), np.nan, dtype=np.float32)
 
             epistemic_c = np.sqrt(0.5 * (std_xgb_c ** 2) + 0.5 * ((s_xgb_c - s_unet_c) ** 2) + 1e-4)
 
             fused_c = np.zeros_like(s_xgb_c)
             for c in range(3):
                 w_x = w_xgb_coal[c] if (w_xgb_coal is not None and len(w_xgb_coal) > c) else 0.75
-                w_u = w_unet_coal[c] if (w_unet_coal is not None and len(w_unet_coal) > c) else 0.25
+                w_u = w_unet_coal[c] if (w_unet_coal is not None and len(w_unet_coal) > c) else (
+                    0.25 if dae_coal_out is not None else 0.0)
+                if dae_coal_out is None:
+                    w_x, w_u = 1.0, 0.0
                 fused_c[:, c] = w_x * s_xgb_c[:, c] + w_u * s_unet_c[:, c]
 
             cal_c = np.zeros_like(fused_c)
@@ -441,7 +496,7 @@ def execute_full_raster_chunked_inference(
                 p_cal_any_ch = 1.0 - np.prod(1.0 - np.clip(cal_c, 0.0, 1.0), axis=1)
                 cal_c, p_coal_any_ch = compute_hierarchical_coal_probabilities(
                     p_cal_coal_any=p_cal_any_ch,
-                    rank_logits=fused_c,
+                    rank_logits=_prob_to_logit(fused_c),
                     basin_gate=g_basin_ch,
                     temperature=1.0,
                 )
@@ -513,8 +568,15 @@ def run_region_seven_pass(
     active_heads: Optional[list[str]] = None,
     scan_only: bool = False,
     on_schema_mismatch: str = "retrain",
+    generalisation: Optional[dict] = None,
 ) -> dict:
     """Execute the complete Dual-Domain 7-Pass pipeline strictly specialized on Kalimantan."""
+    gen = dict(GENERALISATION_DEFAULTS)
+    gen.update({k: v for k, v in (generalisation or {}).items() if v is not None})
+    unknown_gen = set(gen) - set(GENERALISATION_DEFAULTS)
+    if unknown_gen:
+        raise ValueError(f"unknown generalisation settings: {sorted(unknown_gen)}")
+    logger.info("[%s] Generalisation settings: %s", region_name, gen)
     domain_clean = domain.lower().strip()
     if domain_clean not in ("metals", "coal", "both"):
         raise ValueError(f"domain must be 'metals', 'coal', or 'both', got '{domain}'")
@@ -706,6 +768,11 @@ def run_region_seven_pass(
         and not c.startswith("label_")
         and not any(pat in c.lower() for pat in _FORBIDDEN_RAW_BAND_PATTERNS)
     ]
+    _drop = set(gen["drop_features"] or ())
+    if _drop:
+        logger.info("[%s] Dropping features by generalisation setting: %s", region_name,
+                    sorted(_drop & set(feature_cols)))
+        feature_cols = [c for c in feature_cols if c not in _drop]
     # Align feature columns if warm-starting or scanning with a pre-trained model checkpoint.
     # Never silently drop dataset channels the prior model lacks (e.g. newly ingested real SAR):
     # resolve_warm_start_feature_schema logs dropped/missing columns and, under the default
@@ -959,14 +1026,18 @@ def run_region_seven_pass(
     outmogc_gate_models: list[Optional[OUTMOGCGate]] = []
     for k in range(4):
         pos_k_train_mask = (y_k4[train_idx, k] == 1)
-        if np.sum(pos_k_train_mask) >= 5:
+        if np.sum(pos_k_train_mask) >= 5 and gen["gate_mode"] != "off":
             X_k_pos_tr = X_all[train_idx][pos_k_train_mask]
+            _std_gate = gen["gate_mode"] == "standardized"
+            _metal_keep = [i for i, c in enumerate(feature_cols) if c not in set(gen["drop_features_metals"] or ())]
             gate_k = OUTMOGCGate(
-                n_pca_components=min(4, X_k_pos_tr.shape[1]),
+                n_pca_components=min(4, len(_metal_keep)),
                 n_gmm_components=min(2, max(1, len(X_k_pos_tr) // 10)),
                 random_state=42,
+                standardize=_std_gate,
+                feature_index=_metal_keep if len(_metal_keep) < len(feature_cols) else None,
             )
-            gate_k.fit(X_k_pos_tr)
+            gate_k.fit(X_k_pos_tr, X_reference=X_all[train_idx][~pos_k_train_mask] if _std_gate else None)
             outmogc_gate_models.append(gate_k)
             outmogc_gates_list.append(gate_k.score(X_all))
         else:
@@ -976,12 +1047,45 @@ def run_region_seven_pass(
 
     # Exclusion masks (Pass 1 Rule 4: buffer around training deposit occurrences per head ONLY)
     positive_coords_k_train = {k: cell_coords[train_idx][y_k4[train_idx, k] == 1] for k in range(4)}
-    exclusion_masks = compute_k4_exclusion_mask(
-        coords=cell_coords,
-        positive_coords_k=positive_coords_k_train,
-        labels_k4=y_k4,
-        is_geographic=is_geo,
-    )
+    _xs = float(gen["k4_exclusion_scale"])
+    if _xs <= 0:
+        exclusion_masks = np.ones((len(df), 4), dtype=np.float64)
+    else:
+        exclusion_masks = compute_k4_exclusion_mask(
+            coords=cell_coords,
+            positive_coords_k=positive_coords_k_train,
+            labels_k4=y_k4,
+            is_geographic=is_geo,
+            r_k_star_m=None if _xs == 1.0 else {
+                0: 6000.0 * _xs, 1: 3500.0 * _xs, 2: 6000.0 * _xs, 3: (10000.0 * _xs, 2000.0 * _xs, 45.0)},
+        )
+
+    # v4.8 coal negatives: the 1 km ESDM disks (label_coal) are known coal, but the K3 heads
+    # are trained on strike-line halos, so the production subsample used to feed every disk
+    # cell to the heads as a negative. coal_disk_mode="exclude" gives them weight 0, and
+    # coal_buffer_m > 0 also removes unlabeled cells near TRAINING known coal from the negatives.
+    coal_disk_cells = (
+        (df["label_coal"].to_numpy() == 1) if "label_coal" in df.columns else np.zeros(len(df), dtype=bool)
+    ) & ~pos_mask_coal
+    coal_disk_neg_excl = coal_disk_cells if gen["coal_disk_mode"] == "exclude" else np.zeros(len(df), dtype=bool)
+    coal_neg_excl = coal_disk_neg_excl.copy()
+    if run_coal and float(gen["coal_buffer_m"]) > 0:
+        from scipy.spatial import cKDTree as _cKDTree
+
+        if is_geo:
+            _lat0 = float(np.nanmean(cell_coords[:, 1]))
+            _mxy = np.column_stack([cell_coords[:, 0] * 111_320.0 * np.cos(np.radians(_lat0)),
+                                    cell_coords[:, 1] * 110_570.0])
+        else:
+            _mxy = cell_coords
+        _in_tr = np.zeros(len(df), dtype=bool)
+        _in_tr[tr_coal_idx] = True
+        _known_tr = (pos_mask_coal | coal_disk_cells) & _in_tr
+        if _known_tr.any():
+            _d, _ = _cKDTree(_mxy[_known_tr]).query(_mxy, k=1)
+            coal_neg_excl |= (_d <= float(gen["coal_buffer_m"])) & ~pos_mask_coal
+        logger.info("[%s] Coal negative exclusion: %d disk cells, %d cells total (buffer %.0f m)",
+                    region_name, int(coal_disk_neg_excl.sum()), int(coal_neg_excl.sum()), float(gen["coal_buffer_m"]))
 
     # Normalise cube channels using ONLY training split statistics (no validation leakage)
     from src.models.unet_model import project_spatial_grid
@@ -1125,6 +1229,7 @@ def run_region_seven_pass(
             labels_k=y_k4[:, k],
             e_logistics=e_x,
             exclusion_mask_k=exclusion_masks[:, k],
+            hajek_normalize=gen["weight_scheme"] == "hajek_neutral",
         )
         for k in range(4)
     ])
@@ -1219,6 +1324,9 @@ def run_region_seven_pass(
                 learning_rate=float(learning_rate),
                 max_depth=int(max_depth) if max_depth is not None else 6,
                 random_state=42,
+                head0_stacking=bool(gen["head0_stacking"]),
+                min_child_weight=(gen["min_child_weight_metals"] or None),
+                exclude_features=tuple(gen["drop_features_metals"] or ()),
             )
             k4_ensemble.fit(
                 X=X_all[train_idx],
@@ -1489,6 +1597,7 @@ def run_region_seven_pass(
                 learning_rate=float(learning_rate),
                 max_depth=int(max_depth) if max_depth is not None else 5,
                 random_state=42,
+                unlabeled_weighting="neutral" if gen["weight_scheme"] == "hajek_neutral" else "inverse_propensity",
             )
             k3_coal_ensemble.fit(
                 X=X_all[tr_coal_idx],
@@ -1503,6 +1612,7 @@ def run_region_seven_pass(
                 X_val=X_all[val_coal_idx],
                 y_val_k3=y_k3_coal[val_coal_idx],
                 feature_names=feature_cols,
+                negative_exclusion_mask=coal_neg_excl[tr_coal_idx],
             )
             k3_coal_ensemble.save(coal_ensemble_checkpoint)
             logger.info("[%s] Saved updated TwoStageK3CoalEnsemble weights to %s", region_name, coal_ensemble_checkpoint)
@@ -1656,7 +1766,7 @@ def run_region_seven_pass(
 
         cal_k3_full, p_coal_any_full = compute_hierarchical_coal_probabilities(
             p_cal_coal_any=p_cal_coal_any_unmod,
-            rank_logits=fused_k3_full,
+            rank_logits=_prob_to_logit(fused_k3_full),
             basin_gate=basin_gate_arr,
             temperature=1.0,
         )
@@ -2159,12 +2269,24 @@ def run_region_seven_pass(
 
             ranked_gdf["target_class"] = target_classes
 
-        if len(ranked_gdf) > 15:
-            ranked_gdf = ranked_gdf.head(15).reset_index(drop=True)
+        # v4.8: greenfield / brownfield lists (top 15 of each) instead of the overall top 15,
+        # so targets on known deposits cannot crowd new ground out of the list.
+        known_metals_2d = np.zeros((H, W), dtype=bool)
+        _pm = np.any(y_k4 == 1, axis=1)
+        known_metals_2d[rows[_pm], cols[_pm]] = True
+        ranked_gdf = split_targets_by_known_ground(
+            ranked_gdf, known_metals_2d, profile, greenfield_km=GREENFIELD_KM, top_n_each=15)
+        if conformal_target_sets:
+            conformal_target_sets = [conformal_target_sets[i] for i in ranked_gdf["_source_pos"]]
+        ranked_gdf = ranked_gdf.drop(columns="_source_pos")
 
         if len(ranked_gdf) > 0:
             ranked_gdf.to_file(targets_dir / f"ranked_targets_{region_name.lower()}_metals.gpkg", driver="GPKG")
             ranked_gdf.to_file(targets_dir / f"ranked_targets_{region_name.lower()}.gpkg", driver="GPKG")
+            for _cls in ("greenfield", "brownfield"):
+                _sub = ranked_gdf[ranked_gdf["exploration_class"] == _cls]
+                if len(_sub) > 0:
+                    _sub.to_file(targets_dir / f"ranked_targets_{region_name.lower()}_metals_{_cls}.gpkg", driver="GPKG")
 
         _emit_telemetry(
             phase="pass7",
@@ -2225,6 +2347,9 @@ def run_region_seven_pass(
                         random_state=42 + f_idx,
                         learning_rate=eff_lr,
                         max_depth=eff_max_depth,
+                        head0_stacking=bool(gen["head0_stacking"]),
+                        min_child_weight=(gen["min_child_weight_metals"] or None),
+                        exclude_features=tuple(gen["drop_features_metals"] or ()),
                     )
                     fold_ens.fit(
                         X=X_all[tr_f_idx],
@@ -2349,11 +2474,22 @@ def run_region_seven_pass(
 
             ranked_gdf_coal["target_class"] = target_classes_coal
 
-        if len(ranked_gdf_coal) > 15:
-            ranked_gdf_coal = ranked_gdf_coal.head(15).reset_index(drop=True)
+        known_coal_2d = np.zeros((H, W), dtype=bool)
+        _pc = pos_mask_coal | (
+            (df["label_coal"].to_numpy() == 1) if "label_coal" in df.columns else np.zeros(len(df), dtype=bool))
+        known_coal_2d[rows[_pc], cols[_pc]] = True
+        ranked_gdf_coal = split_targets_by_known_ground(
+            ranked_gdf_coal, known_coal_2d, profile, greenfield_km=GREENFIELD_KM, top_n_each=15)
+        if conformal_target_sets_coal:
+            conformal_target_sets_coal = [conformal_target_sets_coal[i] for i in ranked_gdf_coal["_source_pos"]]
+        ranked_gdf_coal = ranked_gdf_coal.drop(columns="_source_pos")
 
         if len(ranked_gdf_coal) > 0:
             ranked_gdf_coal.to_file(targets_dir / f"ranked_targets_{region_name.lower()}_coal.gpkg", driver="GPKG")
+            for _cls in ("greenfield", "brownfield"):
+                _sub = ranked_gdf_coal[ranked_gdf_coal["exploration_class"] == _cls]
+                if len(_sub) > 0:
+                    _sub.to_file(targets_dir / f"ranked_targets_{region_name.lower()}_coal_{_cls}.gpkg", driver="GPKG")
             if not run_metals:
                 ranked_gdf_coal.to_file(targets_dir / f"ranked_targets_{region_name.lower()}.gpkg", driver="GPKG")
 
@@ -2419,6 +2555,7 @@ def run_region_seven_pass(
                         random_state=42 + f_idx,
                         learning_rate=eff_lr,
                         max_depth=max(3, eff_max_depth - 1),
+                        unlabeled_weighting="neutral" if gen["weight_scheme"] == "hajek_neutral" else "inverse_propensity",
                     )
                     fold_coal_ens.fit(
                         X=X_all[tr_f_idx],
@@ -2428,6 +2565,7 @@ def run_region_seven_pass(
                         w_canopy=w_canopy_arr[tr_f_idx],
                         spatial_block_ids=block_ids[tr_f_idx],
                         feature_names=feature_cols,
+                        negative_exclusion_mask=coal_disk_neg_excl[tr_f_idx],
                     )
                     sub_u = u_va_f
                     ev_f = np.concatenate([p_va_f, sub_u])
@@ -2772,7 +2910,45 @@ def main() -> None:
         default=None,
         help="Optional training hypothesis notes",
     )
+    gen_grp = parser.add_argument_group("v4.8 generalisation (defaults: GENERALISATION_DEFAULTS)")
+    gen_grp.add_argument("--weight-scheme", choices=("production", "hajek_neutral"), default=None,
+                         help="positive/unlabeled sample weighting for both domains")
+    gen_grp.add_argument("--gate", dest="gate_mode", choices=("production", "standardized", "off"), default=None,
+                         help="metals OUTMOGC envelope gate")
+    gen_grp.add_argument("--head0-stacking", choices=("on", "off"), default=None,
+                         help="porphyry head uses skarn/epithermal meta-features")
+    gen_grp.add_argument("--min-child-weight-metals", type=float, default=None,
+                         help="XGBoost min_child_weight for the metals heads")
+    gen_grp.add_argument("--coal-disk-mode", choices=("production_keep", "exclude"), default=None,
+                         help="whether ESDM 1 km coal disk cells may act as K3 negatives")
+    gen_grp.add_argument("--coal-buffer-m", type=float, default=None,
+                         help="unlabeled cells within this distance of training known coal are not negatives")
+    gen_grp.add_argument("--drop-features", default=None, help="comma list of feature columns to drop (both domains)")
+    gen_grp.add_argument("--drop-features-metals", default=None,
+                         help="comma list of feature columns the metals heads must not use ('none' keeps all)")
+    gen_grp.add_argument("--legacy-v47", action="store_true",
+                         help="reproduce the v4.7 behaviour of every generalisation switch")
+    gen_grp.add_argument("--k4-exclusion-scale", type=float, default=None,
+                         help="scale the metals exclusion halo around training positives (0 = none)")
     args = parser.parse_args()
+    generalisation = {
+        "weight_scheme": args.weight_scheme,
+        "gate_mode": args.gate_mode,
+        "head0_stacking": None if args.head0_stacking is None else args.head0_stacking == "on",
+        "min_child_weight_metals": args.min_child_weight_metals,
+        "coal_disk_mode": args.coal_disk_mode,
+        "coal_buffer_m": args.coal_buffer_m,
+        "drop_features": None if args.drop_features is None else tuple(
+            c.strip() for c in args.drop_features.split(",") if c.strip()),
+        "k4_exclusion_scale": args.k4_exclusion_scale,
+        "drop_features_metals": None if args.drop_features_metals is None else (
+            () if args.drop_features_metals.strip().lower() == "none" else tuple(
+                c.strip() for c in args.drop_features_metals.split(",") if c.strip())),
+    }
+    if args.legacy_v47:
+        legacy = dict(GENERALISATION_LEGACY_V47)
+        legacy.update({k: v for k, v in generalisation.items() if v is not None})
+        generalisation = legacy
 
     reset_from_zero = args.reset_from_zero and not args.scan_only
     incremental = (args.incremental and not reset_from_zero) or args.scan_only
@@ -2835,6 +3011,7 @@ def main() -> None:
                 active_heads=active_heads_list,
                 scan_only=args.scan_only,
                 on_schema_mismatch=args.on_schema_mismatch,
+                generalisation=generalisation,
             )
             if r == total_rounds:
                 summaries.append(s)
@@ -2872,6 +3049,7 @@ def main() -> None:
                         active_heads=active_heads_list,
                         scan_only=args.scan_only,
                         on_schema_mismatch=args.on_schema_mismatch,
+                        generalisation=generalisation,
                     )
                     if r == total_rounds:
                         summaries.append(s)
@@ -2909,6 +3087,7 @@ def main() -> None:
                         active_heads=active_heads_list,
                         scan_only=args.scan_only,
                         on_schema_mismatch=args.on_schema_mismatch,
+                        generalisation=generalisation,
                     )
                     if r == total_rounds:
                         summaries.append(s)
@@ -2946,6 +3125,7 @@ def main() -> None:
                         active_heads=active_heads_list,
                         scan_only=args.scan_only,
                         on_schema_mismatch=args.on_schema_mismatch,
+                        generalisation=generalisation,
                     )
                     if r == total_rounds:
                         summaries.append(s)

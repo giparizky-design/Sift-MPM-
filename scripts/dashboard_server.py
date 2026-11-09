@@ -623,18 +623,99 @@ def _ensure_bundle_cache_initialized() -> None:
         _init_bundle_cache()
 
 
+def _coal_target_features(out_dir: Path, region_name: str, existing_ids: set) -> tuple[list, list]:
+    """Coal site cards and map features of a dual-domain run (v4.8).
+
+    A ``--domain both`` run writes metals targets to ``site_cards.json`` and coal targets to
+    ``site_cards_coal.json`` / ``ranked_targets_*_coal.gpkg``. Bundles used to carry only the
+    metals ones, so the coal domain view had a map but no targets.
+    """
+    cards_p = out_dir / "targets" / "site_cards_coal.json"
+    if not cards_p.exists():
+        return [], []
+    try:
+        cards = [c for c in json.loads(cards_p.read_text(encoding="utf-8"))
+                 if isinstance(c, dict) and c.get("target_id") not in existing_ids]
+    except Exception as exc:
+        logger.warning("Could not read coal site cards %s: %s", cards_p, exc)
+        return [], []
+    if not cards:
+        return [], []
+    card_by_id = {c["target_id"]: c for c in cards}
+    feats: list = []
+    gpkgs = sorted((out_dir / "targets").glob("*_coal.gpkg"))
+    if gpkgs:
+        try:
+            gdf = gpd.read_file(gpkgs[0])
+            gdf = gdf.to_crs("EPSG:4326") if gdf.crs is not None else gdf
+            for idx, row in gdf.iterrows():
+                tid = str(row.get("target_id", ""))
+                card = card_by_id.get(tid)
+                if card is None:
+                    continue
+                props = {
+                    "target_id": tid,
+                    "rank": int(row.get("rank", idx + 1)),
+                    "rank_score": round(float(row.get("rank_score", 0.0)), 3),
+                    "area_sq_km": round(float(row.get("area_sq_km", 0.0)), 3),
+                    "calibrated_deposit_prob": round(float(row.get("calibrated_deposit_prob", 0.0)), 3),
+                    "lower_bound_L": round(float(row.get("lower_bound_L", 0.0)), 3),
+                    "upper_bound_U": round(float(row.get("upper_bound_U", 1.0)), 3),
+                    "dilation_tendency_Td_max": round(float(row.get("dilation_tendency_Td_max", 0.0)), 3),
+                    "regolith_cover_depth_m": round(float(row.get("regolith_cover_depth_m", 0.0)), 1),
+                    "actual_mines_hit": 0,
+                    "nearest_actual_mine_m": None,
+                    "classification": f"Coal {str(row.get('exploration_class') or 'target').title()} Target",
+                    "site_card": card,
+                }
+                feats.append({"type": "Feature", "geometry": mapping(row.geometry),
+                              "properties": _enrich_target_properties(props, card, region_name)})
+        except Exception as exc:
+            logger.warning("Could not read coal targets %s: %s", gpkgs[0], exc)
+    for c in cards:
+        if "ore_category" not in c or c.get("ore_category") in ("primary_target", "primary", "target"):
+            _enrich_target_properties(c, c, region_name)
+    return cards, feats
+
+
+def _coal_heatmap_b64(maps_dir: Path, boundary_geojson=None) -> str:
+    """p_coal_any (band 4) of prospectivity_k3_coal.tif as an inferno PNG, or ''."""
+    coal_tif = maps_dir / "prospectivity_k3_coal.tif"
+    if not coal_tif.exists():
+        return ""
+    try:
+        with rasterio.open(coal_tif) as src_c:
+            coal_band = 4 if src_c.count >= 4 else 1
+        b64, _ = _raster_to_rgba_base64(coal_tif, band=coal_band, cmap="inferno", alpha_scale=0.85,
+                                        boundary_geojson=boundary_geojson)
+        return b64
+    except Exception as exc:
+        logger.warning("Could not convert coal raster to base64: %s", exc)
+        return ""
+
+
 def _load_bundle_from_run_dir(run_dir: Path, region_name: str) -> dict:
     """Build a UI-compatible bundle from an archived historical run directory."""
     summary_path = run_dir / "seven_pass_summary.json"
-    cards_path = run_dir / "targets" / "site_cards.json"
-    prosp_tif = run_dir / "maps" / "calibrated_prospectivity.tif"
-    conf_tif = run_dir / "maps" / "conformal_bounds_90ci.tif"
+    cards_path = run_dir / "targets" / "site_cards_metals.json"
+    if not cards_path.exists():
+        cards_path = run_dir / "targets" / "site_cards.json"
+    prosp_tif = run_dir / "maps" / "calibrated_prospectivity_metals.tif"
+    if not prosp_tif.exists():
+        prosp_tif = run_dir / "maps" / "calibrated_prospectivity.tif"
+    conf_tif = run_dir / "maps" / "conformal_bounds_90ci_metals.tif"
+    if not conf_tif.exists():
+        conf_tif = run_dir / "maps" / "conformal_bounds_90ci.tif"
 
     summary = json.loads(summary_path.read_text(encoding="utf-8")) if summary_path.exists() else {}
     site_cards = json.loads(cards_path.read_text(encoding="utf-8")) if cards_path.exists() else []
 
     predicted_features = []
-    gpkg_files = list((run_dir / "targets").glob("*.gpkg")) if (run_dir / "targets").exists() else []
+    gpkg_files = sorted((run_dir / "targets").glob("*.gpkg")) if (run_dir / "targets").exists() else []
+    # v4.8: the default view is metals; coal targets are appended below. Skip the per-class splits.
+    _metals_g = [g for g in gpkg_files if g.name.endswith("_metals.gpkg")]
+    _plain_g = [g for g in gpkg_files if not g.name.endswith(("_coal.gpkg", "_greenfield.gpkg", "_brownfield.gpkg"))]
+    gpkg_files = _metals_g or _plain_g or gpkg_files
     card_by_id = {c["target_id"]: c for c in site_cards}
 
     if gpkg_files:
@@ -718,6 +799,12 @@ def _load_bundle_from_run_dir(run_dir: Path, region_name: str) -> dict:
         except Exception:
             pass
 
+    if cards_path.name != "site_cards_coal.json":
+        coal_cards, coal_feats = _coal_target_features(run_dir, region_name, {c.get("target_id") for c in site_cards})
+        site_cards = site_cards + coal_cards
+        predicted_features.extend(coal_feats)
+    coal_heatmap_b64 = _coal_heatmap_b64(run_dir / "maps", boundary_geojson)
+
     return {
         "region": region_name.upper(),
         "title": f"{region_name.upper()} (Historical Run: {run_dir.name})",
@@ -731,6 +818,7 @@ def _load_bundle_from_run_dir(run_dir: Path, region_name: str) -> dict:
         },
         "scanned_boundary_geojson": boundary_geojson,
         "heatmap_png": heatmap_b64,
+        "coal_heatmap_png": coal_heatmap_b64,
         "conformal_l_png": conformal_b64,
         "is_archived_run": True,
         "run_dir": str(run_dir),
@@ -1480,6 +1568,12 @@ def _load_region_bundle(region: str, force_reload: bool = False) -> dict:
                         "properties": props,
                     }
                 )
+
+        # v4.8: dual-domain runs also carry their coal targets (filtered by the UI domain selector)
+        if cards_path.name != "site_cards_coal.json":
+            coal_cards, coal_feats = _coal_target_features(out_dir, region_up, {c.get("target_id") for c in site_cards})
+            site_cards = site_cards + coal_cards
+            predicted_features.extend(coal_feats)
 
         # For Kalimantan, also bundle all 50m Ultra-HD Camp-Scale Overlays across the island
         hd_sub_overlays = []

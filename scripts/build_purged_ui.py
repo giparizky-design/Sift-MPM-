@@ -3265,6 +3265,7 @@ def main():
     let targetRectanglesGroup = null;
     let hdSubRects = [];
     let heatmapOverlay = null;
+    let activeHeatmapDomain = "metals";
     let hdHeatmapOverlays = [];
     let actualMinesLayer = null;
     let targetsGeoLayer = null;
@@ -3360,6 +3361,52 @@ def main():
         });
     }
 
+    // Main calibrated prospectivity heatmap for the selected engine domain (v4.8).
+    function setMainHeatmap(b, domain) {
+      if (!b || !map) return;
+      if (heatmapOverlay) {
+        map.removeLayer(heatmapOverlay);
+        heatmapOverlay = null;
+      }
+      rawHeatmapPixels = null;
+      dynamicHeatmapCanvas = null;
+      dynamicHeatmapCtx = null;
+
+      const hBounds = b.heatmap_bounds || b.bounds;
+      // v4.8: the coal domain swaps in the coal raster instead of stacking it on the metals one
+      const useCoal = domain === "coal" && b.coal_heatmap_png;
+      const pngB64 = useCoal ? b.coal_heatmap_png : b.heatmap_png;
+      activeHeatmapDomain = useCoal ? "coal" : "metals";
+      if (pngB64 && hBounds) {
+        const pngSrc = pngB64.startsWith("data:") ? pngB64 : ("data:image/png;base64," + pngB64);
+        heatmapOverlay = L.imageOverlay(pngSrc, hBounds, {
+          pane: "heatmapPane",
+          opacity: Number(document.getElementById("rng-opacity").value || 0.8),
+          interactive: false
+        }).addTo(map);
+
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = function() {
+          try {
+            rawHeatmapImage = img;
+            rawHeatmapWidth = img.width;
+            rawHeatmapHeight = img.height;
+            dynamicHeatmapCanvas = document.createElement("canvas");
+            dynamicHeatmapCanvas.width = rawHeatmapWidth;
+            dynamicHeatmapCanvas.height = rawHeatmapHeight;
+            dynamicHeatmapCtx = dynamicHeatmapCanvas.getContext("2d", { willReadFrequently: true });
+            dynamicHeatmapCtx.drawImage(img, 0, 0);
+            rawHeatmapPixels = dynamicHeatmapCtx.getImageData(0, 0, rawHeatmapWidth, rawHeatmapHeight);
+            applyHeatmapThreshold();
+          } catch (e) {
+            console.warn("Canvas heatmap dynamic threshold setup notice:", e);
+          }
+        };
+        img.src = pngSrc;
+      }
+    }
+
     function selectEngineDomain(domain) {
       activeEngineDomain = domain;
       const el = document.getElementById("engine-domain-select");
@@ -3381,18 +3428,37 @@ def main():
 
       updateMetricsHudByDomain();
 
-      // Switch satellite layer overlay if active or if user chooses domain
+      // v4.8: swap the main heatmap to the chosen domain instead of stacking the other
+      // domain's raster on top of it as a satellite overlay.
       const satSel = document.getElementById("sel-satellite-layer");
       const satChk = document.getElementById("chk-satellite-layer");
-      if (satSel) {
-        if (domain === "coal") {
-          satSel.value = "prospectivity_k3_coal";
-          if (satChk) satChk.checked = true;
-          updateSatelliteLayer();
-        } else if (domain === "metals") {
-          satSel.value = "prospectivity_k4_metals";
-          updateSatelliteLayer();
+      const hasCoalHeatmap = Boolean(activeRegionBundle && activeRegionBundle.coal_heatmap_png);
+      const wantHeatmap = (domain === "coal" && hasCoalHeatmap) ? "coal" : "metals";
+      if (activeRegionBundle && wantHeatmap !== activeHeatmapDomain) {
+        setMainHeatmap(activeRegionBundle, domain);
+      }
+      // 50m camp-scan heatmaps are metals-only runs; don't paint them over the coal map
+      (hdHeatmapOverlays || []).forEach(ov => ov.setOpacity(domain === "coal" ? 0.0 : 0.90));
+      // keep the side panel on a target of the chosen domain
+      if (domain !== "both" && Array.isArray(activeTargetsList) && activeTargetsList.length) {
+        const isCoalT = t => String(t.oreCategory || "").toLowerCase().includes("coal");
+        const wantCoal = domain === "coal";
+        if (!activeTarget || isCoalT(activeTarget) !== wantCoal) {
+          const first = activeTargetsList.filter(t => isCoalT(t) === wantCoal).sort((a, b) => (a.rank || 99) - (b.rank || 99))[0];
+          if (first) selectTarget(first, false);
         }
+      }
+      if (satSel && satChk && satChk.checked &&
+          ["prospectivity_k3_coal", "prospectivity_k4_metals"].includes(satSel.value)) {
+        // a prospectivity raster shown as a "satellite" layer would double-stack the domains
+        satChk.checked = false;
+        updateSatelliteLayer();
+      }
+      if (domain === "coal" && !hasCoalHeatmap && satSel) {
+        // older bundles without a coal heatmap: fall back to the coal raster overlay
+        satSel.value = "prospectivity_k3_coal";
+        if (satChk) satChk.checked = true;
+        updateSatelliteLayer();
       }
 
       if (activeAnalyticsSubTab === "prauc") renderPraucChart();
@@ -3640,7 +3706,9 @@ def main():
             conformalInterval: [Number((ci.lower_bound_L || 0.5).toFixed(3)), Number((ci.upper_bound_U || 1.0).toFixed(3))],
             primaryDriver: alter.kaolinite_alunite_doublet ? "Hydrothermal SWIR Alteration" : `Dilation Td: ${struct.dilation_tendency_Td_max || 0.8}`,
             structuralDomain: alter.sensor_source || bundle.title || "Regional Tectonic Zone",
-            classification: sc.classification || (sc.rank <= 3 ? "TIER-1 CORE" : "STRUCTURAL EXT"),
+            classification: sc.classification || (sc.exploration_class
+              ? `${String(sc.exploration_class).toUpperCase()} #${sc.class_rank || sc.rank || 1}${sc.dist_to_known_km != null ? ` · ${Number(sc.dist_to_known_km).toFixed(1)} km from known` : ''}`
+              : (sc.rank <= 3 ? "TIER-1 CORE" : "STRUCTURAL EXT")),
             rank: sc.rank || 1,
             area_sq_km: geom.area_sq_km || 1.0,
             oreCategory: primaryOre,
@@ -3961,7 +4029,8 @@ def main():
             const pngSrc = sub.heatmap_png.startsWith("data:") ? sub.heatmap_png : ("data:image/png;base64," + sub.heatmap_png);
             const subOv = L.imageOverlay(pngSrc, sub.bounds, {
               pane: "heatmapPane",
-              opacity: 0.90,
+              // the 50m camp scans are metals runs: hidden while the coal domain is shown (v4.8)
+              opacity: activeEngineDomain === "coal" ? 0.0 : 0.90,
               interactive: false
             }).addTo(map);
             hdHeatmapOverlays.push(subOv);
@@ -3970,45 +4039,9 @@ def main():
       }
 
       // =========================================================================
-      // 4. REGIONAL CALIBRATED PROSPECTIVITY RASTER HEATMAP OVERLAY
+      // 4. REGIONAL CALIBRATED PROSPECTIVITY RASTER HEATMAP OVERLAY (per engine domain)
       // =========================================================================
-      if (heatmapOverlay) {
-        map.removeLayer(heatmapOverlay);
-        heatmapOverlay = null;
-      }
-      rawHeatmapPixels = null;
-      dynamicHeatmapCanvas = null;
-      dynamicHeatmapCtx = null;
-
-      const hBounds = b.heatmap_bounds || b.bounds;
-      if (b.heatmap_png && hBounds) {
-        const pngSrc = b.heatmap_png.startsWith("data:") ? b.heatmap_png : ("data:image/png;base64," + b.heatmap_png);
-        heatmapOverlay = L.imageOverlay(pngSrc, hBounds, {
-          pane: "heatmapPane",
-          opacity: Number(document.getElementById("rng-opacity").value || 0.8),
-          interactive: false
-        }).addTo(map);
-
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.onload = function() {
-          try {
-            rawHeatmapImage = img;
-            rawHeatmapWidth = img.width;
-            rawHeatmapHeight = img.height;
-            dynamicHeatmapCanvas = document.createElement("canvas");
-            dynamicHeatmapCanvas.width = rawHeatmapWidth;
-            dynamicHeatmapCanvas.height = rawHeatmapHeight;
-            dynamicHeatmapCtx = dynamicHeatmapCanvas.getContext("2d", { willReadFrequently: true });
-            dynamicHeatmapCtx.drawImage(img, 0, 0);
-            rawHeatmapPixels = dynamicHeatmapCtx.getImageData(0, 0, rawHeatmapWidth, rawHeatmapHeight);
-            applyHeatmapThreshold();
-          } catch (e) {
-            console.warn("Canvas heatmap dynamic threshold setup notice:", e);
-          }
-        };
-        img.src = pngSrc;
-      }
+      setMainHeatmap(b, activeEngineDomain);
 
       // =========================================================================
       // 5. GROUND TRUTH ACTUAL MINES
@@ -4249,7 +4282,7 @@ def main():
 
       const passesL = pL >= lThr;
       const passesArea = pAreaHa >= minAreaHa;
-      const passesDepth = pDepth <= maxDepth;
+      const passesDepth = oreStr.includes("coal") || pDepth <= maxDepth;  // coal exempt (v4.8)
 
       if (!passesOre || !passesL || !passesArea || !passesDepth) {
         return {
@@ -4320,7 +4353,9 @@ def main():
         const passesL = t.conformalInterval ? (t.conformalInterval[0] >= lThr) : true;
         const targetAreaHa = (t.area_sq_km || 0.05) * 100.0;
         const passesArea = targetAreaHa >= minAreaHa;
-        const passesDepth = (t.depthMeters || 50) <= maxDepth;
+        // v4.8: the drill-depth proxy (regolith cover x 8 + 80 m) is a hard-rock metals idea;
+        // coal targets are not filtered by it (their ~80 m cover would hide every coal target)
+        const passesDepth = String(t.oreCategory || "").toLowerCase().includes("coal") || (t.depthMeters || 50) <= maxDepth;
 
         const isCoalFilter2 = ["coal", "coal_all", "coal_k0_high_cv", "coal_k1_med_cv", "coal_k2_low_cv"].includes(activeOreCategory);
         const isMetalsAll2 = activeOreCategory === "metals_all";
@@ -4667,7 +4702,9 @@ def main():
         const passesL = t.conformalInterval ? (t.conformalInterval[0] >= lThr) : true;
         const targetAreaHa = (t.area_sq_km || 0.05) * 100.0;
         const passesArea = targetAreaHa >= minAreaHa;
-        const passesDepth = (t.depthMeters || 50) <= maxDepth;
+        // v4.8: the drill-depth proxy (regolith cover x 8 + 80 m) is a hard-rock metals idea;
+        // coal targets are not filtered by it (their ~80 m cover would hide every coal target)
+        const passesDepth = String(t.oreCategory || "").toLowerCase().includes("coal") || (t.depthMeters || 50) <= maxDepth;
 
         const isCoalFilter2 = ["coal", "coal_all", "coal_k0_high_cv", "coal_k1_med_cv", "coal_k2_low_cv"].includes(activeOreCategory);
         const isMetalsAll2 = activeOreCategory === "metals_all";
@@ -6378,6 +6415,17 @@ def main():
 
     function onMinAreaChange(val) {
       document.getElementById("lbl-min-area").innerText = parseFloat(val).toFixed(1) + " ha";
+      renderTable();
+      updateMapTargetMarkers();
+    }
+
+    // Z-depth slice slider (v4.8.2). The handler was deleted with the ASCII tomography view
+    // (commit d009708) while the slider and resetDefaults() still called it, so dragging the
+    // slider threw and Reset stopped half-way. It now updates the label and re-filters targets.
+    function onAsciiZChange(val) {
+      const depth = parseInt(val, 10);
+      const lbl = document.getElementById("lbl-z-depth");
+      if (lbl) lbl.innerText = `-${Number.isFinite(depth) ? depth : 450} m`;
       renderTable();
       updateMapTargetMarkers();
     }

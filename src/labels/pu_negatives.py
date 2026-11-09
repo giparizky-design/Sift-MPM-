@@ -876,20 +876,31 @@ class OUTMOGCGate:
         n_pca_components: int = 4,
         n_gmm_components: int = 2,
         random_state: int = 42,
+        standardize: bool = False,
+        feature_index: Optional[list[int]] = None,
     ) -> None:
         self.n_pca_components = n_pca_components
+        # v4.8: optional column subset (same columns the metals heads use)
+        self.feature_index = None if feature_index is None else [int(i) for i in feature_index]
         self.n_gmm_components = n_gmm_components
         self.random_state = random_state
+        # v4.8: z-score features before PCA so large-unit columns (metres, elevation)
+        # do not dominate the leading components. Off by default for backward compatibility.
+        self.standardize = bool(standardize)
+        self.scaler_mean_ = None
+        self.scaler_std_ = None
         self.pca = None
         self.gmm = None
         self.chi2_crit = None
         self.actual_df = None
 
-    def fit(self, X_positives: np.ndarray) -> OUTMOGCGate:
+    def fit(self, X_positives: np.ndarray, X_reference: Optional[np.ndarray] = None) -> OUTMOGCGate:
         """Fit PCA and GMM on the Merdith geophysical features of positive set P_k.
 
         Args:
             X_positives: 2-D array of shape (N_p, n_features).
+            X_reference: Optional background sample used for the z-score scaler when
+                ``standardize`` is True. Defaults to the positives themselves.
 
         Returns:
             Fitted self.
@@ -901,6 +912,11 @@ class OUTMOGCGate:
         X = np.asarray(X_positives, dtype=np.float64).copy()
         if X.ndim != 2:
             raise ValueError(f"X_positives must be 2-D, got shape {X.shape}")
+        fidx = getattr(self, "feature_index", None)
+        if fidx is not None:
+            X = X[:, fidx]
+            if X_reference is not None:
+                X_reference = np.asarray(X_reference)[:, fidx]
 
         if np.isnan(X).any():
             meds = np.nanmedian(X, axis=0)
@@ -910,6 +926,15 @@ class OUTMOGCGate:
             self.feature_medians_ = meds
         else:
             self.feature_medians_ = np.nanmedian(X, axis=0)
+
+        if getattr(self, "standardize", False):
+            ref = X if X_reference is None else np.asarray(X_reference, dtype=np.float64)
+            mu = np.nanmean(ref, axis=0)
+            sd = np.nanstd(ref, axis=0)
+            mu = np.where(np.isfinite(mu), mu, 0.0)
+            sd = np.where(np.isfinite(sd) & (sd > 1e-9), sd, 1.0)
+            self.scaler_mean_, self.scaler_std_ = mu, sd
+            X = (X - mu) / sd
 
         n_samples, n_features = X.shape
         actual_pca_comp = max(1, min(self.n_pca_components, n_samples - 1, n_features))
@@ -941,9 +966,14 @@ class OUTMOGCGate:
             raise RuntimeError("OUTMOGCGate is not fitted yet. Call fit() first.")
 
         X_arr = np.asarray(X, dtype=np.float64).copy()
+        fidx = getattr(self, "feature_index", None)
+        if fidx is not None and X_arr.shape[1] != len(fidx):
+            X_arr = X_arr[:, fidx]
         if np.isnan(X_arr).any() and hasattr(self, "feature_medians_"):
             nan_r, nan_c = np.where(np.isnan(X_arr))
             X_arr[nan_r, nan_c] = self.feature_medians_[nan_c]
+        if getattr(self, "standardize", False) and getattr(self, "scaler_mean_", None) is not None:
+            X_arr = (X_arr - self.scaler_mean_) / self.scaler_std_
 
         Z = self.pca.transform(X_arr)
 

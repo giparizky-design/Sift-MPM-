@@ -7,6 +7,90 @@ All notable modifications, bug fixes, architectural updates, and audits across t
 
 ---
 
+## [v4.8.2] — 2026-11-09 (`2026-11-09T21:25:00+08:00`)
+
+### Dashboard: Z-Depth Slider and Reset Fixed
+- **Modified [`scripts/build_purged_ui.py`](file:///Volumes/Seagate%202/Geospatials/scripts/build_purged_ui.py):** restored `onAsciiZChange(val)`. It updates the `-N m` label and re-filters the target table, map polygons and pins, like the sibling L(x) and min-area handlers.
+  - The function was deleted with the ASCII tomography view in commit `d009708`, but the Z-depth slider and `resetDefaults()` still called it. Dragging the slider threw a `ReferenceError` and did not re-filter.
+  - Reset also stopped part-way: it never reached the satellite-layer, table and marker refresh.
+- **UI recompiled.**
+- **Browser check, metals domain:** visible targets at −200 / −450 / −600 m are 7 / 39 / 47, the label follows the slider, Reset returns to −450 m with 39 targets, and no console errors.
+
+---
+
+## [v4.8.1] — 2026-11-09 (`2026-11-09T21:10:00+08:00`)
+
+### Dashboard: Coal Domain Replaces the Metals Map Instead of Stacking on It
+- **Modified [`scripts/build_purged_ui.py`](file:///Volumes/Seagate%202/Geospatials/scripts/build_purged_ui.py):**
+  - New `setMainHeatmap(bundle, domain)`. Selecting the coal domain now swaps the main heatmap to the bundle's `coal_heatmap_png`.
+    - Before, it left the metals heatmap in place and switched on `prospectivity_k3_coal` as a "satellite" overlay on top.
+    - A prospectivity raster left on as a satellite layer is switched off on domain change.
+    - Bundles without a coal heatmap fall back to the old overlay.
+  - The 50 m hotspot camp-scan heatmaps (metals runs) are hidden in coal mode.
+  - The side panel moves to the top-ranked target of the chosen domain.
+  - **Depth filter.** Coal targets are exempt from the Z-depth filter. The drill-depth proxy (regolith cover × 8 + 80 m) gave every coal target about 720 m and hid them all at the 450 m default.
+- **Modified [`scripts/dashboard_server.py`](file:///Volumes/Seagate%202/Geospatials/scripts/dashboard_server.py):**
+  - New `_coal_target_features` and `_coal_heatmap_b64`.
+  - **Region bundles:** the coal site cards and target polygons of a dual-domain run (`site_cards_coal.json`, `ranked_targets_*_coal.gpkg`) are now appended to the bundle.
+  - **Run-checkpoint bundles** (`_load_bundle_from_run_dir`):
+    - also append the coal targets and send `coal_heatmap_png`;
+    - prefer the `_metals` cards, map and gpkg for the default view, instead of an arbitrary first gpkg.
+- **UI recompiled** (`index.html`, `ui/index.html`).
+- **Checked in the browser.** In coal mode one coal heatmap shows with 30 coal targets, 0 metals targets and 0 hotspot heatmaps; metals mode shows the reverse. The dashboard tests pass (10).
+- **Known at the time:** the Z-depth slider called `onAsciiZChange`, which was undefined. It was already broken at the last commit and was fixed in v4.8.2.
+
+---
+
+## [v4.8.0] — 2026-11-09 (`2026-11-09T20:20:00+08:00`)
+
+### K=4 / K=3 Models Look Further Into Unlabeled Ground (audit v4.8)
+Every change was tested with the deposit-level harness at a 15 km buffer before it became a default. The v4.7 behaviour of each switch is still available: `run_seven_pass_training.py --legacy-v47`, or the individual flags.
+
+- **Modified [`scripts/run_seven_pass_training.py`](file:///Volumes/Seagate%202/Geospatials/scripts/run_seven_pass_training.py):**
+  - `GENERALISATION_DEFAULTS` / `GENERALISATION_LEGACY_V47` and a new `generalisation=` argument on `run_region_seven_pass`.
+  - New CLI options: `--weight-scheme`, `--gate`, `--head0-stacking`, `--min-child-weight-metals`, `--coal-disk-mode`, `--coal-buffer-m`, `--drop-features`, `--drop-features-metals`, `--k4-exclusion-scale` and `--legacy-v47`.
+  - **New defaults:**
+    - metals no longer use `METALS_REGIONAL_PROXY_FEATURES` (Bouguer gravity, crustal thickness, Moho step, plate/arc distances, arc halo, coastal-shelf distance);
+    - Hájek-normalised positive weights and neutral unlabeled weights for metals and coal;
+    - the OUTMOGC gate is z-scored before PCA;
+    - metals `min_child_weight=10`;
+    - coal `label_coal` disk cells are never K3 negatives, and unlabeled cells within 3.5 km of training known coal are not negatives.
+  - **Fixed:**
+    - the rank softmax now gets logits (`_prob_to_logit`) instead of probabilities, so the rank split is no longer near-uniform;
+    - chunked inference keeps NaN (it used `nan_to_num(0)`, unlike training) and runs when the U-Net is disabled (the maps used to stay NaN).
+  - **Targets:** ranked targets are split into greenfield (more than `GREENFIELD_KM` = 5 km from any known deposit) and brownfield, with a top 15 of each. Writes `ranked_targets_<region>_{metals,coal}_{greenfield,brownfield}.gpkg`.
+- **Modified [`src/models/metals.py`](file:///Volumes/Seagate%202/Geospatials/src/models/metals.py):** `TwoStageK4Ensemble` gains:
+  - `exclude_features`: the full input schema stays in `feature_names_`, the used columns go in `model_feature_names_`, and `select_model_inputs()` picks them;
+  - `head0_stacking`;
+  - `min_child_weight`.
+  - Head-0 design matrix construction is now one helper, `_head0_input`.
+- **Modified [`src/models/coal.py`](file:///Volumes/Seagate%202/Geospatials/src/models/coal.py):**
+  - `TwoStageK3CoalEnsemble` gains `unlabeled_weighting` ("inverse_propensity" legacy / "neutral") and `min_child_weight`.
+  - `fit()` gains `negative_exclusion_mask`.
+  - The reliable-negative rule `dist_sed > 15` became `>= 15`, because distances are capped at 15 km and the old rule never fired.
+- **Modified [`src/labels/pu_negatives.py`](file:///Volumes/Seagate%202/Geospatials/src/labels/pu_negatives.py):** `OUTMOGCGate` gains `standardize` (z-score against a background reference) and `feature_index`. Both are off by default, and old pickles still score.
+- **Modified [`src/outputs/prospectivity_map.py`](file:///Volumes/Seagate%202/Geospatials/src/outputs/prospectivity_map.py):**
+  - New `split_targets_by_known_ground`.
+  - Site cards carry `exploration_class`, `class_rank` and `dist_to_known_km`.
+  - The SHAP helper selects the ensemble's own columns.
+- **Modified [`scripts/build_purged_ui.py`](file:///Volumes/Seagate%202/Geospatials/scripts/build_purged_ui.py):** a target's classification label shows "GREENFIELD #n · x km from known" when the site card has it.
+- **Modified [`scripts/run_deposit_cv.py`](file:///Volumes/Seagate%202/Geospatials/scripts/run_deposit_cv.py):**
+  - Novelty metrics: the share of the top 1/5/10% within 5/15 km of any known label, split into near *training* labels and near *held-out* deposits.
+  - `any_frontier` AUC, and the coal `gated` variant.
+  - The coal evaluation background now excludes `label_coal` disks.
+  - Switches mirroring every fix, including `--k4-exclusion-scale`.
+- **Created:**
+  - [`scripts/compare_deposit_cv.py`](file:///Volumes/Seagate%202/Geospatials/scripts/compare_deposit_cv.py): paired per-deposit ΔAUC with bootstrap CI and Wilcoxon test.
+  - [`scripts/measure_map_novelty.py`](file:///Volumes/Seagate%202/Geospatials/scripts/measure_map_novelty.py): near-known enrichment of a production map.
+  - [`tests/unit/test_v48_generalisation.py`](file:///Volumes/Seagate%202/Geospatials/tests/unit/test_v48_generalisation.py): 17 tests. The unit suite is now 258 passed, and integration 18 passed.
+  - [`audits/2026-11-09_v4.8_unlabeled_ground_generalisation.md`](file:///Volumes/Seagate%202/Geospatials/audits/2026-11-09_v4.8_unlabeled_ground_generalisation.md), registered in `audits/INDEX.md`.
+- **UI.** `index.html` and `ui/index.html` were recompiled with `scripts/build_purged_ui.py`. They embed the new active run.
+- **Outputs:**
+  - `outputs/deposit_cv/v48/`: ablation runs, comparisons and before/after map novelty.
+  - East Kalimantan production retrained (U-Net off; the previous run is archived as `run_20261109_121603_135270`).
+
+---
+
 ## [v4.6.1] — 2026-11-09 (`2026-11-09T19:00:00+08:00`)
 
 ### Working Copy Relocated to `/Volumes/Seagate 2/Geospatials`; Doc Links Repointed

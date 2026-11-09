@@ -912,6 +912,70 @@ SKIRROW_MINERAL_SYSTEMS_BUCKETS: list[str] = [
 ]
 
 
+def split_targets_by_known_ground(
+    ranked_gdf: gpd.GeoDataFrame,
+    known_mask_2d: np.ndarray,
+    profile: dict,
+    greenfield_km: float = 5.0,
+    top_n_each: int = 15,
+) -> gpd.GeoDataFrame:
+    """Tag ranked targets as greenfield or brownfield and keep the top N of each (v4.8).
+
+    A target is **brownfield** when any of its cells lies within ``greenfield_km`` of a
+    known labelled deposit cell, and **greenfield** otherwise. Each class keeps its own
+    ``top_n_each`` best targets by ``rank_score``, so polygons sitting on known deposits
+    can no longer crowd new ground out of the list.
+
+    Adds columns ``dist_to_known_km`` (minimum over the polygon), ``exploration_class``
+    and ``class_rank`` (1 = best within its class). The overall ``rank`` / ``target_id``
+    are left untouched. A ``_source_pos`` column records each kept row's position in the
+    input so callers can re-align per-target side lists.
+
+    Args:
+        ranked_gdf: Output of :func:`polygonize_and_rank_targets`.
+        known_mask_2d: (H, W) boolean raster of known labelled deposit cells.
+        profile: Rasterio profile with ``transform`` and ``crs``.
+        greenfield_km: Distance from known ground beyond which a target is greenfield.
+        top_n_each: Targets kept per class (``0`` or less keeps all).
+
+    Returns:
+        GeoDataFrame sorted by ``rank_score`` (descending) with the new columns.
+    """
+    gdf = ranked_gdf.copy()
+    gdf["_source_pos"] = np.arange(len(gdf), dtype=int)
+    if len(gdf) == 0:
+        for c in ("dist_to_known_km", "exploration_class", "class_rank"):
+            gdf[c] = []
+        return gdf
+    transform = profile["transform"]
+    crs_obj = CRS.from_user_input(profile["crs"])
+    known = np.asarray(known_mask_2d, dtype=bool)
+    H, W = known.shape
+    px_m = abs(float(transform.a)) * (111_320.0 if crs_obj.is_geographic else 1.0)
+    if known.any():
+        dist_km = ndimage.distance_transform_edt(~known) * px_m / 1000.0
+    else:
+        dist_km = np.full((H, W), np.inf)
+
+    d_min = []
+    for geom in gdf.geometry:
+        m = rasterio.features.geometry_mask([geom], out_shape=(H, W), transform=transform, invert=True)
+        if not m.any():  # sub-pixel polygon: fall back to the centroid cell
+            col_f, row_f = ~transform * (geom.centroid.x, geom.centroid.y)
+            r = int(np.clip(round(row_f), 0, H - 1))
+            c = int(np.clip(round(col_f), 0, W - 1))
+            d_min.append(float(dist_km[r, c]))
+        else:
+            d_min.append(float(np.min(dist_km[m])))
+    gdf["dist_to_known_km"] = np.round(np.asarray(d_min, dtype=np.float64), 3)
+    gdf["exploration_class"] = np.where(gdf["dist_to_known_km"] > float(greenfield_km), "greenfield", "brownfield")
+    gdf = gdf.sort_values("rank_score", ascending=False, kind="stable")
+    gdf["class_rank"] = gdf.groupby("exploration_class").cumcount() + 1
+    if top_n_each and top_n_each > 0:
+        gdf = gdf[gdf["class_rank"] <= int(top_n_each)]
+    return gdf.reset_index(drop=True)
+
+
 def classify_skirrow_bucket(feature_name: str) -> str:
     """Classify feature into one of the 4 Skirrow Mineral Systems buckets (Skirrow et al., 2019).
 
@@ -1053,6 +1117,8 @@ def extract_target_shap_attribution(
         )
         if hasattr(model, "head_1_") and hasattr(model, "head_2_"):
             x_2d = x_arr if x_arr.ndim == 2 else x_arr[np.newaxis, :]
+            if hasattr(model, "select_model_inputs"):
+                x_2d = model.select_model_inputs(x_2d)
             try:
                 base_feat_dict["stage1_prob_skarn_fe_cu"] = float(model.head_1_.predict_proba(x_2d).ravel()[0])
                 base_feat_dict["stage1_prob_epithermal_au"] = float(model.head_2_.predict_proba(x_2d).ravel()[0])
@@ -1070,6 +1136,8 @@ def extract_target_shap_attribution(
                     x_full = np.array([base_feat_dict.get(fn, 0.0) for fn in head_feats], dtype=np.float64)
                 elif len(head_feats) > len(x_arr.ravel()) and hasattr(model, "head_1_") and hasattr(model, "head_2_"):
                     x_2d = x_arr if x_arr.ndim == 2 else x_arr[np.newaxis, :]
+                    if hasattr(model, "select_model_inputs"):
+                        x_2d = model.select_model_inputs(x_2d)
                     p1 = model.head_1_.predict_proba(x_2d)
                     p2 = model.head_2_.predict_proba(x_2d)
                     x_full = np.concatenate([x_arr.ravel(), p1.ravel(), p2.ravel()])
@@ -1440,6 +1508,14 @@ def emit_site_cards_json(
             "exploration_logistics_propensity": exp_propensity,
             "mineral_systems_shap_attribution": shap_attr,
         }
+        if "exploration_class" in row.index:
+            # v4.8: greenfield (> threshold from any known deposit) vs brownfield
+            d_known = row.get("dist_to_known_km")
+            card["exploration_class"] = str(row.get("exploration_class"))
+            card["class_rank"] = int(row.get("class_rank", 0))
+            card["dist_to_known_km"] = (
+                round(float(d_known), 2) if d_known is not None and np.isfinite(float(d_known)) else None
+            )
         if basin_gate_val is not None:
             card["macro_basin_sequence_gate"] = basin_gate_val
             card["basin_gate"] = basin_gate_val

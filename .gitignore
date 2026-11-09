@@ -66,3 +66,7 @@ earthdata_token.txt
 *.bak
 *.audit_bak
 
+
+# Compiled UI bundles (built by scripts/build_purged_ui.py; >100 MiB, over the GitHub limit)
+/index.html
+/ui/index.html

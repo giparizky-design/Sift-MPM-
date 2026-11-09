@@ -453,6 +453,9 @@ class TwoStageK4Ensemble:
         learning_rate: float = 0.05,
         max_depth: int = 6,
         random_state: int = 42,
+        head0_stacking: bool = True,
+        min_child_weight: Optional[float] = None,
+        exclude_features: Optional[Sequence[str]] = None,
     ) -> None:
         self.config = config or {}
         self.n_estimators = int(n_estimators)
@@ -460,6 +463,16 @@ class TwoStageK4Ensemble:
         self.learning_rate = float(learning_rate)
         self.max_depth = max(2, int(max_depth))
         self.random_state = int(random_state)
+        # v4.8: head0_stacking=False fits porphyry on the base features only (no skarn /
+        # epithermal meta-features); min_child_weight overrides the per-head defaults.
+        self.head0_stacking = bool(head0_stacking)
+        self.min_child_weight = None if min_child_weight is None else float(min_child_weight)
+        # v4.8: columns of the input schema the metals heads must not use (e.g. smooth regional
+        # gravity/crust fields that act as location surrogates). The ensemble keeps the full
+        # input schema in feature_names_ and selects its own columns, so callers pass full rows.
+        self.exclude_features = tuple(exclude_features or ())
+        self.keep_idx_: Optional[list[int]] = None
+        self.model_feature_names_: list[str] = []
 
         self.head_0_: Optional[_BaggedXGBoostHead] = None
         self.head_1_: Optional[_BaggedXGBoostHead] = None
@@ -485,6 +498,39 @@ class TwoStageK4Ensemble:
     @classmethod
     def load(cls, path: Union[Path, str]) -> "TwoStageK4Ensemble":
         return joblib.load(Path(path))
+
+    def select_model_inputs(self, X_arr: np.ndarray) -> np.ndarray:
+        """Columns the heads were trained on, from a full-schema (or already selected) matrix."""
+        keep = getattr(self, "keep_idx_", None)
+        X_arr = np.asarray(X_arr)
+        if keep is None:
+            return X_arr
+        n_in = len(getattr(self, "feature_names_", []) or [])
+        if X_arr.shape[-1] == n_in and n_in != len(keep):
+            return X_arr[..., keep]
+        return X_arr
+
+    def _mcw(self, default: float) -> float:
+        v = getattr(self, "min_child_weight", None)
+        return float(default) if v is None else float(v)
+
+    def _head0_input(
+        self,
+        X_arr: np.ndarray,
+        p1: np.ndarray,
+        p2: np.ndarray,
+        p3: np.ndarray,
+        coords_m: Optional[np.ndarray] = None,
+    ) -> tuple[np.ndarray, list[str]]:
+        """Head-0 design matrix and the names of the columns appended to the base features."""
+        if not getattr(self, "head0_stacking", True):
+            return X_arr, []
+        if getattr(self, "zonation_enabled_", False):
+            zonation_features = compute_concentric_zonation_features(
+                p_skarn=p1, p_epithermal=p2, p_laterite=p3, coords_m=coords_m
+            )
+            return np.column_stack([X_arr, zonation_features]), list(ZONATION_META_FEATURE_NAMES)
+        return np.column_stack([X_arr, p1, p2]), ["oof_prob_skarn", "oof_prob_epithermal"]
 
     def _extract_head_labels_and_weights(
         self,
@@ -565,6 +611,14 @@ class TwoStageK4Ensemble:
             X_arr = np.asarray(X, dtype=np.float32)
 
         self.feature_names_ = col_names
+        excl = set(getattr(self, "exclude_features", ()) or ())
+        if excl and col_names:
+            self.keep_idx_ = [i for i, n in enumerate(col_names) if n not in excl]
+            X_arr = X_arr[:, self.keep_idx_]
+            col_names = [col_names[i] for i in self.keep_idx_]
+        else:
+            self.keep_idx_ = None
+        self.model_feature_names_ = list(col_names)
         N, D = X_arr.shape
 
         targets, weights = self._extract_head_labels_and_weights(
@@ -631,7 +685,9 @@ class TwoStageK4Ensemble:
         oof_epithermal = np.zeros(N, dtype=np.float32)
         oof_laterite = np.zeros(N, dtype=np.float32)
 
-        if spatial_block_ids is not None and len(np.unique(spatial_block_ids)) >= 2:
+        if not getattr(self, "head0_stacking", True):
+            splitter = iter(())  # porphyry uses base features only; no OOF meta-features needed
+        elif spatial_block_ids is not None and len(np.unique(spatial_block_ids)) >= 2:
             n_splits = min(n_cv_folds, len(np.unique(spatial_block_ids)))
             splitter = GroupKFold(n_splits=n_splits).split(X_arr, groups=spatial_block_ids)
         else:
@@ -644,6 +700,7 @@ class TwoStageK4Ensemble:
                 n_estimators=max(20, self.n_estimators // 2),
                 max_depth=depth0,
                 learning_rate=self.head_base_eta_.get(1, eta0),
+                min_child_weight=self._mcw(1.0),
                 max_delta_step=1.0,
                 tree_method="hist",
                 n_bag=1,
@@ -657,6 +714,7 @@ class TwoStageK4Ensemble:
                 n_estimators=max(20, self.n_estimators // 2),
                 max_depth=depth0,
                 learning_rate=self.head_base_eta_.get(2, eta0),
+                min_child_weight=self._mcw(1.0),
                 max_delta_step=1.0,
                 tree_method="hist",
                 n_bag=1,
@@ -670,6 +728,7 @@ class TwoStageK4Ensemble:
                 n_estimators=max(20, self.n_estimators // 2),
                 max_depth=depth0,
                 learning_rate=self.head_base_eta_.get(3, eta0),
+                min_child_weight=self._mcw(1.0),
                 max_delta_step=1.0,
                 tree_method="hist",
                 n_bag=1,
@@ -695,6 +754,7 @@ class TwoStageK4Ensemble:
             n_estimators=self.n_estimators,
             max_depth=depth0,
             learning_rate=self.head_base_eta_.get(1, eta0),
+            min_child_weight=self._mcw(1.0),
             max_delta_step=1.0,
             tree_method="hist",
             n_bag=self.n_bag,
@@ -707,6 +767,7 @@ class TwoStageK4Ensemble:
             n_estimators=self.n_estimators,
             max_depth=depth0,
             learning_rate=self.head_base_eta_.get(2, eta0),
+            min_child_weight=self._mcw(1.0),
             max_delta_step=1.0,
             tree_method="hist",
             n_bag=self.n_bag,
@@ -719,6 +780,7 @@ class TwoStageK4Ensemble:
             n_estimators=self.n_estimators,
             max_depth=depth0,
             learning_rate=self.head_base_eta_.get(3, eta0),
+            min_child_weight=self._mcw(1.0),
             max_delta_step=1.0,
             tree_method="hist",
             n_bag=self.n_bag,
@@ -743,6 +805,10 @@ class TwoStageK4Ensemble:
             # +1 on proximal skarn ring (col D + 3) and distal epithermal ring (col D + 4),
             # -1 on laterite (col D + 6). 0 on all base features.
             monotone_tuple = tuple([0] * D + [0, 0, 0, 1, 1, 0, -1])
+        elif not getattr(self, "head0_stacking", True):
+            self.zonation_enabled_ = False
+            X_head0 = X_arr
+            monotone_tuple = None
         else:
             self.zonation_enabled_ = False
             X_head0 = np.column_stack([X_arr, oof_skarn, oof_epithermal])
@@ -754,7 +820,7 @@ class TwoStageK4Ensemble:
             n_estimators=self.n_estimators,
             max_depth=depth0,  # Aligned to Stage-1 depth
             learning_rate=self.head_base_eta_.get(0, eta0),
-            min_child_weight=3.0,
+            min_child_weight=self._mcw(3.0),
             max_delta_step=1.0,
             tree_method="hist",
             n_bag=self.n_bag,
@@ -791,6 +857,7 @@ class TwoStageK4Ensemble:
             from src.evaluation.metrics import pr_auc as _eval_pr_auc
 
             X_val_arr = X_val.values.astype(np.float32) if isinstance(X_val, pd.DataFrame) else np.asarray(X_val, dtype=np.float32)
+            X_val_arr = self.select_model_inputs(X_val_arr)
             val_targets, _ = self._extract_head_labels_and_weights(
                 y_k4=y_val_k4,
                 sample_weights_k4=None,
@@ -869,18 +936,13 @@ class TwoStageK4Ensemble:
             X_arr = X.values.astype(np.float32)
         else:
             X_arr = np.asarray(X, dtype=np.float32)
+        X_arr = self.select_model_inputs(X_arr)
 
         p1 = self.head_1_.predict_proba(X_arr)
         p2 = self.head_2_.predict_proba(X_arr)
         p3 = self.head_3_.predict_proba(X_arr)
 
-        if getattr(self, "zonation_enabled_", False):
-            zonation_features = compute_concentric_zonation_features(
-                p_skarn=p1, p_epithermal=p2, p_laterite=p3, coords_m=coords_m
-            )
-            X_head0 = np.column_stack([X_arr, zonation_features])
-        else:
-            X_head0 = np.column_stack([X_arr, p1, p2])
+        X_head0, _ = self._head0_input(X_arr, p1, p2, p3, coords_m)
         p0 = self.head_0_.predict_proba(X_head0)
 
         raw_probs = np.column_stack([p0, p1, p2, p3])
@@ -910,6 +972,7 @@ class TwoStageK4Ensemble:
             X_arr = X.values.astype(np.float32)
         else:
             X_arr = np.asarray(X, dtype=np.float32)
+        X_arr = self.select_model_inputs(X_arr)
 
         p1 = self.head_1_.predict_proba(X_arr)
         p2 = self.head_2_.predict_proba(X_arr)
@@ -919,13 +982,7 @@ class TwoStageK4Ensemble:
         std2 = self.head_2_.predict_std(X_arr)
         std3 = self.head_3_.predict_std(X_arr)
 
-        if getattr(self, "zonation_enabled_", False):
-            zonation_features = compute_concentric_zonation_features(
-                p_skarn=p1, p_epithermal=p2, p_laterite=p3, coords_m=coords_m
-            )
-            X_head0 = np.column_stack([X_arr, zonation_features])
-        else:
-            X_head0 = np.column_stack([X_arr, p1, p2])
+        X_head0, _ = self._head0_input(X_arr, p1, p2, p3, coords_m)
         std0 = self.head_0_.predict_std(X_head0)
 
         return np.column_stack([std0, std1, std2, std3])
@@ -980,20 +1037,16 @@ class TwoStageK4Ensemble:
         single = (X_arr.ndim == 1)
         if single:
             X_arr = X_arr[np.newaxis, :]
+        if getattr(self, "keep_idx_", None) is not None and len(base_feature_names) == len(self.feature_names_):
+            X_arr = self.select_model_inputs(X_arr)
+            base_feature_names = [base_feature_names[i] for i in self.keep_idx_]
 
         if k_idx == 0:
             p1 = self.head_1_.predict_proba(X_arr)
             p2 = self.head_2_.predict_proba(X_arr)
             p3 = self.head_3_.predict_proba(X_arr)
-            if getattr(self, "zonation_enabled_", False):
-                zonation_features = compute_concentric_zonation_features(
-                    p_skarn=p1, p_epithermal=p2, p_laterite=p3, coords_m=coords_m
-                )
-                X_head0 = np.column_stack([X_arr, zonation_features])
-                feat_names = list(base_feature_names) + list(ZONATION_META_FEATURE_NAMES)
-            else:
-                X_head0 = np.column_stack([X_arr, p1, p2])
-                feat_names = list(base_feature_names) + ["oof_prob_skarn", "oof_prob_epithermal"]
+            X_head0, extra_names = self._head0_input(X_arr, p1, p2, p3, coords_m)
+            feat_names = list(base_feature_names) + extra_names
             sv = h.compute_shap(X_head0)
         else:
             feat_names = list(base_feature_names)

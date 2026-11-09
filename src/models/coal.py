@@ -237,7 +237,7 @@ class MacroBasinSequenceGate:
             (sed < self.min_sediment_thickness_m)
             | (slope > self.max_basement_slope_deg)
             | (mag_as > 0.10)
-            | (dist_sed > 15.0)
+            | (dist_sed >= 15.0)  # v4.8: distances are capped at 15 km upstream, so '> 15' never fired
             | ((dist_intr < 1.5) & (sed < 600.0))
         )
         if positive_mask is not None:
@@ -263,6 +263,8 @@ class TwoStageK3CoalEnsemble:
         learning_rate: float = 0.05,
         max_depth: int = 5,
         random_state: int = 42,
+        unlabeled_weighting: str = "inverse_propensity",
+        min_child_weight: float = 3.0,
     ) -> None:
         self.config = config or {}
         self.n_estimators = int(n_estimators)
@@ -270,6 +272,13 @@ class TwoStageK3CoalEnsemble:
         self.learning_rate = float(learning_rate)
         self.max_depth = max(2, int(max_depth))
         self.random_state = int(random_state)
+        # v4.8: "inverse_propensity" (legacy) multiplies EVERY cell, unlabeled included, by
+        # 1/e(x), which turns remote unlabeled ground into up-to-20x negatives. "neutral"
+        # gives unlabeled cells weight 1 and Hájek-normalised 1/e to positives only.
+        if unlabeled_weighting not in ("inverse_propensity", "neutral"):
+            raise ValueError(f"unlabeled_weighting must be 'inverse_propensity' or 'neutral', got {unlabeled_weighting!r}")
+        self.unlabeled_weighting = unlabeled_weighting
+        self.min_child_weight = float(min_child_weight)
 
         self.basin_gate_ = MacroBasinSequenceGate()
         self.subcanopy_heads_: dict[int, _BaggedXGBoostHead] = {}
@@ -301,16 +310,21 @@ class TwoStageK3CoalEnsemble:
         tonnage_weights: Optional[np.ndarray],
         e_pooled: Optional[np.ndarray],
         N: int,
+        negative_exclusion_mask: Optional[np.ndarray] = None,
     ) -> tuple[dict[int, np.ndarray], dict[int, np.ndarray]]:
         targets: dict[int, np.ndarray] = {}
         weights: dict[int, np.ndarray] = {}
+        neutral = getattr(self, "unlabeled_weighting", "inverse_propensity") == "neutral"
 
         if e_pooled is not None:
             e_clip = np.clip(np.asarray(e_pooled, dtype=np.float64).ravel(), 0.05, 1.0)
             inv_prop = 1.0 / e_clip
-            inv_prop = inv_prop / max(float(np.mean(inv_prop)), 1e-6)
+            if not neutral:
+                inv_prop = inv_prop / max(float(np.mean(inv_prop)), 1e-6)
         else:
             inv_prop = np.ones(N, dtype=np.float64)
+        excl = (np.asarray(negative_exclusion_mask, dtype=bool).ravel()
+                if negative_exclusion_mask is not None else np.zeros(N, dtype=bool))
 
         if tonnage_weights is not None:
             w_ton = np.clip(np.asarray(tonnage_weights, dtype=np.float64).ravel(), 1.0, 20.0)
@@ -339,10 +353,18 @@ class TwoStageK3CoalEnsemble:
             y_bin = (np.asarray(raw_y).ravel() == 1).astype(np.int32)
             targets[c] = y_bin
 
-            w_c = inv_prop.copy()
             pos_mask = (y_bin == 1)
+            if neutral:
+                w_c = np.ones(N, dtype=np.float64)
+                if np.any(pos_mask):
+                    inv_pos = inv_prop[pos_mask]
+                    w_c[pos_mask] = inv_pos / max(float(np.mean(inv_pos)), 1e-12)
+            else:
+                w_c = inv_prop.copy()
             if np.any(pos_mask):
                 w_c[pos_mask] *= w_ton[pos_mask]
+            # Known-coal cells that are not this head's positives must not act as negatives.
+            w_c[excl & ~pos_mask] = 0.0
             weights[c] = w_c
 
         return targets, weights
@@ -398,6 +420,7 @@ class TwoStageK3CoalEnsemble:
         X_val: Optional[Union[np.ndarray, pd.DataFrame]] = None,
         y_val_k3: Optional[Union[np.ndarray, dict, list]] = None,
         feature_names: Optional[list[str]] = None,
+        negative_exclusion_mask: Optional[np.ndarray] = None,
     ) -> "TwoStageK3CoalEnsemble":
         """Fit Stage 1 Sub-Canopy Heads and Stage 2 Barren-Window Optical Calibrator (Bug 5)."""
         if isinstance(X, pd.DataFrame):
@@ -417,6 +440,7 @@ class TwoStageK3CoalEnsemble:
             tonnage_weights=tonnage_weights,
             e_pooled=e_pooled,
             N=N,
+            negative_exclusion_mask=negative_exclusion_mask,
         )
 
         eta0 = float(getattr(self, "learning_rate", 0.05))
@@ -494,7 +518,7 @@ class TwoStageK3CoalEnsemble:
                 n_estimators=self.n_estimators,
                 max_depth=depth0,
                 learning_rate=self.head_base_eta_.get(c, eta0),
-                min_child_weight=3.0,
+                min_child_weight=float(getattr(self, "min_child_weight", 3.0)),
                 max_delta_step=1.0,
                 tree_method="hist",
                 n_bag=self.n_bag,
