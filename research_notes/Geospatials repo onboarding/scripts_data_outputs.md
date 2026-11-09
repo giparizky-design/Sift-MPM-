@@ -30,10 +30,10 @@ Roughly half the remaining scripts are one-off or legacy experiment drivers from
   - `--l-threshold` (0.50), `--min-area-ha` (5.0)
   - `--block-size-m`, `--active-heads`, `--run-label`, `--notes`
 
-  — [scripts/run_seven_pass_training.py#L2626-L2780](file:///Users/gip/Geospatials/scripts/run_seven_pass_training.py)
-- Regions are restricted to a Kalimantan whitelist. Examples: KALIMANTAN, BORNEO, EAST_KALIMANTAN, KUTAI_BASIN_100M, KELIAN_CORRIDOR, SANGATTA_TREND, CUSTOM_POLYGON. Prefixes HOTSPOT_/KUTAI_/SCAN_/POLY_ are also allowed, and an explicit `--data-dir` overrides the check. Yilgarn therefore cannot run through this script. — [scripts/run_seven_pass_training.py#L2784-L2800](file:///Users/gip/Geospatials/scripts/run_seven_pass_training.py)
+  — [scripts/run_seven_pass_training.py#L2626-L2780](file:///Volumes/Seagate%202/Geospatials/scripts/run_seven_pass_training.py)
+- Regions are restricted to a Kalimantan whitelist. Examples: KALIMANTAN, BORNEO, EAST_KALIMANTAN, KUTAI_BASIN_100M, KELIAN_CORRIDOR, SANGATTA_TREND, CUSTOM_POLYGON. Prefixes HOTSPOT_/KUTAI_/SCAN_/POLY_ are also allowed, and an explicit `--data-dir` overrides the check. Yilgarn therefore cannot run through this script. — [scripts/run_seven_pass_training.py#L2784-L2800](file:///Volumes/Seagate%202/Geospatials/scripts/run_seven_pass_training.py)
 - 18+ files reference the orchestrator. Wrappers that call it include `run_10_rounds_training.py`, `run_kutai_basin_3rounds_training.py`, `run_sangatta_10rounds_and_hotspot_scan.py`, `sagemaker_entry.py`, `run_kalimantan_full_scan.py`, `run_kalimantan_500m_and_100m_scans.py`, `run_indonesia_*` and `dashboard_server.py`. Unit and integration tests also reference it. — `grep -rlw run_seven_pass_training` over scripts/, tests/ and the docs
-- On startup it archives the previous output directory with `archive_existing_run(out_dir, region_name)`. It copies `scanned_boundary.geojson` from the data directory, with `data/east_kalimantan/east_kalimantan_boundary.geojson` as fallback. Output goes to `maps/`, `targets/` and `models/` subdirectories. — [scripts/run_seven_pass_training.py#L551-L588](file:///Users/gip/Geospatials/scripts/run_seven_pass_training.py)
+- On startup it archives the previous output directory with `archive_existing_run(out_dir, region_name)`. It copies `scanned_boundary.geojson` from the data directory, with `data/east_kalimantan/east_kalimantan_boundary.geojson` as fallback. Output goes to `maps/`, `targets/` and `models/` subdirectories. — [scripts/run_seven_pass_training.py#L551-L588](file:///Volumes/Seagate%202/Geospatials/scripts/run_seven_pass_training.py)
 - It writes:
   - `spatial_oof_metrics_{metals,coal}.json`
   - `spatial_oof_metrics.json`
@@ -41,17 +41,17 @@ Roughly half the remaining scripts are one-off or legacy experiment drivers from
   - `seven_pass_summary.json`
   - a per-round history JSON
 
-  — [scripts/run_seven_pass_training.py#L1795, L2272-2275, L2466-2469, L2583, L2618](file:///Users/gip/Geospatials/scripts/run_seven_pass_training.py)
-- It sets `OMP_NUM_THREADS=1` by default to avoid XGBoost/PyTorch OpenMP deadlocks. — [scripts/run_seven_pass_training.py#L21](file:///Users/gip/Geospatials/scripts/run_seven_pass_training.py)
+  — [scripts/run_seven_pass_training.py#L1795, L2272-2275, L2466-2469, L2583, L2618](file:///Volumes/Seagate%202/Geospatials/scripts/run_seven_pass_training.py)
+- It sets `OMP_NUM_THREADS=1` by default to avoid XGBoost/PyTorch OpenMP deadlocks. — [scripts/run_seven_pass_training.py#L21](file:///Volumes/Seagate%202/Geospatials/scripts/run_seven_pass_training.py)
 
 **UI and dashboard**
 - `dashboard_server.py` (2,997 lines):
-  - Flags: `--port 8765`, `--host 127.0.0.1`. — [L2984-2985](file:///Users/gip/Geospatials/scripts/dashboard_server.py)
-  - Launches `run_seven_pass_training.py` via `subprocess.Popen`, passing through region, domain, rounds, trees, bags, epochs, learning rate, depth, thresholds, block size, run label, `--scan-only`, `--reset-from-zero`, `--disable-unet`, `--active-heads` and `--notes`. — [L2392-2431](file:///Users/gip/Geospatials/scripts/dashboard_server.py)
-  - Before launching a polygon run, it rasterizes the polygon into a feature cube. — [L2380-2390](file:///Users/gip/Geospatials/scripts/dashboard_server.py)
-  - API routes: `/api/region|bundle`, `/api/satellite_layer`, `/api/dual_domain_metrics`, `/api/config|carto`, `/api/status`, `/api/performance`, `/api/model_introspect`, `/api/runs`, `/api/models`, `/api/polygons`, `/api/compare_runs`, `/api/run_bundle`, `/api/rerank`, `/api/validate_polygon`, `/api/train`, `/api/scan`, `/api/train/stop`, `/api/runs/rename`, `/api/runs/delete`, `/api/clean_old_training`. — [L2729-2973](file:///Users/gip/Geospatials/scripts/dashboard_server.py)
-  - The performance route shells out to `sysctl hw.memsize`, `vm_stat` and `pgrep -f run_kalimantan_50m_island_scan` (macOS-specific). — [L2536-2599](file:///Users/gip/Geospatials/scripts/dashboard_server.py)
-- `build_purged_ui.py` is 6,490 lines. It compiles `ui/index.html` and the root `index.html`. Both are 77,059,389 bytes, because the data bundles are embedded. — [AGENTS.md §6](file:///Users/gip/Geospatials/AGENTS.md); `ls -la ui/` and the repo root
+  - Flags: `--port 8765`, `--host 127.0.0.1`. — [L2984-2985](file:///Volumes/Seagate%202/Geospatials/scripts/dashboard_server.py)
+  - Launches `run_seven_pass_training.py` via `subprocess.Popen`, passing through region, domain, rounds, trees, bags, epochs, learning rate, depth, thresholds, block size, run label, `--scan-only`, `--reset-from-zero`, `--disable-unet`, `--active-heads` and `--notes`. — [L2392-2431](file:///Volumes/Seagate%202/Geospatials/scripts/dashboard_server.py)
+  - Before launching a polygon run, it rasterizes the polygon into a feature cube. — [L2380-2390](file:///Volumes/Seagate%202/Geospatials/scripts/dashboard_server.py)
+  - API routes: `/api/region|bundle`, `/api/satellite_layer`, `/api/dual_domain_metrics`, `/api/config|carto`, `/api/status`, `/api/performance`, `/api/model_introspect`, `/api/runs`, `/api/models`, `/api/polygons`, `/api/compare_runs`, `/api/run_bundle`, `/api/rerank`, `/api/validate_polygon`, `/api/train`, `/api/scan`, `/api/train/stop`, `/api/runs/rename`, `/api/runs/delete`, `/api/clean_old_training`. — [L2729-2973](file:///Volumes/Seagate%202/Geospatials/scripts/dashboard_server.py)
+  - The performance route shells out to `sysctl hw.memsize`, `vm_stat` and `pgrep -f run_kalimantan_50m_island_scan` (macOS-specific). — [L2536-2599](file:///Volumes/Seagate%202/Geospatials/scripts/dashboard_server.py)
+- `build_purged_ui.py` is 6,490 lines. It compiles `ui/index.html` and the root `index.html`. Both are 77,059,389 bytes, because the data bundles are embedded. — [AGENTS.md §6](file:///Volumes/Seagate%202/Geospatials/AGENTS.md); `ls -la ui/` and the repo root
 - It is called at the end of training by `run_seven_pass_training.py`, `run_10_rounds_training.py` and `run_sangatta_10rounds_and_hotspot_scan.py`. — script cross-reference grep
 
 **Feature and dataset builders**
@@ -64,11 +64,11 @@ Roughly half the remaining scripts are one-off or legacy experiment drivers from
   6. Gravity and EMAG2 magnetics
   7. Deposits, OSM transport, GFW
 
-  Its only flag is `--enrich-only`. — [scripts/harvest_kalimantan_multimodal.py#L6-12, L1270-1284](file:///Users/gip/Geospatials/scripts/harvest_kalimantan_multimodal.py)
-- `build_east_kalimantan_250m.py` (177 lines, no CLI) interpolates 21 channels from 500 m to 250 m for East Kalimantan. — [scripts/build_east_kalimantan_250m.py#L1-3](file:///Users/gip/Geospatials/scripts/build_east_kalimantan_250m.py)
-- `build_kutai_basin_100m.py` (246 lines) builds the Kutai Basin cube: lon 115–118, lat −2.0 to 1.4, 100 m, 3,778 x 3,333 = 12.59 M cells. It is called by `run_kutai_basin_3rounds_training.py` (`--rebuild-cube` / `--reset`). — [scripts/build_kutai_basin_100m.py#L1-6](file:///Users/gip/Geospatials/scripts/build_kutai_basin_100m.py); [scripts/run_kutai_basin_3rounds_training.py#L110-111](file:///Users/gip/Geospatials/scripts/run_kutai_basin_3rounds_training.py)
-- `add_real_sar_channels.py` (166 lines, untracked, 2026-11-08) adds or replaces `sar_*` channels from the JAXA PALSAR-2 annual 25 m mosaic, fetched through Planetary Computer STAC. Flags: `--data-dir` (accepts several), `--year` (default 2021). — [scripts/add_real_sar_channels.py#L1-5, L152-153](file:///Users/gip/Geospatials/scripts/add_real_sar_channels.py)
-- `run_borneo_features.py` (240 lines) builds features for the Kelian 50 m corridor, and `train_borneo_pilot.py` (217 lines) runs 5-fold CV on it. — [AGENTS.md §2.2](file:///Users/gip/Geospatials/AGENTS.md)
+  Its only flag is `--enrich-only`. — [scripts/harvest_kalimantan_multimodal.py#L6-12, L1270-1284](file:///Volumes/Seagate%202/Geospatials/scripts/harvest_kalimantan_multimodal.py)
+- `build_east_kalimantan_250m.py` (177 lines, no CLI) interpolates 21 channels from 500 m to 250 m for East Kalimantan. — [scripts/build_east_kalimantan_250m.py#L1-3](file:///Volumes/Seagate%202/Geospatials/scripts/build_east_kalimantan_250m.py)
+- `build_kutai_basin_100m.py` (246 lines) builds the Kutai Basin cube: lon 115–118, lat −2.0 to 1.4, 100 m, 3,778 x 3,333 = 12.59 M cells. It is called by `run_kutai_basin_3rounds_training.py` (`--rebuild-cube` / `--reset`). — [scripts/build_kutai_basin_100m.py#L1-6](file:///Volumes/Seagate%202/Geospatials/scripts/build_kutai_basin_100m.py); [scripts/run_kutai_basin_3rounds_training.py#L110-111](file:///Volumes/Seagate%202/Geospatials/scripts/run_kutai_basin_3rounds_training.py)
+- `add_real_sar_channels.py` (166 lines, untracked, 2026-11-08) adds or replaces `sar_*` channels from the JAXA PALSAR-2 annual 25 m mosaic, fetched through Planetary Computer STAC. Flags: `--data-dir` (accepts several), `--year` (default 2021). — [scripts/add_real_sar_channels.py#L1-5, L152-153](file:///Volumes/Seagate%202/Geospatials/scripts/add_real_sar_channels.py)
+- `run_borneo_features.py` (240 lines) builds features for the Kelian 50 m corridor, and `train_borneo_pilot.py` (217 lines) runs 5-fold CV on it. — [AGENTS.md §2.2](file:///Volumes/Seagate%202/Geospatials/AGENTS.md)
 
 **Data acquisition (fetch_*)**
 | Script | Lines | Mtime | Fetches |
@@ -82,12 +82,12 @@ Roughly half the remaining scripts are one-off or legacy experiment drivers from
 — per-file docstrings. Apart from gravity, none of these is called by another script. `fetch_satellite_gravity` is referenced from `src/features/geophysics.py`, and `fetch_indonesia_geospatial_data` from `dashboard_server.py`. — cross-reference grep
 
 **Cloud training (untracked, 2026-10-27)**
-- `launch_sagemaker_training.py` submits SageMaker jobs. Defaults: `--instance-type ml.m5.xlarge`, `--volume-size-gb 50`, `--max-runtime-hours 4`, `--region-target EAST_KALIMANTAN`. — [scripts/launch_sagemaker_training.py#L44-54](file:///Users/gip/Geospatials/scripts/launch_sagemaker_training.py)
-- `sagemaker_entry.py` reads the `SM_*` environment channels. — [scripts/sagemaker_entry.py#L44-57](file:///Users/gip/Geospatials/scripts/sagemaker_entry.py)
-- `ec2_train_bootstrap.sh` creates a 4 GB swapfile and `aws s3 sync`s data, models and code from a `sagemaker-ap-southeast-2-<acct>` bucket. — [scripts/ec2_train_bootstrap.sh](file:///Users/gip/Geospatials/scripts/ec2_train_bootstrap.sh)
+- `launch_sagemaker_training.py` submits SageMaker jobs. Defaults: `--instance-type ml.m5.xlarge`, `--volume-size-gb 50`, `--max-runtime-hours 4`, `--region-target EAST_KALIMANTAN`. — [scripts/launch_sagemaker_training.py#L44-54](file:///Volumes/Seagate%202/Geospatials/scripts/launch_sagemaker_training.py)
+- `sagemaker_entry.py` reads the `SM_*` environment channels. — [scripts/sagemaker_entry.py#L44-57](file:///Volumes/Seagate%202/Geospatials/scripts/sagemaker_entry.py)
+- `ec2_train_bootstrap.sh` creates a 4 GB swapfile and `aws s3 sync`s data, models and code from a `sagemaker-ap-southeast-2-<acct>` bucket. — [scripts/ec2_train_bootstrap.sh](file:///Volumes/Seagate%202/Geospatials/scripts/ec2_train_bootstrap.sh)
 
 **Legacy, one-off or experiment scripts (nothing references them, or they are single experiments)**
-- Yilgarn pilot: `run_pilot.py` (623 lines; `--config config/pilot.yaml --stage all --version-tag v1`), `generate_pilot_data.py` (synthetic 10 km benchmark, `np.random.default_rng(2026)`), `run_data_audit.py`. — [scripts/run_pilot.py#L5, L581-583](file:///Users/gip/Geospatials/scripts/run_pilot.py); [scripts/generate_pilot_data.py#L45](file:///Users/gip/Geospatials/scripts/generate_pilot_data.py)
+- Yilgarn pilot: `run_pilot.py` (623 lines; `--config config/pilot.yaml --stage all --version-tag v1`), `generate_pilot_data.py` (synthetic 10 km benchmark, `np.random.default_rng(2026)`), `run_data_audit.py`. — [scripts/run_pilot.py#L5, L581-583](file:///Volumes/Seagate%202/Geospatials/scripts/run_pilot.py); [scripts/generate_pilot_data.py#L45](file:///Volumes/Seagate%202/Geospatials/scripts/generate_pilot_data.py)
 - Island and national scans:
 
   | Script | Lines | Notes |
@@ -100,10 +100,10 @@ Roughly half the remaining scripts are one-off or legacy experiment drivers from
   | `run_indonesia_hd_upgrade.py` | | |
   | `run_viewport_7pass.py` | 420 | `--min-lon/--min-lat/--max-lon/--max-lat`, `--grid-size 200` |
 
-  — docstrings; [scripts/generate_kalimantan_50m_hd_polygons.py#L21](file:///Users/gip/Geospatials/scripts/generate_kalimantan_50m_hd_polygons.py)
+  — docstrings; [scripts/generate_kalimantan_50m_hd_polygons.py#L21](file:///Volumes/Seagate%202/Geospatials/scripts/generate_kalimantan_50m_hd_polygons.py)
 - Multi-round wrappers: `run_10_rounds_training.py` (140 lines, East Kalimantan 250 m), `run_kutai_basin_3rounds_training.py`, `run_sangatta_10rounds_and_hotspot_scan.py` (661 lines, five stages), and `train_unlabeled_25km_tile.py` (660 lines; `--tile_id`, `--r0`, `--c0`, `--seed 2026`). — docstrings
 - Maintenance:
-  - `move_to_geospatials_research.py` moves the RAG documents to `/Users/gip/Geospatials Research` and leaves symlinks behind. — [scripts/move_to_geospatials_research.py#L3](file:///Users/gip/Geospatials/scripts/move_to_geospatials_research.py)
+  - `move_to_geospatials_research.py` moves the RAG documents to `/Users/gip/Geospatials Research` and leaves symlinks behind. — [scripts/move_to_geospatials_research.py#L3](file:///Volumes/Seagate%202/Geospatials/scripts/move_to_geospatials_research.py)
   - `verify_rag.py` tests RAG retrieval.
 - `/Volumes` currently contains only `Claude` and `Macintosh HD`. The Seagate SSD that `dashboard_server.py` (L2576-2610) and the 50 m scripts rely on is **not mounted**. — `ls /Volumes`
 
@@ -132,10 +132,10 @@ The Kalimantan pipelines are configured entirely by CLI flags and constants hard
 
 ### Cited Findings
 - Sizes: `pilot.yaml` 356 lines, `borneo.yaml` 104, `logging.yaml` 39, `carto.yaml` 9. — `wc -l config/*`
-- `pilot.yaml` has these sections: `pilot`, `grid`, `sources`, `features`, `pu_learning`, `evaluation`, `models`, `outputs`, `compute`. — [config/pilot.yaml](file:///Users/gip/Geospatials/config/pilot.yaml)
+- `pilot.yaml` has these sections: `pilot`, `grid`, `sources`, `features`, `pu_learning`, `evaluation`, `models`, `outputs`, `compute`. — [config/pilot.yaml](file:///Volumes/Seagate%202/Geospatials/config/pilot.yaml)
 - Only `scripts/run_pilot.py` (L581) and `scripts/run_data_audit.py` (L47, L222) load `config/pilot.yaml`. `src/models/retrain.py#L72` mentions it in a docstring. No Python file references `borneo.yaml`, `logging.yaml` or `carto.yaml`. — grep over src/, scripts/, agents/, mcp_server/ and tests/
-- `borneo.yaml` describes the Kelian 50 m AOI in EPSG:32750 (`aoi_bounds_geo [115.35,-0.15,115.55,0.05]`) and its sources: PALSAR-2, Copernicus GLO-30 at `s3://copernicus-dem-30m`, and others. — [config/borneo.yaml#L15-46](file:///Users/gip/Geospatials/config/borneo.yaml)
-- `dashboard_server.py` answers `/api/config` and `/api/carto` from `CARTO_API_KEY`, `CARTO_RASTER_TILE_URL`, `CARTO_VECTOR_STYLE_URL` and `CARTO_DARK_MATTER_URL`, falling back to CARTO basemaps URLs. It does not read `carto.yaml`. — [scripts/dashboard_server.py#L2772-2792](file:///Users/gip/Geospatials/scripts/dashboard_server.py)
+- `borneo.yaml` describes the Kelian 50 m AOI in EPSG:32750 (`aoi_bounds_geo [115.35,-0.15,115.55,0.05]`) and its sources: PALSAR-2, Copernicus GLO-30 at `s3://copernicus-dem-30m`, and others. — [config/borneo.yaml#L15-46](file:///Volumes/Seagate%202/Geospatials/config/borneo.yaml)
+- `dashboard_server.py` answers `/api/config` and `/api/carto` from `CARTO_API_KEY`, `CARTO_RASTER_TILE_URL`, `CARTO_VECTOR_STYLE_URL` and `CARTO_DARK_MATTER_URL`, falling back to CARTO basemaps URLs. It does not read `carto.yaml`. — [scripts/dashboard_server.py#L2772-2792](file:///Volumes/Seagate%202/Geospatials/scripts/dashboard_server.py)
 - **Security:**
   - The committed HEAD version of `config/carto.yaml` contains a non-empty `api_key` and `?key=` query strings on the tile URLs.
   - The uncommitted working copy blanks them, a 4-line change.
@@ -192,7 +192,7 @@ The Kalimantan pipelines are configured entirely by CLI flags and constants hard
   — `du -sh data/*`
 - In data/kalimantan, kutai_basin_100m and east_kalimantan, the files are 194 `.tif`, 3 `.parquet`, 3 `.joblib`, 3 `.geojson`, 2 `.json`, 1 `.npz`, 1 `.npy` and 1 `.gpkg`. — `find … | sort | uniq -c`
 - Only one symlink exists under data/ and outputs/: `data/raw/crust -> crust1.0`. — `find -type l`
-- `data/README.md` documents the provenance layout: `raw_real/` holds MINEDEX, WAMEX, GSWA geology/faults and the DEM. `borneo/` holds USGS MRDS (50 records: 28 genuine, 22 centroid artifacts), ESDM Fe (79) and coal (850). — [data/README.md](file:///Users/gip/Geospatials/data/README.md)
+- `data/README.md` documents the provenance layout: `raw_real/` holds MINEDEX, WAMEX, GSWA geology/faults and the DEM. `borneo/` holds USGS MRDS (50 records: 28 genuine, 22 centroid artifacts), ESDM Fe (79) and coal (850). — [data/README.md](file:///Volumes/Seagate%202/Geospatials/data/README.md)
 
 **Git**
 - 503 tracked files. By extension: 246 tif, 72 json, 67 py, 34 gpkg, 24 csv, 8 tsx, 8 parquet, 8 npy, 8 md, 8 joblib, 4 yaml. — `git ls-files`
@@ -202,7 +202,7 @@ The Kalimantan pipelines are configured entirely by CLI flags and constants hard
   - A comment says `data/raw_real/`, `data/borneo/`, `outputs/seven_pass_*/` and `outputs/reports/` are intentionally tracked for UI demo reproducibility.
   - The uncommitted diff adds `outputs/**/models/`, `outputs/run_history/**/models/`, `outputs/run_history/**/maps/*.{tif,vrt}`, `data/lancedb_store/`, `data/manifest.sqlite`, `data/markdown/`, `data/pdfs/` and `*.joblib`.
 
-  — [.gitignore](file:///Users/gip/Geospatials/.gitignore); `git diff .gitignore`
+  — [.gitignore](file:///Volumes/Seagate%202/Geospatials/.gitignore); `git diff .gitignore`
 - History: 32 commits from 2026-10-22 to 2026-10-28; latest is `ad5476a` on 10-28. Commits per day: 11 on 10-22, 6 on 10-23, 1 each on 10-24 and 10-25, 10 on 10-27, 3 on 10-28. — `git log`
 
 **Uncommitted state, by status**
@@ -278,7 +278,7 @@ The previous run is archived under `outputs/run_history/<region>/run_<ts>/`, and
   - `training_mode` (`standard` | `incremental_warm_start` | `transfer_adaptation`)
   - `n_ranked_targets`, `ore_categories`
 
-  — [outputs/run_history/training_runs_catalog.json](file:///Users/gip/Geospatials/outputs/run_history/training_runs_catalog.json)
+  — [outputs/run_history/training_runs_catalog.json](file:///Volumes/Seagate%202/Geospatials/outputs/run_history/training_runs_catalog.json)
 - Selected catalog entries:
   - EK 10-round run (2026-10-30): `pr_auc_fused` 0.3373.
   - `v4.0-smoke-test` (2026-11-07): `pr_auc_fused` 0.0311.
@@ -295,9 +295,9 @@ The previous run is archived under `outputs/run_history/<region>/run_<ts>/`, and
   - `w_xgb` 0.3351, `w_unet` 0.6649; `elkan_noto_c_hat` 0.5; `conformal_q_hat_90` 0.5; 3 ranked targets
   - the top target card carries mineral-systems SHAP groups
 
-  — [outputs/seven_pass_east_kalimantan/seven_pass_summary.json](file:///Users/gip/Geospatials/outputs/seven_pass_east_kalimantan/seven_pass_summary.json)
-- `n_cells` = 117,196 contrasts with the documented 2.92 M valid cells for the 250 m East Kalimantan cube. — [AGENTS.md §2.2](file:///Users/gip/Geospatials/AGENTS.md); [HANDOFF.md#L39-52](file:///Users/gip/Geospatials/HANDOFF.md)
-- HANDOFF says "All 29 historical training runs are cataloged" in the catalog. — [HANDOFF.md#L41](file:///Users/gip/Geospatials/HANDOFF.md)
+  — [outputs/seven_pass_east_kalimantan/seven_pass_summary.json](file:///Volumes/Seagate%202/Geospatials/outputs/seven_pass_east_kalimantan/seven_pass_summary.json)
+- `n_cells` = 117,196 contrasts with the documented 2.92 M valid cells for the 250 m East Kalimantan cube. — [AGENTS.md §2.2](file:///Volumes/Seagate%202/Geospatials/AGENTS.md); [HANDOFF.md#L39-52](file:///Volumes/Seagate%202/Geospatials/HANDOFF.md)
+- HANDOFF says "All 29 historical training runs are cataloged" in the catalog. — [HANDOFF.md#L41](file:///Volumes/Seagate%202/Geospatials/HANDOFF.md)
 - `outputs/reports/` holds Yilgarn-era `pipeline_2026102*.log` files (15), `blind_holdout_v{1,2_real}.json`, `spatial_cv_metrics_v{1,2_real}.csv` and `data_audit_report.md`. — `ls outputs/reports`
 - `outputs/maps` and `outputs/targets` are empty (0B). — `du`
 
@@ -316,8 +316,8 @@ The previous run is archived under `outputs/run_history/<region>/run_<ts>/`, and
 `.env.example` declares only the four CARTO variables. The real `.env` also defines UI-tool keys, an Elsevier key and `GEOLOGY_DATA_DIR`. Data comes from public REST, WFS, STAC and S3 endpoints: ESDM, GeoRIMA, GSWA SLIP, USGS MRDS, Copernicus DEM, AWS Terrarium, Scripps gravity, Planetary Computer PALSAR-2 and fraxen tectonic plates. Several "workstreams" that are labelled as real sensors actually generate seeded random fields.
 
 ### Cited Findings
-- `.env.example` variable names: `CARTO_API_KEY`, `CARTO_RASTER_TILE_URL`, `CARTO_VECTOR_STYLE_URL`, `CARTO_DARK_MATTER_URL`. — [.env.example](file:///Users/gip/Geospatials/.env.example)
-- `.env` variable names, values not read: the four CARTO variables plus `UI_UX_PRO_MAX_API_KEY`, `UI_UX_PRO_MAX_ESSENTIALS`, `UIUXPROMAX_API_KEY`, `UXKIN_API_KEY`, `ELSEVIER_API_KEY`, `GEOLOGY_DATA_DIR`. `.env` is mode 600 and gitignored. — `.env` key names only; [.gitignore](file:///Users/gip/Geospatials/.gitignore)
+- `.env.example` variable names: `CARTO_API_KEY`, `CARTO_RASTER_TILE_URL`, `CARTO_VECTOR_STYLE_URL`, `CARTO_DARK_MATTER_URL`. — [.env.example](file:///Volumes/Seagate%202/Geospatials/.env.example)
+- `.env` variable names, values not read: the four CARTO variables plus `UI_UX_PRO_MAX_API_KEY`, `UI_UX_PRO_MAX_ESSENTIALS`, `UIUXPROMAX_API_KEY`, `UXKIN_API_KEY`, `ELSEVIER_API_KEY`, `GEOLOGY_DATA_DIR`. `.env` is mode 600 and gitignored. — `.env` key names only; [.gitignore](file:///Volumes/Seagate%202/Geospatials/.gitignore)
 - Endpoint hosts found in the fetch, harvest and SAR scripts, with occurrence counts:
 
   | Endpoint | Count |
@@ -333,20 +333,20 @@ The previous run is archived under `outputs/run_history/<region>/run_<ts>/`, and
   | `copernicus-dem-30m.s3.eu-central-1.amazonaws.com` | |
 
   — grep over scripts/fetch_*.py, harvest_kalimantan_multimodal.py, add_real_sar_channels.py, run_indonesia_hd_upgrade.py, run_borneo_features.py and src/features/sar_palsar2.py
-- `data/README.md` also lists the NOAA EMAG2v3 global magnetics GeoTIFF URL and the ESDM Fe and coal MapServer layers (79 Fe, 850 coal). — [data/README.md](file:///Users/gip/Geospatials/data/README.md)
+- `data/README.md` also lists the NOAA EMAG2v3 global magnetics GeoTIFF URL and the ESDM Fe and coal MapServer layers (79 Fe, 850 coal). — [data/README.md](file:///Volumes/Seagate%202/Geospatials/data/README.md)
 - **Synthetic fields inside the "real" ingestion pipeline:**
   - Sentinel-2 workstream: NDVI and albedo are built from `np.random.default_rng(77)` Gaussian-filtered noise.
   - Thermal workstream: uses `default_rng(88)` noise.
   - "NOAA EMAG2v3 Magnetics" block: TMI is `gaussian_filter(rng.normal(0,45,…))` with `default_rng(555)`, and that field is then reduced to the pole.
 
-  — [scripts/harvest_kalimantan_multimodal.py#L329-L345, L382, L563-L566](file:///Users/gip/Geospatials/scripts/harvest_kalimantan_multimodal.py)
-- By contrast, the PALSAR-2 workstream says real data is used, and when it is unavailable the SAR channels are "omitted (not fabricated)". — [scripts/harvest_kalimantan_multimodal.py#L283-305, L960](file:///Users/gip/Geospatials/scripts/harvest_kalimantan_multimodal.py)
+  — [scripts/harvest_kalimantan_multimodal.py#L329-L345, L382, L563-L566](file:///Volumes/Seagate%202/Geospatials/scripts/harvest_kalimantan_multimodal.py)
+- By contrast, the PALSAR-2 workstream says real data is used, and when it is unavailable the SAR channels are "omitted (not fabricated)". — [scripts/harvest_kalimantan_multimodal.py#L283-305, L960](file:///Volumes/Seagate%202/Geospatials/scripts/harvest_kalimantan_multimodal.py)
 - MCP and agent credentials:
   - `mcp_server/geology_mcp_server.py` loads `.env` and uses `GEOLOGY_DATA_DIR`.
   - `agents/famous_literature_harvester.py` uses `ELSEVIER_API_KEY` for Scopus. Its docstring also lists "Library Genesis (LibGen) & Anna's Archive (via mirror resolvers)" as outlets.
 
-  — [mcp_server/geology_mcp_server.py#L24](file:///Users/gip/Geospatials/mcp_server/geology_mcp_server.py); [agents/famous_literature_harvester.py#L1-12](file:///Users/gip/Geospatials/agents/famous_literature_harvester.py)
-- AWS: `launch_sagemaker_training.py` hard-codes a SageMaker execution role ARN containing an account ID and uses an `ap-southeast-2` S3 bucket. — [scripts/launch_sagemaker_training.py#L36, L75-78](file:///Users/gip/Geospatials/scripts/launch_sagemaker_training.py)
+  — [mcp_server/geology_mcp_server.py#L24](file:///Volumes/Seagate%202/Geospatials/mcp_server/geology_mcp_server.py); [agents/famous_literature_harvester.py#L1-12](file:///Volumes/Seagate%202/Geospatials/agents/famous_literature_harvester.py)
+- AWS: `launch_sagemaker_training.py` hard-codes a SageMaker execution role ARN containing an account ID and uses an `ap-southeast-2` S3 bucket. — [scripts/launch_sagemaker_training.py#L36, L75-78](file:///Volumes/Seagate%202/Geospatials/scripts/launch_sagemaker_training.py)
 
 ### Inferences
 - The synthetic Sentinel-2, thermal and magnetic layers contradict the "Provenance Honesty" guardrail in AGENTS.md §3. Any feature derived from them, such as RTP and the analytic signal of the random TMI, is noise that the model can still fit spatially. Audit these channels before trusting the metals PR-AUCs.
@@ -379,13 +379,13 @@ These are side projects, not wired into the MPM pipeline:
   - `download_and_ingest_pdf`
   - `query_geology_rag`, `get_rag_stats`
 
-  It uses SQLite (`data/manifest.sqlite`), LanceDB (`data/lancedb_store`) and markdown chunking. — [mcp_server/geology_mcp_server.py#L45-671](file:///Users/gip/Geospatials/mcp_server/geology_mcp_server.py)
-- `.antigravity/mcp.json` registers the server with `./.venv/bin/python mcp_server/geology_mcp_server.py`. `.antigravity/skills/` has two skills, `geology-harvester` and `geology-rag-expert`. — [.antigravity/mcp.json](file:///Users/gip/Geospatials/.antigravity/mcp.json)
-- `requirements.txt` (untracked) lists only the RAG/MCP stack: `mcp[cli]`, `httpx`, `pymupdf`, `pymupdf4llm`, `lancedb`, `sentence-transformers`, `torch`, `pydantic`, `rich`, `typer`. The MPM stack is declared separately in `pyproject.toml` as project `mpm-yilgarn` v1.0.0: rasterio, geopandas, xgboost, shap, torch and others. — [requirements.txt](file:///Users/gip/Geospatials/requirements.txt); [pyproject.toml](file:///Users/gip/Geospatials/pyproject.toml)
+  It uses SQLite (`data/manifest.sqlite`), LanceDB (`data/lancedb_store`) and markdown chunking. — [mcp_server/geology_mcp_server.py#L45-671](file:///Volumes/Seagate%202/Geospatials/mcp_server/geology_mcp_server.py)
+- `.antigravity/mcp.json` registers the server with `./.venv/bin/python mcp_server/geology_mcp_server.py`. `.antigravity/skills/` has two skills, `geology-harvester` and `geology-rag-expert`. — [.antigravity/mcp.json](file:///Volumes/Seagate%202/Geospatials/.antigravity/mcp.json)
+- `requirements.txt` (untracked) lists only the RAG/MCP stack: `mcp[cli]`, `httpx`, `pymupdf`, `pymupdf4llm`, `lancedb`, `sentence-transformers`, `torch`, `pydantic`, `rich`, `typer`. The MPM stack is declared separately in `pyproject.toml` as project `mpm-yilgarn` v1.0.0: rasterio, geopandas, xgboost, shap, torch and others. — [requirements.txt](file:///Volumes/Seagate%202/Geospatials/requirements.txt); [pyproject.toml](file:///Volumes/Seagate%202/Geospatials/pyproject.toml)
 - RAG corpus on disk: `data/pdfs` (177M), `data/markdown` (1.5M), `data/lancedb_store` (7.2M), `data/manifest.sqlite` (20K). The `.gitignore` diff now ignores all of them. — `du`; `git diff .gitignore`
-- **`app/`** has only `layout.tsx` (30 lines), `page.tsx` (17 lines) and `globals.css` (97 lines). `page.tsx` dynamically imports `../ui/GeospatialWorkspace` with `ssr:false`, and the layout title is "GEOSPATIALS // Autonomous Mineral Intelligence Workspace". There is no `package.json` or `next.config.*` at the repo root. — [app/page.tsx](file:///Users/gip/Geospatials/app/page.tsx); [app/layout.tsx](file:///Users/gip/Geospatials/app/layout.tsx); `ls`
+- **`app/`** has only `layout.tsx` (30 lines), `page.tsx` (17 lines) and `globals.css` (97 lines). `page.tsx` dynamically imports `../ui/GeospatialWorkspace` with `ssr:false`, and the layout title is "GEOSPATIALS // Autonomous Mineral Intelligence Workspace". There is no `package.json` or `next.config.*` at the repo root. — [app/page.tsx](file:///Volumes/Seagate%202/Geospatials/app/page.tsx); [app/layout.tsx](file:///Volumes/Seagate%202/Geospatials/app/layout.tsx); `ls`
 - `ui/` contains `GeospatialWorkspace.tsx` (23 KB) and `components/`, `hooks/` and `types/` directories next to the compiled `index.html`. — `ls -la ui`
-- `design-system/geospatials/` has `MASTER.md` (233 lines; page-specific files override it) and `pages/dashboard.md` (52 lines). — [design-system/geospatials/MASTER.md](file:///Users/gip/Geospatials/design-system/geospatials/MASTER.md)
+- `design-system/geospatials/` has `MASTER.md` (233 lines; page-specific files override it) and `pages/dashboard.md` (52 lines). — [design-system/geospatials/MASTER.md](file:///Volumes/Seagate%202/Geospatials/design-system/geospatials/MASTER.md)
 - `notebooks/01_data_audit.ipynb` (292 lines) is the only notebook. — `ls notebooks`
 - `docs/` contains `MPM_System_Design.md` (261 lines), `borneo_data_audit.md` (164 lines) and `session/transcript.jsonl` (414 lines). — `wc -l`
 
@@ -402,20 +402,20 @@ These are side projects, not wired into the MPM pipeline:
 Training runs on CPU on the developer's Mac by default. The U-Net uses CUDA only if available and never picks MPS automatically. A 250 m East Kalimantan incremental round takes about 11–12.5 minutes. A 50 m hotspot round takes about 50 minutes. Memory pressure comes from multi-GB joblib and parquet cubes. Cloud execution exists through SageMaker and EC2, with ml.m5.xlarge as the default.
 
 ### Cited Findings
-- `get_best_device()` honours a `SIFT_DEVICE` override (cpu/cuda/mps). Otherwise it picks CUDA, then CPU, and "Defaults to CPU on macOS to eliminate Apple Silicon Metal command buffer synchronization stalls". — [src/models/unet_model.py#L57-69](file:///Users/gip/Geospatials/src/models/unet_model.py)
-- `OMP_NUM_THREADS=1` is forced in the orchestrator and in `model_introspection.py`. The PU isolation forest uses `n_jobs=-1`. — [scripts/run_seven_pass_training.py#L21](file:///Users/gip/Geospatials/scripts/run_seven_pass_training.py); [src/outputs/model_introspection.py#L27](file:///Users/gip/Geospatials/src/outputs/model_introspection.py); [src/labels/pu_negatives.py#L115](file:///Users/gip/Geospatials/src/labels/pu_negatives.py)
+- `get_best_device()` honours a `SIFT_DEVICE` override (cpu/cuda/mps). Otherwise it picks CUDA, then CPU, and "Defaults to CPU on macOS to eliminate Apple Silicon Metal command buffer synchronization stalls". — [src/models/unet_model.py#L57-69](file:///Volumes/Seagate%202/Geospatials/src/models/unet_model.py)
+- `OMP_NUM_THREADS=1` is forced in the orchestrator and in `model_introspection.py`. The PU isolation forest uses `n_jobs=-1`. — [scripts/run_seven_pass_training.py#L21](file:///Volumes/Seagate%202/Geospatials/scripts/run_seven_pass_training.py); [src/outputs/model_introspection.py#L27](file:///Volumes/Seagate%202/Geospatials/src/outputs/model_introspection.py); [src/labels/pu_negatives.py#L115](file:///Volumes/Seagate%202/Geospatials/src/labels/pu_negatives.py)
 - Measured durations:
   - `ten_rounds_history.json` for East Kalimantan 250 m: rounds took 675–754 s each (about 2 h for 10 rounds), adding 50 trees per round; completed 2026-10-30.
   - `three_rounds_hotspot_history.json` for the EK 50 m hotspots: 2,956.6 to 3,084.7 s per round.
   - Another history file records 1,850.2 s.
 
-  — [outputs/seven_pass_east_kalimantan/ten_rounds_history.json](file:///Users/gip/Geospatials/outputs/seven_pass_east_kalimantan/ten_rounds_history.json); [outputs/seven_pass_hotspot_east_kalimantan_50m/three_rounds_hotspot_history.json](file:///Users/gip/Geospatials/outputs/seven_pass_hotspot_east_kalimantan_50m/three_rounds_hotspot_history.json)
-- `pilot.yaml` `compute` (Yilgarn): about 40 M active cells, a 12 GB feature matrix, a recommended "8-core CPU, 64 GB RAM, 500 GB SSD", GPU optional (A10, 24 GB) and only needed for the U-Net. — [config/pilot.yaml#L347-356](file:///Users/gip/Geospatials/config/pilot.yaml)
+  — [outputs/seven_pass_east_kalimantan/ten_rounds_history.json](file:///Volumes/Seagate%202/Geospatials/outputs/seven_pass_east_kalimantan/ten_rounds_history.json); [outputs/seven_pass_hotspot_east_kalimantan_50m/three_rounds_hotspot_history.json](file:///Volumes/Seagate%202/Geospatials/outputs/seven_pass_hotspot_east_kalimantan_50m/three_rounds_hotspot_history.json)
+- `pilot.yaml` `compute` (Yilgarn): about 40 M active cells, a 12 GB feature matrix, a recommended "8-core CPU, 64 GB RAM, 500 GB SSD", GPU optional (A10, 24 GB) and only needed for the U-Net. — [config/pilot.yaml#L347-356](file:///Volumes/Seagate%202/Geospatials/config/pilot.yaml)
 - Cloud:
   - SageMaker defaults: ml.m5.xlarge, 50 GB volume, 4 h max runtime. g4dn and p3 instances are handled specially (GPU).
   - The EC2 bootstrap adds a 4 GB swapfile "to prevent OOM".
 
-  — [scripts/launch_sagemaker_training.py#L45-53, L70](file:///Users/gip/Geospatials/scripts/launch_sagemaker_training.py); [scripts/ec2_train_bootstrap.sh](file:///Users/gip/Geospatials/scripts/ec2_train_bootstrap.sh)
+  — [scripts/launch_sagemaker_training.py#L45-53, L70](file:///Volumes/Seagate%202/Geospatials/scripts/launch_sagemaker_training.py); [scripts/ec2_train_bootstrap.sh](file:///Volumes/Seagate%202/Geospatials/scripts/ec2_train_bootstrap.sh)
 - Large in-memory artefacts: `feature_stack.joblib` is 2.3 GB and `dataset.parquet` is 1.4 GB in `data/kalimantan/processed`. Kutai 100 m has 12.59 M cells. The 50 m island scan claims about 488 M cells across 42 tiles. — `find -size +100M`; script docstrings
 
 ### Inferences

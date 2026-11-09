@@ -18,18 +18,18 @@ There are no Antigravity rules files (`.agents/rules/`) and no workflow files an
 
 **`.agents/skills/`** (9 entries)
 
-- **`geology-harvester`**: a real directory with `SKILL.md`. Its frontmatter `description` is "Autonomous literature harvester for building the local Geology RAG. Use when spawning subagents to search, validate, download, and index…" — [SKILL.md:L1-L4](file:///Users/gip/Geospatials/.agents/skills/geology-harvester/SKILL.md)
+- **`geology-harvester`**: a real directory with `SKILL.md`. Its frontmatter `description` is "Autonomous literature harvester for building the local Geology RAG. Use when spawning subagents to search, validate, download, and index…" — [SKILL.md:L1-L4](file:///Volumes/Seagate%202/Geospatials/.agents/skills/geology-harvester/SKILL.md)
   - **Sources it searches:**
     - OpenAlex/Crossref
     - USGS Pubs Warehouse
     - Elsevier ScienceDirect, using `ELSEVIER_API_KEY` from `.env`
     - JSTOR, via `JSTOR_PROXY_URL`
-    - LibGen and Anna's Archive mirrors (`libgen.is`, `libgen.li`, `annas-archive.org`) for textbooks and monographs — [L15-L33](file:///Users/gip/Geospatials/.agents/skills/geology-harvester/SKILL.md)
-  - **Credential protocol:** never ask the user to paste keys in chat. Check them with `grep -sq` and set them with `read -s` — [L35-L45](file:///Users/gip/Geospatials/.agents/skills/geology-harvester/SKILL.md)
-  - **3-tier query expansion** — [L47-L51](file:///Users/gip/Geospatials/.agents/skills/geology-harvester/SKILL.md)
-  - **Hardware rules for a 16GB Apple Silicon machine:** `asyncio.Semaphore(3)`, dedup against `manifest.sqlite`, 1800-char chunks with 250 overlap, LanceDB batches of 16–32, and `gc.collect()` — [L53-L59](file:///Users/gip/Geospatials/.agents/skills/geology-harvester/SKILL.md)
-- **`geology-rag-expert`**: a real directory. Its description: synthesizes geological laws, ore genesis, and remote sensing "using the local Geology RAG database" — [SKILL.md:L1-L4](file:///Users/gip/Geospatials/.agents/skills/geology-rag-expert/SKILL.md)
-  - It says to always call the MCP tool `query_geology_rag` first, across 6 domains, then reason through a 4-part mineral-system chain — [L8-L14](file:///Users/gip/Geospatials/.agents/skills/geology-rag-expert/SKILL.md)
+    - LibGen and Anna's Archive mirrors (`libgen.is`, `libgen.li`, `annas-archive.org`) for textbooks and monographs — [L15-L33](file:///Volumes/Seagate%202/Geospatials/.agents/skills/geology-harvester/SKILL.md)
+  - **Credential protocol:** never ask the user to paste keys in chat. Check them with `grep -sq` and set them with `read -s` — [L35-L45](file:///Volumes/Seagate%202/Geospatials/.agents/skills/geology-harvester/SKILL.md)
+  - **3-tier query expansion** — [L47-L51](file:///Volumes/Seagate%202/Geospatials/.agents/skills/geology-harvester/SKILL.md)
+  - **Hardware rules for a 16GB Apple Silicon machine:** `asyncio.Semaphore(3)`, dedup against `manifest.sqlite`, 1800-char chunks with 250 overlap, LanceDB batches of 16–32, and `gc.collect()` — [L53-L59](file:///Volumes/Seagate%202/Geospatials/.agents/skills/geology-harvester/SKILL.md)
+- **`geology-rag-expert`**: a real directory. Its description: synthesizes geological laws, ore genesis, and remote sensing "using the local Geology RAG database" — [SKILL.md:L1-L4](file:///Volumes/Seagate%202/Geospatials/.agents/skills/geology-rag-expert/SKILL.md)
+  - It says to always call the MCP tool `query_geology_rag` first, across 6 domains, then reason through a 4-part mineral-system chain — [L8-L14](file:///Volumes/Seagate%202/Geospatials/.agents/skills/geology-rag-expert/SKILL.md)
   - So this skill depends on the `geology-rag-mcp` server.
 - **Seven symlinks to a global Antigravity plugin:** `banner-design`, `brand`, `design`, `design-system`, `slides`, `ui-styling`, `ui-ux-pro-max`. All point to `/Users/gip/.gemini/config/plugins/ui-ux-pro-max/skills/<name>`. They are absolute, machine-specific links (`ls -la .agents/skills`, created Oct 23).
 
@@ -41,11 +41,11 @@ There are no Antigravity rules files (`.agents/rules/`) and no workflow files an
   - `command`: `./.venv/bin/python`
   - `args`: `["mcp_server/geology_mcp_server.py"]`
   - `env`: `PYTHONUNBUFFERED` and `TOKENIZERS_PARALLELISM` (no secrets)
-  - Source: [mcp.json](file:///Users/gip/Geospatials/.antigravity/mcp.json)
+  - Source: [mcp.json](file:///Volumes/Seagate%202/Geospatials/.antigravity/mcp.json)
 
 **The MCP server**
 
-[geology_mcp_server.py](file:///Users/gip/Geospatials/mcp_server/geology_mcp_server.py) is 689 lines and uses FastMCP with the name `"geology-rag-mcp"` (L16-L19).
+[geology_mcp_server.py](file:///Volumes/Seagate%202/Geospatials/mcp_server/geology_mcp_server.py) is 689 lines and uses FastMCP with the name `"geology-rag-mcp"` (L16-L19).
 
 - **Tools it exposes:**
   - `search_open_access_papers` (L135)
@@ -57,11 +57,11 @@ There are no Antigravity rules files (`.agents/rules/`) and no workflow files an
   - `get_rag_stats` (L670)
 - **Dependencies:** `httpx`, `python-dotenv`, `pymupdf4llm`, `lancedb`, `mcp`.
 - **Environment:** reads `ELSEVIER_API_KEY` and `ELSEVIER_INST_TOKEN` from the environment (L36-L37), and `GEOLOGY_DATA_DIR`, which defaults to `data/` (L24-L33).
-- **Data it writes:** `data/pdfs`, `data/markdown`, `data/lancedb_store`, `data/manifest.sqlite`. All four are gitignored ([.gitignore](file:///Users/gip/Geospatials/.gitignore)).
+- **Data it writes:** `data/pdfs`, `data/markdown`, `data/lancedb_store`, `data/manifest.sqlite`. All four are gitignored ([.gitignore](file:///Volumes/Seagate%202/Geospatials/.gitignore)).
 
 **Related harvester code (not Antigravity config, but agent-oriented)**
 
-[agents/](file:///Users/gip/Geospatials/agents/) holds:
+[agents/](file:///Volumes/Seagate%202/Geospatials/agents/) holds:
 - `subagent_swarm_orchestrator.py` (329 lines): "Spawns and throttles 6 specialized Subagent Harvester Instances"
 - `famous_literature_harvester.py` (468 lines)
 - `master_geology_catalog.py` (363 lines)
@@ -72,19 +72,19 @@ There are no Antigravity rules files (`.agents/rules/`) and no workflow files an
 
 It holds two full orchestrated runs. Each agent folder contains `BRIEFING.md`, `DISPATCH.md`, `progress.md`, `handoff.md`, and a report file.
 
-- **Run 1 (2026-10-29), "Kalimantan Prospectivity Pipeline Stabilization"** — [orchestrator_1/SCOPE.md](file:///Users/gip/Geospatials/.agents/teamwork/teamwork_orchestrator_1/SCOPE.md)
+- **Run 1 (2026-10-29), "Kalimantan Prospectivity Pipeline Stabilization"** — [orchestrator_1/SCOPE.md](file:///Volumes/Seagate%202/Geospatials/.agents/teamwork/teamwork_orchestrator_1/SCOPE.md)
   - 16 features across milestones M1–M5.
   - Agents: explorers ×3, workers m1–m4, reviewers ×2, challengers ×2, auditor, victory_auditor_1.
-  - Gate PASS, with "163/163 unit tests" — [orchestrator_1/GATE_STATUS.md](file:///Users/gip/Geospatials/.agents/teamwork/teamwork_orchestrator_1/GATE_STATUS.md)
-  - Verdict: "VICTORY CONFIRMED" at 2026-10-29T15:07Z — [victory_auditor_1/handoff.md](file:///Users/gip/Geospatials/.agents/teamwork/teamwork_victory_auditor_1/handoff.md)
+  - Gate PASS, with "163/163 unit tests" — [orchestrator_1/GATE_STATUS.md](file:///Volumes/Seagate%202/Geospatials/.agents/teamwork/teamwork_orchestrator_1/GATE_STATUS.md)
+  - Verdict: "VICTORY CONFIRMED" at 2026-10-29T15:07Z — [victory_auditor_1/handoff.md](file:///Volumes/Seagate%202/Geospatials/.agents/teamwork/teamwork_victory_auditor_1/handoff.md)
 - **Run 2 (2026-11-07), "Multi-Domain MPM Pipeline v4.0 Production Upgrade"**
-  - The approved prompt covers R1 D1–D10 (math fixes), R2 Bugs 1–10, R3 restructure, and R4 governance. It includes "Integrity mode: demo" and "The team must NOT: read test source code…" — [ORIGINAL_REQUEST.md:L1-L87](file:///Users/gip/Geospatials/.agents/teamwork/ORIGINAL_REQUEST.md)
-  - 12 of 16 allowed spawns were used. Gate PASS with "226/226" tests — [orchestrator_2/GATE_STATUS.md](file:///Users/gip/Geospatials/.agents/teamwork/teamwork_orchestrator_2/GATE_STATUS.md), [orchestrator_2/handoff.md](file:///Users/gip/Geospatials/.agents/teamwork/teamwork_orchestrator_2/handoff.md)
-  - `DEAD_ENDS.md` is an empty table — [DEAD_ENDS.md](file:///Users/gip/Geospatials/.agents/teamwork/teamwork_orchestrator_2/DEAD_ENDS.md)
-  - Sentinel reports "Phase: complete; VICTORY CONFIRMED" — [sentinel/BRIEFING.md](file:///Users/gip/Geospatials/.agents/teamwork/sentinel/BRIEFING.md)
-  - The victory auditor reports 213 unit + 13 integration tests passed, plus `--help` smoke tests of 3 CLIs — [victory_auditor_2/handoff.md](file:///Users/gip/Geospatials/.agents/teamwork/teamwork_victory_auditor_2/handoff.md)
+  - The approved prompt covers R1 D1–D10 (math fixes), R2 Bugs 1–10, R3 restructure, and R4 governance. It includes "Integrity mode: demo" and "The team must NOT: read test source code…" — [ORIGINAL_REQUEST.md:L1-L87](file:///Volumes/Seagate%202/Geospatials/.agents/teamwork/ORIGINAL_REQUEST.md)
+  - 12 of 16 allowed spawns were used. Gate PASS with "226/226" tests — [orchestrator_2/GATE_STATUS.md](file:///Volumes/Seagate%202/Geospatials/.agents/teamwork/teamwork_orchestrator_2/GATE_STATUS.md), [orchestrator_2/handoff.md](file:///Volumes/Seagate%202/Geospatials/.agents/teamwork/teamwork_orchestrator_2/handoff.md)
+  - `DEAD_ENDS.md` is an empty table — [DEAD_ENDS.md](file:///Volumes/Seagate%202/Geospatials/.agents/teamwork/teamwork_orchestrator_2/DEAD_ENDS.md)
+  - Sentinel reports "Phase: complete; VICTORY CONFIRMED" — [sentinel/BRIEFING.md](file:///Volumes/Seagate%202/Geospatials/.agents/teamwork/sentinel/BRIEFING.md)
+  - The victory auditor reports 213 unit + 13 integration tests passed, plus `--help` smoke tests of 3 CLIs — [victory_auditor_2/handoff.md](file:///Volumes/Seagate%202/Geospatials/.agents/teamwork/teamwork_victory_auditor_2/handoff.md)
 - **Other run 2 artifacts:** `interviewer/prompt_draft.md` (the drafted task prompt), and challenger-added test files `tests/unit/test_adversarial_v4_math_invariants.py` and `tests/integration/test_v4_challenger_2_adversarial.py` (orchestrator_2 handoff, section 2).
-- `.agents/` is gitignored under "# Local Agent Workspace & Backups" — [.gitignore](file:///Users/gip/Geospatials/.gitignore)
+- `.agents/` is gitignored under "# Local Agent Workspace & Backups" — [.gitignore](file:///Volumes/Seagate%202/Geospatials/.gitignore)
 
 **Global Antigravity config outside the repo (names only)**
 
@@ -108,7 +108,7 @@ It holds two full orchestrated runs. Each agent folder contains `BRIEFING.md`, `
 
 **The original Antigravity session transcript is committed to git**
 
-- [docs/session/transcript.jsonl](file:///Users/gip/Geospatials/docs/session/transcript.jsonl) has 414 steps from 2026-10-20T19:28Z to 2026-10-21T08:34Z, with types `PLANNER_RESPONSE`, `USER_INPUT`, `GENERIC`, and `SYSTEM_MESSAGE`. It includes model "thinking" fields.
+- [docs/session/transcript.jsonl](file:///Volumes/Seagate%202/Geospatials/docs/session/transcript.jsonl) has 414 steps from 2026-10-20T19:28Z to 2026-10-21T08:34Z, with types `PLANNER_RESPONSE`, `USER_INPUT`, `GENERIC`, and `SYSTEM_MESSAGE`. It includes model "thinking" fields.
 - It has been tracked since the first commit `015310f` (`git log -- docs/session`).
 - A regex scan for common key formats found 0 matches.
 
@@ -147,7 +147,7 @@ The recommended durable setup is a short `CLAUDE.md` that starts with `@AGENTS.m
 - **The "Project instructions" setting** (`claude-md-or-agents-md` default, `claude-md-and-agents-md`, `claude-md`, `managed-only`) controls what loads. It is read only from user, `--settings`, or managed settings, not from project settings — [Claude Code memory docs](https://code.claude.com/docs/en/memory)
 - **Imports:** `@path` imports expand up to 4 hops deep and don't reduce context cost. Keep each CLAUDE.md under about 200 lines. Use `.claude/rules/` with `paths:` frontmatter for scoped rules — [Claude Code memory docs](https://code.claude.com/docs/en/memory)
 - **Instruction audit:** `/doctor prompt-audit` checks CLAUDE.md, CLAUDE.local.md, and AGENTS.md for stale or contradictory content (v2.1.283+) — [Claude Code memory docs](https://code.claude.com/docs/en/memory)
-- **AGENTS.md was modified by a third-party tool.** Lines 152–183 contain an appended block, `<!-- BEGIN AWS Agent Toolkit rules --> # AWS Guidance for the new AWS experience …`, which is about 2.4 KB of 20,380 bytes — [AGENTS.md:L152-L183](file:///Users/gip/Geospatials/AGENTS.md)
+- **AGENTS.md was modified by a third-party tool.** Lines 152–183 contain an appended block, `<!-- BEGIN AWS Agent Toolkit rules --> # AWS Guidance for the new AWS experience …`, which is about 2.4 KB of 20,380 bytes — [AGENTS.md:L152-L183](file:///Volumes/Seagate%202/Geospatials/AGENTS.md)
   - The untracked SageMaker/EC2 scripts fit an AWS training effort: `scripts/launch_sagemaker_training.py`, `scripts/sagemaker_entry.py`, `scripts/ec2_train_bootstrap.sh`, `scripts/requirements_sagemaker.txt` (`git status --porcelain`).
 
 ### Inferences
@@ -181,7 +181,7 @@ Agents followed these rules with great diligence: 20 audits and about 45 changel
 
 ### Cited Findings
 
-**AGENTS.md structure** ([AGENTS.md](file:///Users/gip/Geospatials/AGENTS.md); 183 lines, 20,380 bytes; header "Last Updated: 2026-11-07 (v4.0.0-mpm-pipeline-upgrade)", L3)
+**AGENTS.md structure** ([AGENTS.md](file:///Volumes/Seagate%202/Geospatials/AGENTS.md); 183 lines, 20,380 bytes; header "Last Updated: 2026-11-07 (v4.0.0-mpm-pipeline-upgrade)", L3)
 
 - **§1 Mandatory Governance** (L8-L20):
   - Save audits to `audits/` using `YYYY-MM-DD_vX.Y_<slug>.md` and add each to `INDEX.md` with version, ISO date, timestamp, `file://` link, and summary.
@@ -204,10 +204,10 @@ Agents followed these rules with great diligence: 20 audits and about 45 changel
   - Check `lsof -i :8765` and restart stale servers.
 - **The rules are reflected in code:**
   - `apiFetch` appears 19 times in `scripts/build_purged_ui.py`; the older `getApiEndpoint` appears twice.
-  - `Access-Control-Allow-Origin: *` is set at [dashboard_server.py:L2676-L2720](file:///Users/gip/Geospatials/scripts/dashboard_server.py) (grep).
+  - `Access-Control-Allow-Origin: *` is set at [dashboard_server.py:L2676-L2720](file:///Volumes/Seagate%202/Geospatials/scripts/dashboard_server.py) (grep).
 - **The root `index.html` is 77 MB** (77,059,389 bytes) and is tracked and modified (`ls -la`, `git status`).
 
-**audits/INDEX.md** ([INDEX.md](file:///Users/gip/Geospatials/audits/INDEX.md))
+**audits/INDEX.md** ([INDEX.md](file:///Volumes/Seagate%202/Geospatials/audits/INDEX.md))
 
 It restates the policy (L5-L8) and lists the audits below. All timestamps are UTC+8.
 
@@ -234,15 +234,15 @@ It restates the policy (L5-L8) and lists the audits below. All timestamps are UT
 | v4.4 | 2026-11-08 | **SAR feature dropout audit.** Models have 0% SAR gain and 59–77% GEM-fault gain. SAR was missing from the datasets, dropped by warm-start, and **synthetic** (DEM slope + seeded noise). |
 | v4.3 | 2026-11-08 | Responsive UI, polygon rasterizer, multi-resolution training, warm-start and scan-only modes, new API routes (190 tests passed). |
 
-Sources: [INDEX.md:L16-L35](file:///Users/gip/Geospatials/audits/INDEX.md), [v4.4 audit](file:///Users/gip/Geospatials/audits/2026-11-08_v4.4_sar_feature_dropout_audit.md)
+Sources: [INDEX.md:L16-L35](file:///Volumes/Seagate%202/Geospatials/audits/INDEX.md), [v4.4 audit](file:///Volumes/Seagate%202/Geospatials/audits/2026-11-08_v4.4_sar_feature_dropout_audit.md)
 
 **Problems in the index itself**
 - v4.4 is listed above v4.3, so the table is out of order (L34-L35).
 - There is no v4.1 or v4.2.
 - `sift_dual_domain_metrics.json` sits in `audits/` but isn't indexed.
-- The run 2 prompt cites `audits/pipeline_domain_head_audit_report.md` as its reference audit ([ORIGINAL_REQUEST.md](file:///Users/gip/Geospatials/.agents/teamwork/ORIGINAL_REQUEST.md)), but that file doesn't exist anywhere in the repo (`find`).
+- The run 2 prompt cites `audits/pipeline_domain_head_audit_report.md` as its reference audit ([ORIGINAL_REQUEST.md](file:///Volumes/Seagate%202/Geospatials/.agents/teamwork/ORIGINAL_REQUEST.md)), but that file doesn't exist anywhere in the repo (`find`).
 
-**CHANGELOG.md** ([CHANGELOG.md](file:///Users/gip/Geospatials/CHANGELOG.md); 776 lines, 109,939 bytes)
+**CHANGELOG.md** ([CHANGELOG.md](file:///Volumes/Seagate%202/Geospatials/CHANGELOG.md); 776 lines, 109,939 bytes)
 
 - It restates the mandatory-logging rule (L5-L6).
 - **The 10 most recent entries, newest first:**
@@ -256,7 +256,7 @@ Sources: [INDEX.md:L16-L35](file:///Users/gip/Geospatials/audits/INDEX.md), [v4.
   - v3.2.0 (18:57)
   - v3.1.0 (18:25)
   - v3.0.0 (11-01)
-  - Source: [CHANGELOG.md:L10-L192](file:///Users/gip/Geospatials/CHANGELOG.md)
+  - Source: [CHANGELOG.md:L10-L192](file:///Volumes/Seagate%202/Geospatials/CHANGELOG.md)
 - **Entry format:** `## [vX.Y.Z(-slug)] — date (ISO+08:00)`, then H3 title, then bullets of `**Modified/Created [file](file://…):**` with detailed sub-bullets. Entries are LaTeX-heavy and often restate test counts.
 - **Older entries were backfilled from commits:** v1.9.0 "(Commits d009708, 0c4d6ef, ad5476a)", v1.8.0, and v1.5.0 (L741-L762).
 - **Version numbering skips and collides:**
@@ -291,7 +291,7 @@ Open items:
 - Commit roughly 11 days of uncommitted work.
 
 ### Cited Findings
-- **HANDOFF.md says** "Handoff Version: v2.0, Date: 2026-10-28 (2026-10-28T23:50:26+08:00)", with audits listed only through v2.0 — [HANDOFF.md:L3-L7](file:///Users/gip/Geospatials/HANDOFF.md), [L53-L60](file:///Users/gip/Geospatials/HANDOFF.md)
+- **HANDOFF.md says** "Handoff Version: v2.0, Date: 2026-10-28 (2026-10-28T23:50:26+08:00)", with audits listed only through v2.0 — [HANDOFF.md:L3-L7](file:///Volumes/Seagate%202/Geospatials/HANDOFF.md), [L53-L60](file:///Volumes/Seagate%202/Geospatials/HANDOFF.md)
 - **Its prioritized next steps were:**
   - fix Evans `plan_curvature` (structural.py:406)
   - `_pad_and_taper`
@@ -303,28 +303,28 @@ Open items:
   - fit `OUTMOGCGate` on `train_idx` only
   - remove fabricated site-card sensors and make `/api/rerank` read-only
   - and noted "Currently 108 / 108 unit tests pass"
-  - Source: [HANDOFF.md:L64-L78](file:///Users/gip/Geospatials/HANDOFF.md)
-- **These were later reported fixed:** v2.1 "verified all 7 physics… fixes (112 passed)" ([INDEX.md:L21](file:///Users/gip/Geospatials/audits/INDEX.md)), and AGENTS §4 marks plan_curvature, FFT taper, RTP, and Bouguer as "RESOLVED in v4.0.0" ([AGENTS.md:L85-L90](file:///Users/gip/Geospatials/AGENTS.md)).
+  - Source: [HANDOFF.md:L64-L78](file:///Volumes/Seagate%202/Geospatials/HANDOFF.md)
+- **These were later reported fixed:** v2.1 "verified all 7 physics… fixes (112 passed)" ([INDEX.md:L21](file:///Volumes/Seagate%202/Geospatials/audits/INDEX.md)), and AGENTS §4 marks plan_curvature, FFT taper, RTP, and Bouguer as "RESOLVED in v4.0.0" ([AGENTS.md:L85-L90](file:///Volumes/Seagate%202/Geospatials/AGENTS.md)).
 - **HANDOFF.md is modified but uncommitted** (+73/−57 lines vs HEAD per `git diff --stat`). Its mtime is Oct 28 23:52, so the uncommitted v2.0 rewrite was never followed by a newer handoff.
 - **HANDOFF's training history**, useful context on past results:
   - Yilgarn P-vs-RN PR-AUC 0.8472
   - Kelian clean CV OOF PR-AUC 0.0061 (ROC 0.4618)
   - East Kalimantan 10-round run peaking at round 2 (`pr_auc_fused=0.1793`) and over-boosting by round 10
   - `porphyry_cu` with 0 positives, defaulted to 0.50
-  - Source: [HANDOFF.md:L43-L49](file:///Users/gip/Geospatials/HANDOFF.md)
-- **docs/session/** contains only `transcript.jsonl`, the Antigravity trajectory of the Oct 20–21 founding session (414 steps). The last step says the evaluation "runs properly", that the blind holdout PR-AUC of 1.000 is "an artifact of the synthetic setup", and that HANDOFF.md will be updated — [transcript.jsonl](file:///Users/gip/Geospatials/docs/session/transcript.jsonl), last line
+  - Source: [HANDOFF.md:L43-L49](file:///Volumes/Seagate%202/Geospatials/HANDOFF.md)
+- **docs/session/** contains only `transcript.jsonl`, the Antigravity trajectory of the Oct 20–21 founding session (414 steps). The last step says the evaluation "runs properly", that the blind holdout PR-AUC of 1.000 is "an artifact of the synthetic setup", and that HANDOFF.md will be updated — [transcript.jsonl](file:///Volumes/Seagate%202/Geospatials/docs/session/transcript.jsonl), last line
 - **Last activity, from CHANGELOG v4.4.0 and v4.4.1:**
   - created `src/features/sar_palsar2.py` and `scripts/add_real_sar_channels.py`
   - ran it on `east_kalimantan` (42 tiles, 2.92M cells), `kelian_corridor_250m`, and `hotspot_east_kalimantan_50m`
   - added `resolve_warm_start_feature_schema` in `canonical.py`
   - added radar layers to the UI
   - restarted the server on port 8765
-  - Source: [CHANGELOG.md:L10-L52](file:///Users/gip/Geospatials/CHANGELOG.md)
+  - Source: [CHANGELOG.md:L10-L52](file:///Volumes/Seagate%202/Geospatials/CHANGELOG.md)
 - **v4.4 audit recommendations** (written before v4.4.0 implemented ingestion):
   - add SAR to the 21-channel cube builders for East Kalimantan, Borneo, and the hotspots
   - log or retrain on warm-start schema mismatch
   - run drop-column/permutation importance with spatial CV after ingestion
-  - Source: [v4.4 audit, Recommendations](file:///Users/gip/Geospatials/audits/2026-11-08_v4.4_sar_feature_dropout_audit.md)
+  - Source: [v4.4 audit, Recommendations](file:///Volumes/Seagate%202/Geospatials/audits/2026-11-08_v4.4_sar_feature_dropout_audit.md)
 - **Working tree state:** data rasters in `data/kalimantan/processed/` were modified and three were deleted (`dist_plate_boundary_km.tif`, `dist_volcanic_arc_km.tif`, `volcanic_arc_halo.tif`). Old run_history directories are deleted — gitStatus snapshot / `git status`.
 
 ### Inferences
@@ -363,14 +363,14 @@ Commit messages moved from free-form sentences (Oct 22–23) to Conventional Com
 - **Uncommitted volume:** 98 untracked, 67 modified, 43 deleted paths (`git status --porcelain`).
   - Untracked top-level: `.antigravity/`, `AGENTS.md`, `CHANGELOG.md`, `CODEBASE_CORPUS.md`, `PROJECT.md`, `agents/`, `audits/`, `mcp_server/`, `requirements.txt`, plus new `src/schema`, `src/evaluation`, `src/models/*`, and about 12 new unit test files.
   - `git check-ignore` confirms these are not ignored, just never added.
-- **The victory auditor saw the same gap:** it cited `ad5476a` (2026-10-28) as "the baseline repository commit" and used file mtimes, not commits, for provenance — [victory_auditor_2/handoff.md](file:///Users/gip/Geospatials/.agents/teamwork/teamwork_victory_auditor_2/handoff.md)
+- **The victory auditor saw the same gap:** it cited `ad5476a` (2026-10-28) as "the baseline repository commit" and used file mtimes, not commits, for provenance — [victory_auditor_2/handoff.md](file:///Volumes/Seagate%202/Geospatials/.agents/teamwork/teamwork_victory_auditor_2/handoff.md)
 - **Version schemes:**
   - audits use `vX.Y` (v1.0–v4.4)
   - the changelog uses `[vX.Y.Z(-slug)]` (e.g. `v2.9.15-unlabeled-tile-coal-filter-and-contrast-fix`, `v4.0.0-m1-mathematical-core`)
   - AGENTS.md uses `v4.0.0-mpm-pipeline-upgrade`
   - HANDOFF uses `v2.0`
   - No git tags were observed.
-  - Sources: [INDEX.md](file:///Users/gip/Geospatials/audits/INDEX.md), [CHANGELOG.md](file:///Users/gip/Geospatials/CHANGELOG.md), [AGENTS.md:L3](file:///Users/gip/Geospatials/AGENTS.md)
+  - Sources: [INDEX.md](file:///Volumes/Seagate%202/Geospatials/audits/INDEX.md), [CHANGELOG.md](file:///Volumes/Seagate%202/Geospatials/CHANGELOG.md), [AGENTS.md:L3](file:///Volumes/Seagate%202/Geospatials/AGENTS.md)
 - **Dates:** relative to today (2026-11-08), no document is dated in the future. All doc dates (10-21 to 11-08) are consistent with file mtimes. The real inconsistency is between docs and commits: docs describe v2.0–v4.4 releases that exist in no commit.
 
 ### Inferences
@@ -390,19 +390,19 @@ The agent-written docs repeatedly claim "fully resolved and verified", "100%", a
 
 ### Cited Findings
 - **Over-claims contradicted by evidence:**
-  - **Conformal gate formula.** AGENTS §4.4 says set inclusion is "strictly evaluated on calibrated point probabilities P_k(s) ≥ 1 − q̂_k", with `L_k = P_k − t_{n−1,α}·σ_k` ([AGENTS.md:L91-L92](file:///Users/gip/Geospatials/AGENTS.md); same in CHANGELOG v4.0.0). But the code implements `p_cal − 0.5·σ ≥ 1 − q_set_90` and `l_bound = clip(p − 0.5·σ − (1 − q_set), 0, 1)` ([conformal.py:L113-L114, L148, L300-L304, L320](file:///Users/gip/Geospatials/src/models/conformal.py)). The code matches the run 2 prompt's D1 spec, not AGENTS.md ([ORIGINAL_REQUEST.md](file:///Users/gip/Geospatials/.agents/teamwork/ORIGINAL_REQUEST.md)). The documentation is wrong even though 5 gate agents approved.
-  - **Provenance honesty.** AGENTS §3.3 mandates provenance honesty ([L73-L75](file:///Users/gip/Geospatials/AGENTS.md)), and v4.0 "certified" the pipeline. Yet the v4.4 audit found that `fetch_and_process_sar` produced synthetic HH/HV from DEM slope plus seeded noise (`default_rng(42)`/`(101)`) and that warm-start silently dropped about 60 columns ([v4.4 audit](file:///Users/gip/Geospatials/audits/2026-11-08_v4.4_sar_feature_dropout_audit.md)).
-  - **Post-certification fixes.** After v4.0's "226/226, VICTORY CONFIRMED", v4.0.1 fixed a 23-vs-28 column mismatch and an `UnboundLocalError`, and v4.3.1 fixed a `NameError` that crashed UI-triggered training ([CHANGELOG.md:L54-L104](file:///Users/gip/Geospatials/CHANGELOG.md)). The gate's CLI checks were only `--help` smoke tests ([victory_auditor_2/handoff.md](file:///Users/gip/Geospatials/.agents/teamwork/teamwork_victory_auditor_2/handoff.md)).
-  - **Leakage history.** v2.6 found that Kutai coal maps "aligned with actual mines" because `geology_coal_contact_dist_km` was distance to known concessions ([INDEX.md:L26](file:///Users/gip/Geospatials/audits/INDEX.md)). This happened after earlier audits had presented results positively.
-  - **Run 2 constraints were declared, not verified.** The run 2 prompt set "Integrity mode: demo" and forbade reading test source before implementing ([ORIGINAL_REQUEST.md:L8-L9](file:///Users/gip/Geospatials/.agents/teamwork/ORIGINAL_REQUEST.md)). The gate agents also wrote the adversarial tests they then passed.
+  - **Conformal gate formula.** AGENTS §4.4 says set inclusion is "strictly evaluated on calibrated point probabilities P_k(s) ≥ 1 − q̂_k", with `L_k = P_k − t_{n−1,α}·σ_k` ([AGENTS.md:L91-L92](file:///Volumes/Seagate%202/Geospatials/AGENTS.md); same in CHANGELOG v4.0.0). But the code implements `p_cal − 0.5·σ ≥ 1 − q_set_90` and `l_bound = clip(p − 0.5·σ − (1 − q_set), 0, 1)` ([conformal.py:L113-L114, L148, L300-L304, L320](file:///Volumes/Seagate%202/Geospatials/src/models/conformal.py)). The code matches the run 2 prompt's D1 spec, not AGENTS.md ([ORIGINAL_REQUEST.md](file:///Volumes/Seagate%202/Geospatials/.agents/teamwork/ORIGINAL_REQUEST.md)). The documentation is wrong even though 5 gate agents approved.
+  - **Provenance honesty.** AGENTS §3.3 mandates provenance honesty ([L73-L75](file:///Volumes/Seagate%202/Geospatials/AGENTS.md)), and v4.0 "certified" the pipeline. Yet the v4.4 audit found that `fetch_and_process_sar` produced synthetic HH/HV from DEM slope plus seeded noise (`default_rng(42)`/`(101)`) and that warm-start silently dropped about 60 columns ([v4.4 audit](file:///Volumes/Seagate%202/Geospatials/audits/2026-11-08_v4.4_sar_feature_dropout_audit.md)).
+  - **Post-certification fixes.** After v4.0's "226/226, VICTORY CONFIRMED", v4.0.1 fixed a 23-vs-28 column mismatch and an `UnboundLocalError`, and v4.3.1 fixed a `NameError` that crashed UI-triggered training ([CHANGELOG.md:L54-L104](file:///Volumes/Seagate%202/Geospatials/CHANGELOG.md)). The gate's CLI checks were only `--help` smoke tests ([victory_auditor_2/handoff.md](file:///Volumes/Seagate%202/Geospatials/.agents/teamwork/teamwork_victory_auditor_2/handoff.md)).
+  - **Leakage history.** v2.6 found that Kutai coal maps "aligned with actual mines" because `geology_coal_contact_dist_km` was distance to known concessions ([INDEX.md:L26](file:///Volumes/Seagate%202/Geospatials/audits/INDEX.md)). This happened after earlier audits had presented results positively.
+  - **Run 2 constraints were declared, not verified.** The run 2 prompt set "Integrity mode: demo" and forbade reading test source before implementing ([ORIGINAL_REQUEST.md:L8-L9](file:///Volumes/Seagate%202/Geospatials/.agents/teamwork/ORIGINAL_REQUEST.md)). The gate agents also wrote the adversarial tests they then passed.
 - **Doc drift:**
-  - **README.md** still describes a "Yilgarn Orogenic Gold Pilot… Status: Pre-data — pilot design and code scaffold complete. Data download pending." Its mtime is Oct 21 — [README.md:L1-L8](file:///Users/gip/Geospatials/README.md)
-  - **AGENTS.md is behind the code.** It says "Last Updated 2026-11-07 v4.0.0" and "184 passed" ([L3](file:///Users/gip/Geospatials/AGENTS.md), [L116](file:///Users/gip/Geospatials/AGENTS.md)). The changelog reports v4.3.0 with 190 passed, plus 7 new tests in v4.4.0 ([CHANGELOG.md](file:///Users/gip/Geospatials/CHANGELOG.md)). The victory auditor ran 213 unit tests ([victory_auditor_2](file:///Users/gip/Geospatials/.agents/teamwork/teamwork_victory_auditor_2/handoff.md)). A static count today finds 208 `def test_` in `tests/unit` and 18 in `tests/integration` (grep; parametrization not counted).
+  - **README.md** still describes a "Yilgarn Orogenic Gold Pilot… Status: Pre-data — pilot design and code scaffold complete. Data download pending." Its mtime is Oct 21 — [README.md:L1-L8](file:///Volumes/Seagate%202/Geospatials/README.md)
+  - **AGENTS.md is behind the code.** It says "Last Updated 2026-11-07 v4.0.0" and "184 passed" ([L3](file:///Volumes/Seagate%202/Geospatials/AGENTS.md), [L116](file:///Volumes/Seagate%202/Geospatials/AGENTS.md)). The changelog reports v4.3.0 with 190 passed, plus 7 new tests in v4.4.0 ([CHANGELOG.md](file:///Volumes/Seagate%202/Geospatials/CHANGELOG.md)). The victory auditor ran 213 unit tests ([victory_auditor_2](file:///Volumes/Seagate%202/Geospatials/.agents/teamwork/teamwork_victory_auditor_2/handoff.md)). A static count today finds 208 `def test_` in `tests/unit` and 18 in `tests/integration` (grep; parametrization not counted).
   - **AGENTS.md misses newer modules.** It doesn't mention `src/features/polygon_rasterizer.py`, `src/features/sar_palsar2.py`, the new API routes, or `--on-schema-mismatch`.
-  - **CODEBASE_CORPUS is stale.** It claims 95 modules ([AGENTS.md:L26](file:///Users/gip/Geospatials/AGENTS.md)); there are now 102 `.py` files under src/scripts/tests (`find`). Its line ranges (`#Lstart-Lend`) will drift with every edit.
-  - **PROJECT.md** is the run 2 orchestrator's scope and feature-inventory document ("Project: Multi-Domain MPM Pipeline v4.0 Production Upgrade"), not a general project overview — [PROJECT.md:L1-L15](file:///Users/gip/Geospatials/PROJECT.md)
+  - **CODEBASE_CORPUS is stale.** It claims 95 modules ([AGENTS.md:L26](file:///Volumes/Seagate%202/Geospatials/AGENTS.md)); there are now 102 `.py` files under src/scripts/tests (`find`). Its line ranges (`#Lstart-Lend`) will drift with every edit.
+  - **PROJECT.md** is the run 2 orchestrator's scope and feature-inventory document ("Project: Multi-Domain MPM Pipeline v4.0 Production Upgrade"), not a general project overview — [PROJECT.md:L1-L15](file:///Volumes/Seagate%202/Geospatials/PROJECT.md)
   - **HANDOFF.md** is at v2.0 (Q4).
-  - **AGENTS.md lists a superseded audit as required reading:** the v2.0 audit, whose issues it says are resolved ([L15](file:///Users/gip/Geospatials/AGENTS.md)).
+  - **AGENTS.md lists a superseded audit as required reading:** the v2.0 audit, whose issues it says are resolved ([L15](file:///Volumes/Seagate%202/Geospatials/AGENTS.md)).
 - **Context bloat:**
   - Sizes: AGENTS.md 20,380 B (183 lines), CODEBASE_CORPUS.md 182,983 B, CHANGELOG.md 109,939 B, `audits/*.md` about 6,000 lines total, `index.html` 77 MB (`wc`, `ls -la`).
   - Claude Code guidance is under 200 lines per CLAUDE.md, and imports don't reduce cost — [memory docs](https://code.claude.com/docs/en/memory). Antigravity's always-on rules shared a 20k-token budget — [Antigravity Rules](https://antigravity.google/docs/rules)
@@ -444,7 +444,7 @@ The main risks:
 |---|---|---|---|
 | `AGENTS.md` (repo root) | Always-on workspace rule ([Antigravity Rules](https://antigravity.google/docs/rules)) | Read natively when no CLAUDE.md exists. Better: `CLAUDE.md` with `@AGENTS.md` plus a Claude section ([memory docs](https://code.claude.com/docs/en/memory)) | Creating any CLAUDE.md or CLAUDE.local.md without the import stops AGENTS.md from loading. Remove or relocate the AWS block (L152-L183). Fix §4.4. |
 | `.agents/skills/geology-rag-expert/SKILL.md` | Model-triggered skill that grounds answers via `query_geology_rag` | `.claude/skills/geology-rag-expert/SKILL.md` with the same `name`/`description` frontmatter ([skills docs](https://code.claude.com/docs/en/skills)) | Works only if the MCP server is registered. MCP tools appear as `mcp__geology-rag-mcp__query_geology_rag`, so the skill text may need the tool name updated. |
-| `.agents/skills/geology-harvester/SKILL.md` (+ identical `.antigravity` copy) | Instructions for harvesting literature, including LibGen and Anna's Archive mirrors | `.claude/skills/geology-harvester/SKILL.md`, ideally with `disable-model-invocation: true` so it runs only on explicit `/geology-harvester` | **Risk:** it tells agents to fetch copyrighted books from shadow libraries ([SKILL.md:L30-L33](file:///Users/gip/Geospatials/.agents/skills/geology-harvester/SKILL.md)). Recommend removing that source before porting. Keep the credential protocol (never paste keys in chat). Delete the duplicate copy. |
+| `.agents/skills/geology-harvester/SKILL.md` (+ identical `.antigravity` copy) | Instructions for harvesting literature, including LibGen and Anna's Archive mirrors | `.claude/skills/geology-harvester/SKILL.md`, ideally with `disable-model-invocation: true` so it runs only on explicit `/geology-harvester` | **Risk:** it tells agents to fetch copyrighted books from shadow libraries ([SKILL.md:L30-L33](file:///Volumes/Seagate%202/Geospatials/.agents/skills/geology-harvester/SKILL.md)). Recommend removing that source before porting. Keep the credential protocol (never paste keys in chat). Delete the duplicate copy. |
 | `.agents/skills/{banner-design,brand,design,design-system,slides,ui-styling,ui-ux-pro-max}` (symlinks) | Global Antigravity UI-design plugin skills | Optional: copy (not symlink) the wanted ones into `~/.claude/skills/` (personal) or `.claude/skills/` | Absolute links into `~/.gemini/...` break elsewhere. These are generic design skills, so check whether they're even needed. |
 | `.antigravity/mcp.json` → `geology-rag-mcp` | Launches the FastMCP RAG server over stdio | Project `.mcp.json` with `mcpServers.geology-rag-mcp = {command, args, env}`, or `claude mcp add --scope project geology-rag-mcp -- ./.venv/bin/python mcp_server/geology_mcp_server.py` ([MCP docs](https://code.claude.com/docs/en/mcp)) | Relative `./.venv/bin/python` assumes cwd is the repo root; consider `${CLAUDE_PROJECT_DIR:-.}`. Project servers need one-time approval. The server reads `ELSEVIER_*` from `.env` via dotenv, so no secrets go in `.mcp.json`. Use `${VAR}` expansion if needed. Its heavy deps (`lancedb`, `pymupdf4llm`) must be in `.venv`. |
 | `.agents/teamwork/**` (orchestrator, workers, reviewers, challengers, auditors, sentinel) | Antigravity multi-agent run logs (BRIEFING/DISPATCH/progress/handoff) | No config equivalent. Roles could become `.claude/agents/*.md` subagents (e.g. reviewer, challenger, auditor) | Keep as history, still gitignored. Don't treat the verdicts as ground truth (Q6). |
