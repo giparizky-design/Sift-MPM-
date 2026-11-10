@@ -124,3 +124,58 @@ def test_success_rate_curve_monotone():
     c = success_rate_curve(np.array([0.05, 0.2, 0.6]))
     v = c["deposits_captured"].to_numpy()
     assert v[0] == 0.0 and v[-1] == 1.0 and np.all(np.diff(v) >= 0)
+
+
+def _coal_comp(rng, n=200):
+    return {"domain": "coal", "raw": rng.random((n, 3)), "basin_gate": rng.random(n),
+            "c_hat": {0: 0.3, 1: 0.5, 2: 0.8}}
+
+
+def test_unet_blend_weight_zero_reproduces_xgb_and_one_gives_unet():
+    from scripts.run_deposit_cv import blend_outputs
+
+    rng = np.random.default_rng(0)
+    comp = _coal_comp(rng)
+    s_u = rng.random((200, 3))
+    b0 = blend_outputs(comp, s_u, 0.0)
+    np.testing.assert_allclose(b0["raw"][:, :3], comp["raw"])
+    # gated = coal ensemble calibration (0.65 p + 0.35 min(1, p/c)) times the basin gate
+    c = np.array([0.3, 0.5, 0.8])
+    cal = 0.65 * comp["raw"] + 0.35 * np.minimum(1.0, comp["raw"] / c)
+    np.testing.assert_allclose(b0["gated"][:, :3], cal * comp["basin_gate"][:, None])
+    np.testing.assert_allclose(b0["gated"][:, 3], (1 - np.prod(1 - cal, axis=1)) * comp["basin_gate"])
+    b1 = blend_outputs(comp, s_u, 1.0)
+    np.testing.assert_allclose(b1["raw"][:, :3], s_u)
+    # per-head weights
+    bh = blend_outputs(comp, s_u, [0.0, 1.0, 0.5])
+    np.testing.assert_allclose(bh["raw"][:, 2], 0.5 * comp["raw"][:, 2] + 0.5 * s_u[:, 2])
+
+
+def test_unet_blend_metals_zero_positive_head_stays_zero():
+    from scripts.run_deposit_cv import blend_outputs
+
+    rng = np.random.default_rng(1)
+    comp = {"domain": "metals", "raw": rng.random((50, 4)), "gates": [None] * 4,
+            "c_hat": {k: 0.35 for k in range(4)}, "n_train_pos": np.array([5, 5, 5, 0])}
+    out = blend_outputs(comp, rng.random((50, 4)), 0.4)
+    assert np.all(out["calibrated"][:, 3] == 0.0)
+    assert out["raw"].shape == (50, 5) and np.allclose(out["raw"][:, 4], out["raw"][:, :4].max(axis=1))
+
+
+def test_compare_pairs_across_models(tmp_path):
+    import json
+
+    from scripts.compare_deposit_cv import main as compare_main
+
+    rng = np.random.default_rng(2)
+    a = rng.random(20)
+    for name, model, variant, af in (("b", "xgb_prod", "calibrated", a), ("c", "unet", "srauc_calibrated", a * 0.5)):
+        d = tmp_path / name
+        d.mkdir()
+        pd.DataFrame({"model": model, "variant": variant, "target": "any", "cluster_id": np.arange(20),
+                      "area_fraction": af}).to_csv(d / "per_deposit.csv", index=False)
+        (d / "deposit_cv_summary.json").write_text(json.dumps({"novelty": {}}))
+    res = compare_main([str(tmp_path / "b"), str(tmp_path / "c"), "--cand-model", "unet",
+                        "--pairs", "calibrated:srauc_calibrated"])
+    r = res["xgb_prod/calibrated->unet/srauc_calibrated/any"]
+    assert r["n"] == 20 and r["delta_auc"] == pytest.approx(float(np.mean(a * 0.5)))

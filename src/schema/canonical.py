@@ -60,7 +60,54 @@ EXTENDED_NON_FEATURE_COLS: Tuple[str, ...] = (
     "deposit_dist",
     "regional_fe",
     "regional_coal",
+    # v4.9 real-cube quality / context layers (not geological evidence)
+    "tree_cover_2000",
+    "s2_clear_obs",
+    "emag2_error_nt",
+    "emag2_source_code",
+    "thermal_lst_c",
+    "w_canopy",
+    "alteration_benchmark",
+    # v4.15 (audit v4.14 T18/T20): masks and propensity covariates are context, never geological evidence
+    "water_mask",
+    "osm_water_mask",
+    "osm_quarry_mask",
+    "dist_roads_km",
+    "dist_ports_km",
 )
+
+# v4.15 (audit v4.13 section 2.9): features built from the same GeoRIMA rock-type nodes that supply
+# the metal labels. They separate positives from background by construction, so no model may use them
+# while those nodes (or the records near them) are labels. The layers stay in the cube for provenance.
+LABEL_DERIVED_COLS: Tuple[str, ...] = (
+    "dist_calc_alkaline_intrusive_km",
+    "dist_pluton_carbonate_contact_km",
+)
+
+EXTENDED_NON_FEATURE_COLS = (*EXTENDED_NON_FEATURE_COLS, *LABEL_DERIVED_COLS)
+
+
+def load_feature_list(path) -> list:
+    """Read an explicit feature list: one column name per line, ``#`` starts a comment.
+
+    Used by the orchestrator and the deposit-level harness so both train on the same, pinned
+    columns instead of "every column not on a deny-list" (audit v4.14 M10/A3). Duplicates and
+    an empty file raise ``ValueError``.
+    """
+    from pathlib import Path
+
+    names = []
+    for raw in Path(path).read_text(encoding="utf-8").splitlines():
+        name = raw.split("#", 1)[0].strip()
+        if name:
+            names.append(name)
+    if not names:
+        raise ValueError(f"feature list {path} is empty")
+    dup = sorted({n for n in names if names.count(n) > 1})
+    if dup:
+        raise ValueError(f"feature list {path} has duplicate columns: {dup}")
+    return names
+
 
 # ---------------------------------------------------------------------------
 # Forbidden Raw Band Patterns

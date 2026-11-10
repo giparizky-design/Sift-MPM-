@@ -501,9 +501,9 @@ def test_d8_unified_buffered_spatial_cv():
 def test_d10_causal_propensity_covariates():
     """Verify D10: Propensity model covariates restricted to pre-mining regional infrastructure."""
     # Verify canonical columns
-    assert "dist_roads" in CANONICAL_PROPENSITY_COLS
-    assert "dist_rivers" in CANONICAL_PROPENSITY_COLS
-    assert "dist_ports" in CANONICAL_PROPENSITY_COLS
+    assert "dist_roads_km" in CANONICAL_PROPENSITY_COLS
+    assert "dist_major_rivers_km" in CANONICAL_PROPENSITY_COLS
+    assert "dist_ports_km" in CANONICAL_PROPENSITY_COLS
 
     # Verify forbidden patterns
     assert "slope" in FORBIDDEN_PROPENSITY_PATTERNS

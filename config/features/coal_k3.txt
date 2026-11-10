@@ -1,0 +1,26 @@
+# Pinned feature list for the K=3 coal heads (audit v4.14 T19, written 2026-11-10 for the v4.15 cube).
+# Read by scripts/run_seven_pass_training.py (--feature-list-coal). The orchestrator gives the coal heads the union of
+# the metals and coal lists, so this file must contain every column of metals_k4.txt.
+#
+# Basis: the v4.12 "COAL21" set (the 14 terrain/structure features plus six regional fields, which help coal and were
+# kept in v4.8) MINUS Td/Ts (see metals_k4.txt). dist_sedimentary_polygon_km and dist_marine_deltaic_contact_km are
+# excluded on purpose: they come from the polygons that define the coal label rule (v4.12 section 3: cell AUC 0.95 alone).
+# Whether coal can be evaluated at all is still open (coal labels are generated; v4.12 section 3).
+dist_active_faults_m
+active_fault_density
+dist_topo_lineaments_km
+dem_elevation
+dem_slope
+dem_aspect
+dem_tpi_local
+dem_tpi_regional
+dem_plan_curvature
+terrain_ruggedness_tri
+depth_to_bedrock_m
+outcrop_exposure_index
+bouguer_gravity_mgal
+crustal_thickness_km
+moho_gravity_step_mgal_km
+dist_plate_boundary_km
+dist_volcanic_arc_km
+coastal_shelf_dist_km

@@ -43,6 +43,8 @@ from src.labels.borneo_labels import (
     rasterize_borneo_k4_labels,
 )
 from src.labels.pu_negatives import (
+    CANONICAL_PROPENSITY_COLS,
+    ExplorationPropensity,
     OUTMOGCGate,
     compute_asymmetric_head_weights,
     compute_inverse_propensity_weights,
@@ -50,7 +52,14 @@ from src.labels.pu_negatives import (
     fit_exploration_propensity,
     fit_pooled_exploration_propensity,
 )
-from src.labels.spatial_splits import assign_spatial_blocks, spatial_block_kfold
+from src.labels.spatial_splits import (
+    assign_spatial_blocks,
+    count_clusters_spanning_folds,
+    enforce_cluster_integrity,
+    positive_cluster_raster,
+    spatial_block_kfold,
+    training_buffer_exclusion,
+)
 from src.schema.canonical import (
     NON_FEATURE_COLS as CANONICAL_NON_FEATURE_COLS,
     EXTENDED_NON_FEATURE_COLS,
@@ -244,6 +253,14 @@ GENERALISATION_DEFAULTS: dict[str, Any] = {
     "drop_features": (),                  # dropped for BOTH domains
     "drop_features_metals": METALS_REGIONAL_PROXY_FEATURES,  # legacy: ()
     "k4_exclusion_scale": 1.0,            # 0 / 0.5 / 2 made no difference (kept)
+    # v4.15 (audit v4.14 T19/T21). Pinned, reviewed feature lists replace "every column not on a deny-list";
+    # "none" restores the automatic selection. Paths are relative to the repository root.
+    "feature_list_metals": "config/features/metals_k4.txt",
+    "feature_list_coal": "config/features/coal_k3.txt",
+    # Every positive cluster (one deposit) stays in one fold, and training cells within this distance of a
+    # held-out deposit are removed (the deposit-level harness uses 5 km). 0 disables the buffer.
+    "cluster_integrity": True,
+    "split_buffer_m": 5000.0,
 }
 
 
@@ -251,8 +268,66 @@ GENERALISATION_LEGACY_V47: dict[str, Any] = {
     "weight_scheme": "production", "gate_mode": "production", "head0_stacking": True,
     "min_child_weight_metals": 0.0, "coal_disk_mode": "production_keep", "coal_buffer_m": 0.0,
     "drop_features": (), "drop_features_metals": (), "k4_exclusion_scale": 1.0,
+    "feature_list_metals": "none", "feature_list_coal": "none",
+    "cluster_integrity": False, "split_buffer_m": 0.0,
 }
 GREENFIELD_KM = 5.0  # targets farther than this from any known deposit are "greenfield"
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def resolve_pinned_feature_lists(
+    feature_list_metals: Optional[str],
+    feature_list_coal: Optional[str],
+    run_metals: bool,
+    run_coal: bool,
+    available_cols: Any,
+    non_feature_cols: Any,
+) -> Optional[dict[str, Any]]:
+    """Load the pinned feature lists (audit v4.14 T19) and turn them into the orchestrator's column sets.
+
+    The lists are authoritative: a listed column that is not in the dataset, or that is on the non-feature
+    list (labels, masks, label-derived distances, propensity covariates), raises ``ValueError``; nothing is
+    filled with zeros. ``feature_cols`` is the ordered union of the active lists; the metals heads are
+    restricted to their own list through ``metals_exclude``. Coal heads see the whole union, so the coal list
+    must contain the metals list (a warning is logged otherwise).
+
+    Returns None when no list is active (value ``"none"``), i.e. the automatic selection applies.
+    """
+    from src.schema.canonical import load_feature_list
+
+    def _path(v: Optional[str]) -> Optional[Path]:
+        if v is None or str(v).strip().lower() in ("", "none"):
+            return None
+        pth = Path(v)
+        return pth if pth.is_absolute() else _REPO_ROOT / pth
+
+    paths = {"metals": _path(feature_list_metals) if run_metals else None,
+             "coal": _path(feature_list_coal) if run_coal else None}
+    lists = {k: load_feature_list(v) for k, v in paths.items() if v is not None}
+    if not lists:
+        return None
+    avail, banned_set = set(available_cols), set(non_feature_cols)
+    for name, cols in lists.items():
+        missing = [c for c in cols if c not in avail]
+        if missing:
+            raise ValueError(f"pinned {name} feature list {paths[name]} names columns absent from the dataset: {missing}")
+        banned = [c for c in cols if c in banned_set or c.startswith("label_")]
+        if banned:
+            raise ValueError(f"pinned {name} feature list {paths[name]} names non-feature columns: {banned}")
+    union: list[str] = []
+    for cols in lists.values():
+        union.extend(c for c in cols if c not in union)
+    if "metals" in lists and "coal" in lists:
+        extra = [c for c in lists["metals"] if c not in set(lists["coal"])]
+        if extra:
+            logger.warning("Metals feature list has %d columns that the coal list lacks; coal heads will also use them: %s", len(extra), extra)
+    metals_exclude = tuple(c for c in union if c not in set(lists["metals"])) if "metals" in lists else ()
+    return {
+        "feature_cols": union,
+        "metals_exclude": metals_exclude,
+        "paths": {k: str(v) for k, v in paths.items() if v is not None},
+        "n_listed": {k: len(v) for k, v in lists.items()},
+    }
 
 
 def _prob_to_logit(p: np.ndarray, eps: float = 1e-6) -> np.ndarray:
@@ -283,9 +358,7 @@ def execute_full_raster_chunked_inference(
     w_xgb_coal: Optional[list[float]] = None,
     w_unet_coal: Optional[list[float]] = None,
     # Propensity model
-    prop_pipe: Optional[Any] = None,
-    explicit_access_cols: Optional[list[str]] = None,
-    access_col_indices: Optional[list[int]] = None,
+    prop_model: Optional[ExplorationPropensity] = None,
     coarse_scale: int = 1,
     chunk_size: int = 250_000,
 ) -> dict[str, Any]:
@@ -344,8 +417,8 @@ def execute_full_raster_chunked_inference(
     pf = pq.ParquetFile(parquet_path)
     parquet_cols = set(pf.schema.names)
     read_cols = ["row", "col"] + [c for c in feature_cols if c in parquet_cols]
-    if explicit_access_cols:
-        for c in explicit_access_cols:
+    if prop_model is not None:
+        for c in prop_model.columns:
             if c in parquet_cols and c not in read_cols:
                 read_cols.append(c)
     for c in ("w_canopy", "spec_ndvi", "dem_slope"):
@@ -375,15 +448,9 @@ def execute_full_raster_chunked_inference(
         X_ch = chunk_df[feature_cols].to_numpy(dtype=np.float32)
 
         # Propensity scoring
-        if prop_pipe is not None:
-            if explicit_access_cols:
-                X_acc_ch = np.nan_to_num(chunk_df[explicit_access_cols].to_numpy(dtype=np.float64), nan=0.0)
-            elif access_col_indices:
-                X_acc_ch = X_ch[:, access_col_indices].astype(np.float64)
-            else:
-                X_acc_ch = X_ch[:, :1].astype(np.float64)
-            e_x_ch = np.clip(prop_pipe.predict_proba(X_acc_ch)[:, 1], 0.05, 1.0)
-            ex_2d[r_ch, c_ch] = e_x_ch.astype(np.float32)
+        # v4.15: the same fitted model as the in-memory path; NaN goes to its median imputer (it was zero-filled)
+        if prop_model is not None:
+            ex_2d[r_ch, c_ch] = prop_model.score(chunk_df).astype(np.float32)
         else:
             ex_2d[r_ch, c_ch] = 0.20
 
@@ -768,6 +835,15 @@ def run_region_seven_pass(
         and not c.startswith("label_")
         and not any(pat in c.lower() for pat in _FORBIDDEN_RAW_BAND_PATTERNS)
     ]
+    pinned = resolve_pinned_feature_lists(
+        gen["feature_list_metals"], gen["feature_list_coal"], run_metals, run_coal, df.columns, NON_FEATURE_COLS,
+    )
+    pinned_info: Optional[dict[str, Any]] = None
+    if pinned is not None:
+        logger.info("[%s] Pinned feature lists %s (%d columns in use)", region_name, pinned["paths"], len(pinned["feature_cols"]))
+        feature_cols = list(pinned["feature_cols"])
+        gen["drop_features_metals"] = tuple(dict.fromkeys([*(gen["drop_features_metals"] or ()), *pinned["metals_exclude"]]))
+        pinned_info = {"paths": pinned["paths"], "n_listed": pinned["n_listed"]}
     _drop = set(gen["drop_features"] or ())
     if _drop:
         logger.info("[%s] Dropping features by generalisation setting: %s", region_name,
@@ -803,11 +879,12 @@ def run_region_seven_pass(
     if schema_decision["use_prior"]:
         if schema_decision["dropped"] or schema_decision["missing"]:
             logger.warning(
-                "[%s] Using prior feature schema (%s): %d dropped channels are IGNORED, %d missing channels ZERO-FILLED",
+                "[%s] Using prior feature schema (%s): %d dropped channels are IGNORED, %d missing channels set to NaN (missing)",
                 region_name, schema_decision["reason"], len(schema_decision["dropped"]), len(schema_decision["missing"]),
             )
         for req_f in schema_decision["missing"]:
-            df[req_f] = np.float32(0.0)
+            # Absent channel = unknown (NaN, handled as missing by XGBoost), never a fabricated 0.0
+            df[req_f] = np.float32(np.nan)
     elif ref_model_feats:
         logger.warning(
             "[%s] Feature schema mismatch with prior checkpoint -> discarding warm-start and training "
@@ -819,6 +896,10 @@ def run_region_seven_pass(
     feature_cols = list(schema_decision["feature_cols"])
 
     verify_no_raw_pixel_leakage(feature_cols)
+    # v4.9: every feature must come from a real data product (layer_provenance.json)
+    from src.features.real_sources.core import RealDataUnavailableError, assert_feature_provenance
+
+    assert_feature_provenance(data_dir, feature_cols)
     C = len(feature_cols)
 
     # Cap distance features at local physical limit (15.0 km / 15000.0 m) to prevent GPS grid triangulation
@@ -946,6 +1027,30 @@ def run_region_seven_pass(
     block_ids = assign_spatial_blocks(rows, cols, H, W, block_size_px=block_size_px)
     folds = spatial_block_kfold(block_ids, n_folds=5, random_state=42)
 
+    # v4.15 (audit v4.14 T21): a deposit is one 8-connected cluster of positive cells and must sit in ONE fold;
+    # replayed on the deployed East Kalimantan cube, 4 of 33 metal clusters were cut across folds.
+    # All positives survive the subsample, so these clusters equal the full-raster clusters.
+    cluster_2d = positive_cluster_raster(rows, cols, pos_mask_any, H, W)
+    n_span_before = count_clusters_spanning_folds(cluster_2d, rows, cols, folds)
+    if gen["cluster_integrity"] and pos_mask_any.any():
+        pos_2d_split = np.zeros((H, W), dtype=bool)
+        pos_2d_split[rows[pos_mask_any], cols[pos_mask_any]] = True
+        block_ids = enforce_cluster_integrity(block_ids, rows, cols, pos_2d_split)
+        folds = spatial_block_kfold(block_ids, n_folds=5, random_state=42)
+    split_buffer_px = float(gen["split_buffer_m"]) / max(px_size_m, 1.0)
+    split_info: dict[str, Any] = {
+        "cluster_integrity": bool(gen["cluster_integrity"]),
+        "n_positive_clusters": int(cluster_2d.max() + 1) if cluster_2d.max() >= 0 else 0,
+        "clusters_spanning_folds_before": int(n_span_before),
+        "clusters_spanning_folds": int(count_clusters_spanning_folds(cluster_2d, rows, cols, folds)),
+        "buffer_m": float(gen["split_buffer_m"]),
+        "buffer_px": round(split_buffer_px, 2),
+    }
+
+    def _split_exclusion(val_set: np.ndarray) -> np.ndarray:
+        """Samples that may not train while ``val_set`` is held out (held-out deposits plus the buffer)."""
+        return training_buffer_exclusion(val_set, rows, cols, pos_mask_any, cluster_2d, split_buffer_px)
+
     all_idx = np.arange(len(df))
 
     # Resolve validation fold for metals upfront
@@ -1020,6 +1125,24 @@ def run_region_seven_pass(
         tr_coal_idx = train_metals_idx
     else:
         train_idx = tr_coal_idx
+
+    # v4.15: remove training cells inside the buffer around the held-out deposits (production validation split)
+    if split_buffer_px > 0:
+        _val_union = np.union1d(val_idx, val_coal_idx).astype(np.int64)
+        _excl = _split_exclusion(_val_union)
+        _n_tr0, _n_trc0 = len(train_idx), len(tr_coal_idx)
+        _pos_tr0 = int(pos_mask_any[train_idx].sum())
+        train_idx = train_idx[~_excl[train_idx]]
+        tr_coal_idx = tr_coal_idx[~_excl[tr_coal_idx]]
+        split_info.update({
+            "train_rows_removed_by_buffer": int(_n_tr0 - len(train_idx)),
+            "coal_train_rows_removed_by_buffer": int(_n_trc0 - len(tr_coal_idx)),
+            "train_positive_cells_removed_by_buffer": int(_pos_tr0 - pos_mask_any[train_idx].sum()),
+        })
+        logger.info("[%s] Split buffer %.0f m: removed %d training rows (%d positive cells); clusters spanning folds %d -> %d",
+                    region_name, float(gen["split_buffer_m"]), split_info["train_rows_removed_by_buffer"],
+                    split_info["train_positive_cells_removed_by_buffer"], split_info["clusters_spanning_folds_before"],
+                    split_info["clusters_spanning_folds"])
 
     # OUTMOGC closed boundary gates per head (Fitted on TRAINING SPLIT ONLY - No Validation Leakage)
     outmogc_gates_list = []
@@ -1170,33 +1293,16 @@ def run_region_seven_pass(
         progress_pct=18.0,
         message=f"[{region_name}] Pass 2: Fitting logistics exploration propensity & Hájek weights",
     )
-    explicit_access_cols = [
-        c for c in (
-            "dist_major_rivers_km",
-            "dist_haul_roads_km",
-            "dist_transport_km",
-            "gfw_forest_disturbance",
-            "forest_disturbance_rate",
-            "dem_elevation",
-            "dem_slope",
-            "outcrop_exposure_index",
-            "regolith_cover_m",
-            "coastal_shelf_dist_km",
+    # v4.15 (audit v4.14 T20): exploration propensity from the documented access covariates only
+    # (roads, rivers, ports). The earlier 10-column list contained forest disturbance, DEM, slope, outcrop
+    # and regolith, which are on pu_negatives.FORBIDDEN_PROPENSITY_PATTERNS; a logistic model on the two
+    # forest-disturbance columns alone reproduced the old target with AUC 0.93 (audit v4.13 section 2.8).
+    missing_access = [c for c in CANONICAL_PROPENSITY_COLS if c not in df.columns]
+    if missing_access:
+        raise RealDataUnavailableError(
+            f"Propensity covariates {missing_access} are not in the dataset. Rebuild the cube with "
+            "scripts/build_real_feature_cubes.py (v4.15 adds dist_roads_km and dist_ports_km)."
         )
-        if c in df.columns
-    ]
-    access_col_indices: list[int] = []
-    if explicit_access_cols:
-        X_access = df[explicit_access_cols].to_numpy(dtype=np.float64)
-    else:
-        ACCESS_KEYS = (
-            "outcrop", "regolith", "cover", "coastal", "slope", "elev", "dem", "ndvi", "tri"
-        )
-        access_col_indices = [
-            i for i, col in enumerate(feature_cols)
-            if any(k in col.lower() for k in ACCESS_KEYS)
-        ] or [0]
-        X_access = X_all[:, access_col_indices]
 
     explored_footprint_col = df.get("explored_footprint", None)
     if explored_footprint_col is not None:
@@ -1205,23 +1311,15 @@ def run_region_seven_pass(
     else:
         explored_mask_tr = pos_mask_any[train_idx]
 
-    y_exp_tr = explored_mask_tr.astype(int)
-    from sklearn.impute import SimpleImputer
-    from sklearn.linear_model import LogisticRegression
-    from sklearn.pipeline import make_pipeline
-    from sklearn.preprocessing import StandardScaler
-
-    if 0 < y_exp_tr.sum() < len(y_exp_tr):
-        prop_pipe = make_pipeline(
-            SimpleImputer(strategy="median"),
-            StandardScaler(),
-            LogisticRegression(C=0.1, max_iter=500, random_state=42),
-        )
-        prop_pipe.fit(X_access[train_idx], y_exp_tr)
-        e_x = np.clip(prop_pipe.predict_proba(X_access)[:, 1], 0.05, 1.0)
-    else:
-        prop_pipe = None
-        e_x = np.full(len(X_all), 0.20, dtype=np.float64)
+    prop_model = ExplorationPropensity(columns=CANONICAL_PROPENSITY_COLS, random_state=42)
+    prop_model.fit(df.iloc[train_idx], explored_mask_tr)
+    e_x = prop_model.score(df)
+    propensity_info = {
+        "columns": list(prop_model.columns),
+        "n_fit": int(prop_model.n_fit_),
+        "explored_fraction_train": float(np.mean(explored_mask_tr)),
+        "degenerate": bool(prop_model.degenerate_),
+    }
 
     # Asymmetric sample weights for all 4 metallic heads
     sample_weights_k4 = np.column_stack([
@@ -1953,9 +2051,7 @@ def run_region_seven_pass(
             q_hat_k3_list=q_hat_k3_list,
             w_xgb_coal=w_xgb_coal,
             w_unet_coal=w_unet_coal,
-            prop_pipe=prop_pipe,
-            explicit_access_cols=explicit_access_cols,
-            access_col_indices=access_col_indices,
+            prop_model=prop_model,
             chunk_size=250_000,
         )
         ex_2d = raster_out["ex_2d"]
@@ -2337,6 +2433,7 @@ def run_region_seven_pass(
 
         if not scan_only:
             for f_idx, (tr_f_idx, va_f_idx) in enumerate(folds):
+                tr_f_idx = tr_f_idx[~_split_exclusion(va_f_idx)[tr_f_idx]]  # v4.15: same buffer as the production split
                 va_f_pos = pos_mask_metals[va_f_idx]
                 p_va_f = va_f_idx[va_f_pos]
                 u_va_f = va_f_idx[~va_f_pos]
@@ -2545,6 +2642,7 @@ def run_region_seven_pass(
 
         if not scan_only:
             for f_idx, (tr_f_idx, va_f_idx) in enumerate(folds):
+                tr_f_idx = tr_f_idx[~_split_exclusion(va_f_idx)[tr_f_idx]]  # v4.15: same buffer as the production split
                 va_f_pos = pos_mask_coal[va_f_idx]
                 p_va_f = va_f_idx[va_f_pos]
                 u_va_f = va_f_idx[~va_f_pos]
@@ -2687,6 +2785,10 @@ def run_region_seven_pass(
         "rejected_warm_start_heads": getattr(k4_ensemble, "rejected_heads_", {}) if k4_ensemble else {},
         "propensity_min": round(float(e_x.min()), 4),
         "propensity_median": round(float(np.median(e_x)), 4),
+        "propensity_model": propensity_info,
+        "split_protocol": split_info,
+        "pinned_feature_lists": pinned_info,
+        "feature_columns": list(feature_cols),
         "n_ranked_targets": len(ranked_gdf) if len(ranked_gdf) > 0 else (len(ranked_gdf_coal) if len(ranked_gdf_coal) > 0 else 0),
         "top_target_card": cards[0] if cards else (cards_coal[0] if cards_coal else None),
         "training_mode": (
@@ -2926,11 +3028,23 @@ def main() -> None:
     gen_grp.add_argument("--drop-features", default=None, help="comma list of feature columns to drop (both domains)")
     gen_grp.add_argument("--drop-features-metals", default=None,
                          help="comma list of feature columns the metals heads must not use ('none' keeps all)")
+    gen_grp.add_argument("--feature-list-metals", default=None,
+                         help="file with one metals feature per line (authoritative); 'none' = automatic selection")
+    gen_grp.add_argument("--feature-list-coal", default=None,
+                         help="file with one coal feature per line (authoritative); 'none' = automatic selection")
+    gen_grp.add_argument("--cluster-integrity", choices=("on", "off"), default=None,
+                         help="keep every positive cluster (deposit) inside one validation fold")
+    gen_grp.add_argument("--split-buffer-m", type=float, default=None,
+                         help="remove training cells within this distance of held-out deposits (0 = no buffer)")
+    parser.add_argument("--allow-unverified-layers", action="store_true",
+                        help="Train on a dataset without layer_provenance.json (legacy cubes contain fabricated layers)")
     gen_grp.add_argument("--legacy-v47", action="store_true",
                          help="reproduce the v4.7 behaviour of every generalisation switch")
     gen_grp.add_argument("--k4-exclusion-scale", type=float, default=None,
                          help="scale the metals exclusion halo around training positives (0 = none)")
     args = parser.parse_args()
+    if args.allow_unverified_layers:
+        os.environ["MPM_ALLOW_UNVERIFIED_LAYERS"] = "1"
     generalisation = {
         "weight_scheme": args.weight_scheme,
         "gate_mode": args.gate_mode,
@@ -2941,6 +3055,10 @@ def main() -> None:
         "drop_features": None if args.drop_features is None else tuple(
             c.strip() for c in args.drop_features.split(",") if c.strip()),
         "k4_exclusion_scale": args.k4_exclusion_scale,
+        "feature_list_metals": args.feature_list_metals,
+        "feature_list_coal": args.feature_list_coal,
+        "cluster_integrity": None if args.cluster_integrity is None else args.cluster_integrity == "on",
+        "split_buffer_m": args.split_buffer_m,
         "drop_features_metals": None if args.drop_features_metals is None else (
             () if args.drop_features_metals.strip().lower() == "none" else tuple(
                 c.strip() for c in args.drop_features_metals.split(",") if c.strip())),

@@ -226,6 +226,8 @@ def test_generalisation_defaults_have_every_switch():
     assert set(GENERALISATION_DEFAULTS) == {
         "weight_scheme", "gate_mode", "head0_stacking", "min_child_weight_metals",
         "coal_disk_mode", "coal_buffer_m", "drop_features", "drop_features_metals", "k4_exclusion_scale",
+        # v4.15 additions
+        "feature_list_metals", "feature_list_coal", "cluster_integrity", "split_buffer_m",
     }
     assert set(GENERALISATION_LEGACY_V47) == set(GENERALISATION_DEFAULTS)
 

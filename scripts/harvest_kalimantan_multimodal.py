@@ -181,7 +181,9 @@ def rasterize_faults_to_grid(
         az_raster = np.full((out_h, out_w), 115.0, dtype=np.float32)
 
     if not line_mask.any():
-        line_mask[out_h // 2, :] = True
+        # No mapped fault in the window: distances are unknown (never a synthetic fault axis)
+        nan = np.full((out_h, out_w), np.nan, dtype=np.float32)
+        return nan, nan.copy(), np.zeros((out_h, out_w), dtype=np.float32)
 
     dist_px, nearest_idx = distance_transform_edt(~line_mask, return_indices=True)
     nearest_strike = az_raster[nearest_idx[0], nearest_idx[1]]
@@ -323,49 +325,14 @@ def fetch_and_process_optical(
     out_h: int,
     out_w: int,
 ) -> dict[str, np.ndarray]:
-    """Ingest Sentinel-2 L2A dry-season composite and enforce Gate 2 Physical Dual-Regime Vegetation Masking."""
-    logger.info("[Workstream 2] Ingesting Sentinel-2 L2A Dry-Season Composite & enforcing Gate 2...")
+    """REMOVED in v4.9 (2026-11-10): this function fabricated Sentinel-2 NDVI/albedo/ratio layers from seeded random noise.
 
-    rng = np.random.default_rng(77)
-    base_ndvi = 0.72 + 0.08 * gaussian_filter(rng.normal(0, 1, size=(out_h, out_w)).astype(np.float32), sigma=3.0)
-    water_mask = (dem <= 2.0) | ((dem < 15.0) & (uniform_filter(dem, size=7) < 5.0))
-    base_ndvi = np.where(water_mask, -0.15, base_ndvi)
-
-    # Open pit mines / clearings (low NDVI)
-    clearing_seed = (rng.uniform(0, 1, size=(out_h, out_w)) > 0.985) & (dem > 50.0) & (dem < 400.0)
-    clearing_patches = gaussian_filter(clearing_seed.astype(np.float32), sigma=2.0) > 0.15
-    base_ndvi = np.where(clearing_patches, rng.uniform(0.04, 0.18, size=(out_h, out_w)), base_ndvi)
-    f_ndvi = np.clip(base_ndvi, -1.0, 1.0).astype(np.float32)
-
-    # NDRE: Red Edge index (B08 - B05) / (B08 + B05)
-    f_ndre = np.clip(f_ndvi * 0.65 + 0.10, -0.5, 0.9).astype(np.float32)
-
-    # Ungated baseline spectral ratios
-    raw_albedo = np.clip(0.12 + 0.05 * gaussian_filter(rng.normal(0, 1, size=(out_h, out_w)).astype(np.float32), sigma=2.0), 0.01, 0.85).astype(np.float32)
-    raw_wcdi = np.clip(1.45 - 0.9 * f_ndvi, 0.1, 4.0).astype(np.float32)
-    raw_oci = np.clip(0.85 + 1.2 * clearing_patches.astype(np.float32), 0.1, 5.0).astype(np.float32)
-    raw_ficr = np.clip(1.10 + 0.8 * clearing_patches.astype(np.float32), 0.2, 4.5).astype(np.float32)
-
-    # GATE 2: PHYSICAL DUAL-REGIME VEGETATION MASKING ENFORCED!
-    # All optical SWIR and alteration layers MUST have values set to NaN wherever NDVI >= 0.2!
-    veg_mask = f_ndvi >= 0.2
-    masked_albedo = np.where(veg_mask, np.nan, raw_albedo).astype(np.float32)
-    masked_wcdi = np.where(veg_mask, np.nan, raw_wcdi).astype(np.float32)
-    masked_oci = np.where(veg_mask, np.nan, raw_oci).astype(np.float32)
-    masked_ficr = np.where(veg_mask, np.nan, raw_ficr).astype(np.float32)
-
-    # Save interim composite
-    save_raster(raw_albedo, REF_PROFILE, str(INTERIM_DIR / "s2_dry_season_composite_20m.tif"))
-    logger.info("Enforced Gate 2: Masked %.1f%% of cells where NDVI >= 0.2 to NaN", 100.0 * np.sum(veg_mask) / veg_mask.size)
-
-    return {
-        "spec_ndvi": f_ndvi,
-        "spec_ndre": f_ndre,
-        "spec_albedo_gated": masked_albedo,
-        "spec_wcdi_gated": masked_wcdi,
-        "spec_oci_gated": masked_oci,
-        "spec_ficr_gated": masked_ficr,
-    }
+    Real layers are built by ``scripts/fetch_real_layers.py`` + ``scripts/build_real_feature_cubes.py``.
+    """
+    raise RuntimeError(
+        "fetch_and_process_optical fabricated Sentinel-2 NDVI/albedo/ratio layers from seeded random noise and has been removed. "
+        "Use scripts/build_real_feature_cubes.py (real data only)."
+    )
 
 
 def fetch_and_process_thermal(
@@ -374,24 +341,14 @@ def fetch_and_process_thermal(
     out_h: int,
     out_w: int,
 ) -> dict[str, np.ndarray]:
-    """Ingest Landsat 8/9 TIRS ST and ASTER TIR Ninomiya Silica Index."""
-    logger.info("[Workstream 3] Ingesting Landsat 8/9 TIRS & ASTER TIR...")
+    """REMOVED in v4.9 (2026-11-10): this function fabricated Landsat thermal and ASTER silica layers from a lapse-rate formula plus random noise.
 
-    lapse_rate = -0.0065 * np.maximum(dem, 0.0)
-    clearing_thermal = np.where(ndvi < 0.2, 4.5, 0.0).astype(np.float32)
-    f_thermal_anomaly = (lapse_rate + clearing_thermal + gaussian_filter(np.random.default_rng(88).normal(0, 0.5, size=(out_h, out_w)).astype(np.float32), sigma=2.0)).astype(np.float32)
-
-    # ASTER Ninomiya Silica Index: SI = B13 / B11 (Gated where vegetation NDVI >= 0.2)
-    raw_si = (1.15 + 0.35 * (ndvi < 0.2).astype(np.float32)).astype(np.float32)
-    masked_si = np.where(ndvi >= 0.2, np.nan, raw_si).astype(np.float32)
-
-    save_raster(f_thermal_anomaly, REF_PROFILE, str(INTERIM_DIR / "thermal_anomaly_st_30m.tif"))
-    save_raster(raw_si, REF_PROFILE, str(INTERIM_DIR / "aster_silica_index_90m.tif"))
-
-    return {
-        "thermal_anomaly_st": f_thermal_anomaly,
-        "aster_silica_index": masked_si,
-    }
+    Real layers are built by ``scripts/fetch_real_layers.py`` + ``scripts/build_real_feature_cubes.py``.
+    """
+    raise RuntimeError(
+        "fetch_and_process_thermal fabricated Landsat thermal and ASTER silica layers from a lapse-rate formula plus random noise and has been removed. "
+        "Use scripts/build_real_feature_cubes.py (real data only)."
+    )
 
 
 def fetch_and_process_geology_and_faults(
@@ -463,7 +420,7 @@ def fetch_and_process_geology_and_faults(
             grid_coarse[nan_s] = griddata((pts_arr[:, 0], pts_arr[:, 1]), pts_arr[:, 2], (gx, gy), method="nearest")[nan_s]
         f_sediment_thk = zoom(grid_coarse, (out_h / sub_h, out_w / sub_w), order=1).astype(np.float32)
     else:
-        f_sediment_thk = np.full((out_h, out_w), 2.5, dtype=np.float32)
+        raise RuntimeError(f"CRUST1.0 sediment file missing ({sed_xyz_path}); refusing to use a constant thickness")
 
     f_sediment_thk = np.clip(f_sediment_thk, 0.0, 15.0).astype(np.float32)
     save_raster(f_sediment_thk, REF_PROFILE, str(INTERIM_DIR / "sediment_thickness_globsed.tif"))
@@ -495,12 +452,8 @@ def fetch_and_process_geology_and_faults(
         logger.warning("ESDM REST server query fallback (%s): using known coal basin centroids", e)
 
     if not esdm_polys:
-        # Fallback to key known formation nodes
-        esdm_polys = [
-            {"formation": "Warukin", "lithology": "Coal-bearing sandstones", "geometry": Point(115.5, -2.1).buffer(0.3)},
-            {"formation": "Tanjung", "lithology": "Lower coal measures", "geometry": Point(115.2, -1.9).buffer(0.25)},
-            {"formation": "Balikpapan", "lithology": "Upper coal sequence", "geometry": Point(116.8, -1.2).buffer(0.35)},
-        ]
+        # No invented formation circles: without the real ESDM polygons the layer cannot be built
+        raise RuntimeError("ESDM coal-formation polygons unavailable; refusing to fabricate formation geometry")
 
     gdf_esdm = gpd.GeoDataFrame(esdm_polys, crs="EPSG:4326")
     gdf_esdm.to_file(INTERIM_DIR / "esdm_geology_250k.gpkg", driver="GPKG")
@@ -524,8 +477,8 @@ def fetch_and_process_geology_and_faults(
 
     save_raster(f_sed_poly_dist_km, REF_PROFILE, str(INTERIM_DIR / "dist_sedimentary_polygon_km.tif"))
 
-    # Legacy column permanently quarantined in NON_FEATURE_COLS
-    f_coal_contact_km = np.full((out_h, out_w), 15.0, dtype=np.float32)
+    # Legacy constant column removed (it was a fabricated 15 km everywhere)
+    f_coal_contact_km = np.full((out_h, out_w), np.nan, dtype=np.float32)
 
     return {
         "dist_active_faults_m": dist_faults_m,
@@ -544,47 +497,14 @@ def fetch_and_process_geophysics(
     out_w: int,
     ref_transform: Affine,
 ) -> dict[str, np.ndarray]:
-    """Ingest Sandwell & Smith v33.1 Gravity & NOAA EMAG2v3 Magnetics."""
-    logger.info("[Workstream 6] Computing Potential Fields Geophysics (Gravity & Magnetics)...")
+    """REMOVED in v4.9 (2026-11-10): this function fabricated EMAG2 magnetics from seeded random noise.
 
-    # 1. Authentic Satellite Bouguer Gravity & Parker-Oldenburg Moho
-    f_bouguer_mgal, f_crustal_thickness_km, f_moho_step = load_and_compute_real_gravity_channels(
-        dem=dem,
-        dst_crs="EPSG:4326",
-        dst_transform=ref_transform,
-        res_m=RES_M,
+    Real layers are built by ``scripts/fetch_real_layers.py`` + ``scripts/build_real_feature_cubes.py``.
+    """
+    raise RuntimeError(
+        "fetch_and_process_geophysics fabricated EMAG2 magnetics from seeded random noise and has been removed. "
+        "Use scripts/build_real_feature_cubes.py (real data only)."
     )
-
-    # 30 km Low-Pass Residual Gravity: Delta_g_residual = g_bouguer - LowPass_30km(g_bouguer)
-    # sigma in pixels: 30,000m / 250m = 120 pixels
-    lowpass_30km = gaussian_filter(f_bouguer_mgal, sigma=120.0)
-    f_gravity_residual = (f_bouguer_mgal - lowpass_30km).astype(np.float32)
-
-    # 2. NOAA EMAG2v3 Magnetics
-    rng = np.random.default_rng(555)
-    tmi_base = gaussian_filter(rng.normal(0, 45, size=(out_h, out_w)).astype(np.float64), sigma=12.0)
-    f_tmi = tmi_base.astype(np.float32)
-
-    logger.info("Computing MacLeod (1993) Equatorial RTP & 3D Analytic Signal Texture...")
-    f_rtp = reduced_to_pole(
-        tmi=f_tmi,
-        inclination_deg=-14.0,
-        declination_deg=1.5,
-        dx=RES_M,
-        dy=RES_M,
-        min_inc_deg=20.0,
-    ).astype(np.float32)
-
-    f_as = analytic_signal(tmi=f_tmi, dx=RES_M, dy=RES_M).astype(np.float32)
-
-    return {
-        "bouguer_gravity_mgal": f_bouguer_mgal,
-        "gravity_residual_30km_mgal": f_gravity_residual,
-        "crustal_thickness_km": f_crustal_thickness_km,
-        "moho_gravity_step_mgal_km": f_moho_step,
-        "emag2_rtp_magnetics": f_rtp,
-        "emag2_analytic_signal": f_as,
-    }
 
 
 def fetch_and_process_deposits_and_covariates(
@@ -592,89 +512,14 @@ def fetch_and_process_deposits_and_covariates(
     out_w: int,
     ref_transform: Affine,
 ) -> dict[str, Any]:
-    """Ingest ESDM concessions, OSM transport, GFW tree loss, and rasterize K=4 + Coal labels with Gate 3."""
-    logger.info("[Workstream 7] Ingesting Deposits, Transport, Disturbance & enforcing Gate 3...")
+    """REMOVED in v4.9 (2026-11-10): this function fabricated a transport network from five hand-drawn river polylines and forest disturbance from it.
 
-    # 1. Transport Network (OSM Highways + Navigable Rivers: Mahakam, Barito, Kapuas, Kahayan, Kayan)
-    rivers_coords = [
-        [[115.0, 0.5], [115.8, 0.2], [116.5, -0.2], [117.1, -0.5], [117.5, -0.6]],
-        [[114.5, -0.2], [114.8, -1.0], [114.9, -2.0], [114.6, -3.3]],
-        [[113.0, 0.8], [112.0, 0.5], [110.5, 0.1], [109.3, -0.1]],
-        [[113.5, -0.5], [113.8, -1.5], [114.0, -2.5], [114.1, -3.2]],
-        [[115.5, 2.5], [116.5, 2.8], [117.3, 2.9]],
-    ]
-    features_osm = [
-        {"type": "Feature", "properties": {"type": "navigable_river"}, "geometry": {"type": "LineString", "coordinates": coords}}
-        for coords in rivers_coords
-    ]
-    osm_gj = {"type": "FeatureCollection", "features": features_osm}
-    (INTERIM_DIR / "osm_transport_network.geojson").write_text(json.dumps(osm_gj, indent=2), encoding="utf-8")
-
-    import rasterio.features
-    river_shapes = [(f["geometry"], 1) for f in features_osm]
-    river_mask = rasterio.features.rasterize(river_shapes, out_shape=(out_h, out_w), transform=ref_transform, fill=0, all_touched=True, dtype="uint8").astype(bool)
-    dist_river_px = distance_transform_edt(~river_mask)
-    f_dist_transport_km = (dist_river_px * (RES_M / 1000.0)).astype(np.float32)
-
-    # 2. Global Forest Watch (GFW) Disturbance Footprints
-    f_disturbance_rate = np.clip(np.exp(-f_dist_transport_km / 15.0) * 0.75 + 0.05, 0.0, 1.0).astype(np.float32)
-    save_raster(f_disturbance_rate, REF_PROFILE, str(INTERIM_DIR / "gfw_forest_disturbance.tif"))
-
-    # 3. K=4 Targets & Alteration Benchmark (from src.labels.borneo_labels)
-    deposit_targets = build_k4_deposit_targets()
-
-    # GATE 3: STRICT CENTROID ARTIFACT PURGE!
-    # Quarantine the historical USGS MRDS centroid artifact at (-1.9982, 113.9995) from ALL positive ore targets (Pk)
-    purged_count = 0
-    for key in ["positives_k0", "positives_k1", "positives_k2", "positives_k3"]:
-        gdf = deposit_targets[key]
-        if len(gdf) > 0:
-            d_deg = np.hypot(gdf.geometry.x - CENTROID_ARTIFACT_LON, gdf.geometry.y - CENTROID_ARTIFACT_LAT)
-            bad = d_deg < 0.08  # within ~9 km of centroid artifact
-            if bad.any():
-                purged_count += int(bad.sum())
-                deposit_targets[key] = gdf[~bad].copy()
-
-    logger.info("Enforced Gate 3: Quarantined %d centroid clustering artifacts from positive training sets P_k!", purged_count)
-
-    # Rasterize K=4 deposit mechanics labels (1000m buffer)
-    rasters_k4 = rasterize_borneo_k4_labels(deposit_targets, REF_PROFILE, buffer_m=1000.0)
-
-    # 4. Coal Labels (ESDM Coal Concessions & Mines)
-    coal_dep_path = ROOT / "data" / "borneo" / "kalimantan_coal_deposits.csv"
-    raster_coal = np.full((out_h, out_w), -1, dtype=np.int8)
-    if coal_dep_path.exists():
-        df_coal = pd.read_csv(coal_dep_path)
-        d_coal_cent = np.hypot(df_coal["longitude"] - CENTROID_ARTIFACT_LON, df_coal["latitude"] - CENTROID_ARTIFACT_LAT)
-        clean_coal = df_coal[d_coal_cent >= 0.08].copy()
-
-        coal_pts = [Point(float(r["longitude"]), float(r["latitude"])) for _, r in clean_coal.iterrows()]
-        gdf_coal = gpd.GeoDataFrame({"target": ["coal"] * len(coal_pts)}, geometry=coal_pts, crs="EPSG:4326")
-        buffered_coal = gdf_coal.geometry.buffer(1000.0 / 111320.0)
-        shapes_coal = [(geom, 1) for geom in buffered_coal if geom is not None and not geom.is_empty]
-        if shapes_coal:
-            rasterio.features.rasterize(shapes_coal, out=raster_coal, transform=ref_transform, all_touched=True, dtype=np.int8)
-
-    logger.info(
-        "Rasterized Ground-Truth Targets: Coal=%d, P0=%d, P1=%d, P2=%d, P3=%d cells",
-        int((raster_coal == 1).sum()),
-        int((rasters_k4["label_k0_porphyry_cu"] == 1).sum()),
-        int((rasters_k4["label_k1_skarn_fe_cu"] == 1).sum()),
-        int((rasters_k4["label_k2_epithermal_au"] == 1).sum()),
-        int((rasters_k4["label_k3_laterite_fe_ni"] == 1).sum()),
+    Real layers are built by ``scripts/fetch_real_layers.py`` + ``scripts/build_real_feature_cubes.py``.
+    """
+    raise RuntimeError(
+        "fetch_and_process_deposits_and_covariates fabricated a transport network from five hand-drawn river polylines and forest disturbance from it and has been removed. "
+        "Use scripts/build_real_feature_cubes.py (real data only)."
     )
-
-    return {
-        "dist_transport_km": f_dist_transport_km,
-        "forest_disturbance_rate": f_disturbance_rate,
-        "label_coal": raster_coal,
-        "label_k0_porphyry_cu": rasters_k4["label_k0_porphyry_cu"],
-        "label_k1_skarn_fe_cu": rasters_k4["label_k1_skarn_fe_cu"],
-        "label_k2_epithermal_au": rasters_k4["label_k2_epithermal_au"],
-        "label_k3_laterite_fe_ni": rasters_k4["label_k3_laterite_fe_ni"],
-        "explored_footprint": rasters_k4["explored_footprint"],
-        "alteration_benchmark": rasters_k4["alteration_benchmark"],
-    }
 
 
 def export_hotspots_50m(all_channels: dict[str, np.ndarray]) -> None:
@@ -876,395 +721,25 @@ def verify_all_acceptance_gates(
 def enrich_with_dual_domain_multimodal_features(
     processed_dir: Path = PROCESSED_DIR,
 ) -> dict[str, Any]:
-    """Compute and integrate the Dual-Domain (K=4 Metals + K=3 Coal) multimodal features
-    and Rim-Anchored Rank-Adaptive Coal Halo labels into processed GeoTIFFs and dataset.parquet.
+    """REMOVED in v4.9 (2026-11-10): this function fabricated constant default rasters for missing inputs.
+
+    Real layers are built by ``scripts/fetch_real_layers.py`` + ``scripts/build_real_feature_cubes.py``.
     """
-    from src.features.coal_and_multimodal_features import (
-        compute_continuous_canopy_weight,
-        compute_hydro_twi_and_censored_upslope_amd,
-        compute_lithologic_and_stratigraphic_contacts,
-        compute_metallic_and_coal_gated_optical,
-        compute_potential_field_derivatives,
-        compute_sar_bedding_strike_and_anisotropy,
+    raise RuntimeError(
+        "enrich_with_dual_domain_multimodal_features fabricated constant default rasters for missing inputs and has been removed. "
+        "Use scripts/build_real_feature_cubes.py (real data only)."
     )
-    from src.labels.borneo_labels import (
-        build_k3_coal_rank_targets,
-        build_pooled_exploration_footprint,
-        load_kalimantan_coal_sources,
-    )
-
-    t0 = time.time()
-    parquet_path = processed_dir / "dataset.parquet"
-    if not parquet_path.exists():
-        raise FileNotFoundError(f"Cannot enrich missing parquet at {parquet_path}")
-
-    logger.info("Loading existing base rasters from %s to compute dual-domain multimodal features...", processed_dir)
-
-    def _read_tif(name: str, default_val: float = 0.0) -> np.ndarray:
-        p = processed_dir / f"{name}.tif"
-        if p.exists():
-            with rasterio.open(p) as src:
-                return src.read(1).astype(np.float32)
-        return np.full((H, W), default_val, dtype=np.float32)
-
-    dem = _read_tif("dem_elevation")
-    slope = _read_tif("dem_slope")
-    ndvi = _read_tif("spec_ndvi", default_val=0.6)
-    ndre = _read_tif("spec_ndre", default_val=0.5)
-    gfw_dist = _read_tif("forest_disturbance_rate", default_val=0.0)
-    sar_available = (processed_dir / "sar_palsar2_hh.tif").exists() and (processed_dir / "sar_palsar2_hv.tif").exists()
-    # Missing SAR stays NaN (never a fabricated constant backscatter)
-    sar_hh = _read_tif("sar_palsar2_hh", default_val=np.nan)
-    sar_hv = _read_tif("sar_palsar2_hv", default_val=np.nan)
-    bouguer = _read_tif("bouguer_gravity_mgal", default_val=0.0)
-    sed_thick = _read_tif("sediment_thickness_globsed", default_val=500.0)
-    mag_rtp = _read_tif("emag2_rtp_magnetics", default_val=0.0)
-    mag_as = _read_tif("emag2_analytic_signal", default_val=0.0)
-    thermal_st = _read_tif("thermal_anomaly_st", default_val=0.0)
-    aster_sil = _read_tif("aster_silica_index", default_val=np.nan)
-    spec_albedo = _read_tif("spec_albedo_gated", default_val=np.nan)
-    spec_wcdi = _read_tif("spec_wcdi_gated", default_val=np.nan)
-    spec_oci = _read_tif("spec_oci_gated", default_val=np.nan)
-    spec_ficr = _read_tif("spec_ficr_gated", default_val=np.nan)
-    dist_transport = _read_tif("dist_transport_km", default_val=15.0)
-    coastal_dist = _read_tif("coastal_shelf_dist_km", default_val=50.0)
-    explored_metal = _read_tif("explored_footprint", default_val=0.0)
-
-    lats_1d = np.linspace(MAX_LAT, MIN_LAT, H, dtype=np.float32)
-    lons_1d = np.linspace(MIN_LON, MAX_LON, W, dtype=np.float32)
-
-    # 1. Patch 2: Continuous Canopy Weight & Active Mine Mask
-    logger.info("Computing Patch 2 continuous canopy transmittance weight w_canopy...")
-    w_canopy = compute_continuous_canopy_weight(ndvi=ndvi)
-    active_mine_mask = (
-        ((ndvi < 0.18) & (gfw_dist >= 0.45))
-        | (gfw_dist >= 0.75)
-        | (sar_hh > -2.5)
-    ).astype(np.int8)
-
-    # 2. Patch 6: SAR Bedding Strike, GLCM Anisotropy & DEM Strike Persistence
-    logger.info("Computing Patch 6 SAR bedding strike, anisotropy, and DEM strike persistence...")
-    if sar_available:
-        from src.features.sar_palsar2 import _fill_nearest
-
-        sar_invalid = ~(np.isfinite(sar_hh) & np.isfinite(sar_hv))
-        sar_mm_dict = compute_sar_bedding_strike_and_anisotropy(
-            hh_db=_fill_nearest(sar_hh),
-            hv_db=_fill_nearest(sar_hv),
-            dem=dem,
-            res_m=250.0,
-        )
-        for k in ("sar_bedding_strike_deg", "sar_glcm_anisotropy"):
-            sar_mm_dict[k] = np.where(sar_invalid, np.nan, sar_mm_dict[k]).astype(np.float32)
-    else:
-        logger.warning("Real PALSAR-2 rasters absent in %s: SAR-derived channels omitted (not fabricated)", processed_dir)
-        sar_mm_dict = {}
-
-    # 3. Patch 3: Hydrological TWI & Censored Upslope AMD Index
-    logger.info("Computing Patch 3 Topographic Wetness Index and pit-censored Upslope AMD Index...")
-    hydro_dict = compute_hydro_twi_and_censored_upslope_amd(
-        dem=dem,
-        slope=slope,
-        ndre=ndre,
-        ficr=np.nan_to_num(spec_ficr, nan=1.0),
-        active_mine_mask=active_mine_mask,
-        res_m=250.0,
-    )
-
-    # 4. Patches 4, 5, 6: Lithologic Contacts, Stratigraphic Distances & Formation Polygon IDs
-    logger.info("Computing Patches 4-6 lithologic contacts, coal formation distances, and formation_polygon_id...")
-    litho_dict = compute_lithologic_and_stratigraphic_contacts(
-        geology_gpkg_path=INTERIM_DIR / "esdm_geology_250k.gpkg",
-        grid_lon=lons_1d,
-        grid_lat=lats_1d,
-        dem=dem,
-        slope=slope,
-        coastal_dist_km=coastal_dist,
-        georima_csv_path=ROOT / "data" / "indonesia" / "georima_all_indonesia_nodes.csv",
-        res_m=250.0,
-    )
-
-    # 5. Potential Field Derivatives
-    logger.info("Computing potential field derivatives (RTP tilt derivative, analytic signal, basin residual)...")
-    pot_dict = compute_potential_field_derivatives(
-        bouguer_mgal=bouguer,
-        sed_thickness_m=sed_thick,
-        rtp=mag_rtp,
-        analytic_sig=mag_as,
-        res_m=250.0,
-    )
-
-    # 6. Patches 7 & 8: Metallic & Coal Gated Optical/TIR Channels
-    logger.info("Computing Patches 7 & 8 vegetation-gated optical/TIR indices and fire-filtered thermal anomaly...")
-    s2_stack = {
-        "ndvi": ndvi,
-        "albedo": spec_albedo,
-        "wcdi": spec_wcdi,
-        "oci": spec_oci,
-        "ficr": spec_ficr,
-    }
-    opt_mm_dict = compute_metallic_and_coal_gated_optical(
-        s2_stack=s2_stack,
-        aster_tir_silica=aster_sil,
-        thermal_st=thermal_st,
-        w_canopy=w_canopy,
-        river_mask=dist_transport * 0.85,
-        disturbance_mask=gfw_dist,
-        in_coal_bearing_formation=litho_dict["in_coal_bearing_formation"],
-        res_m=250.0,
-    )
-
-    # 7. Component 2: K=3 Coal Rank Halo Labels with 3 Non-Negotiable Spatial Guardrails
-    logger.info("Building K=3 Coal Rank targets with Rim-Anchored Offsets and 3 Spatial Guardrails...")
-    coal_gdf = load_kalimantan_coal_sources()
-    coal_targets = build_k3_coal_rank_targets(
-        concessions=coal_gdf,
-        ndvi=ndvi,
-        active_mine_mask=active_mine_mask,
-        formation_polygon_id=litho_dict["formation_polygon_id"],
-        sar_bedding_strike_deg=sar_mm_dict.get("sar_bedding_strike_deg"),
-        gfw_forest_disturbance=gfw_dist,
-        sar_hh_db=sar_hh if sar_available else None,
-        bounds=(MIN_LON, MIN_LAT, MAX_LON, MAX_LAT),
-    )
-
-    pooled_fp = build_pooled_exploration_footprint(
-        metallic_explored_footprint=explored_metal,
-        coal_concessions=coal_gdf,
-        active_mine_mask=active_mine_mask,
-        gfw_forest_disturbance=gfw_dist,
-        bounds=(MIN_LON, MIN_LAT, MAX_LON, MAX_LAT),
-    )
-
-    # Explicit Pass 2 access / disturbance channels
-    dist_major_rivers_km = np.clip(dist_transport * 0.85, 0.0, 250.0).astype(np.float32)
-    dist_haul_roads_km = np.clip(dist_transport * 1.10, 0.0, 250.0).astype(np.float32)
-    gfw_forest_disturbance = gfw_dist.astype(np.float32)
-
-    new_rasters: dict[str, np.ndarray] = {}
-    new_rasters["w_canopy"] = w_canopy
-    new_rasters["active_mine_mask"] = active_mine_mask.astype(np.float32)
-    new_rasters.update(sar_mm_dict)
-    new_rasters.update(hydro_dict)
-    new_rasters.update({k: v.astype(np.float32) for k, v in litho_dict.items()})
-    new_rasters.update(pot_dict)
-    new_rasters.update(opt_mm_dict)
-    new_rasters["dist_major_rivers_km"] = dist_major_rivers_km
-    new_rasters["dist_haul_roads_km"] = dist_haul_roads_km
-    new_rasters["gfw_forest_disturbance"] = gfw_forest_disturbance
-    new_rasters["explored_footprint"] = pooled_fp.astype(np.float32)
-    new_rasters["label_coal_k0_high_cv"] = coal_targets["label_coal_k0_high_cv"].astype(np.float32)
-    new_rasters["label_coal_k1_med_cv"] = coal_targets["label_coal_k1_med_cv"].astype(np.float32)
-    new_rasters["label_coal_k2_low_cv"] = coal_targets["label_coal_k2_low_cv"].astype(np.float32)
-
-    for name, arr in new_rasters.items():
-        save_raster(arr, REF_PROFILE, str(processed_dir / f"{name}.tif"))
-
-    # Update dataset.parquet with new columns at valid land rows/cols
-    logger.info("Updating %s with dual-domain multimodal channels and K=3 coal labels...", parquet_path)
-    df = pd.read_parquet(parquet_path)
-    rows = df["row"].to_numpy(dtype=np.int32)
-    cols = df["col"].to_numpy(dtype=np.int32)
-
-    for name, arr in new_rasters.items():
-        if name.startswith("label_"):
-            df[name] = arr[rows, cols].astype(np.int32)
-        elif name in ("active_mine_mask", "formation_polygon_id", "in_ophiolite_unit", "in_holocene_peat_or_karst_mask", "explored_footprint"):
-            df[name] = arr[rows, cols].astype(np.int32)
-        else:
-            df[name] = arr[rows, cols].astype(np.float32)
-
-    df["coal_tonnage_weight"] = coal_targets["coal_tonnage_weights"][rows, cols].astype(np.float32)
-    df["coal_parent_concession_id"] = coal_targets["coal_parent_concession_id"][rows, cols].astype(np.int32)
-
-    # Update composite label_coal to also reflect halo positives
-    any_coal_halo = (
-        (df["label_coal_k0_high_cv"] == 1)
-        | (df["label_coal_k1_med_cv"] == 1)
-        | (df["label_coal_k2_low_cv"] == 1)
-    )
-    df["label_coal"] = np.where((df["label_coal"] == 1) | any_coal_halo, 1, -1).astype(np.int32)
-
-    df.to_parquet(parquet_path, index=False)
-    logger.info(
-        "Updated dataset.parquet: %d rows, %d columns (K=3 coal halo positives: k0=%d, k1=%d, k2=%d)",
-        len(df),
-        len(df.columns),
-        int((df["label_coal_k0_high_cv"] == 1).sum()),
-        int((df["label_coal_k1_med_cv"] == 1).sum()),
-        int((df["label_coal_k2_low_cv"] == 1).sum()),
-    )
-
-    gate_results = verify_all_acceptance_gates(processed_dir, parquet_path)
-    dt = time.time() - t0
-    return {
-        "execution_time_sec": round(dt, 2),
-        "parquet_rows": len(df),
-        "parquet_cols": len(df.columns),
-        "positives_coal_k0": int((df["label_coal_k0_high_cv"] == 1).sum()),
-        "positives_coal_k1": int((df["label_coal_k1_med_cv"] == 1).sum()),
-        "positives_coal_k2": int((df["label_coal_k2_low_cv"] == 1).sum()),
-        "halo_samples_count": len(coal_targets["halo_samples_df"]),
-        "gate_results": gate_results,
-    }
 
 
 def build_kalimantan_multimodal_pipeline() -> dict[str, Any]:
-    """Execute the complete Kalimantan Multimodal Ingestion Pipeline."""
-    t0 = time.time()
-    logger.info("==========================================================================")
-    logger.info("STARTING SIFT KALIMANTAN MULTIMODAL INGESTION PIPELINE")
-    logger.info("Target BBox: [%.2fE..%.2fE, %.2fS..%.2fN] | Resolution: 0.0025° (~250m)", MIN_LON, MAX_LON, MIN_LAT, MAX_LAT)
-    logger.info("Grid Dimensions: %d cols x %d rows (~15.84M total cells)", W, H)
-    logger.info("==========================================================================")
+    """REMOVED in v4.9 (2026-11-10): this function fabricated several input layers (see the functions above).
 
-    create_directories()
-
-    # 1. Digital Elevation & Morphometrics (Workstream 4)
-    dem_dict = fetch_and_process_dem(MIN_LON, MIN_LAT, MAX_LON, MAX_LAT, H, W, REF_TRANSFORM)
-    dem = dem_dict["dem_elevation"]
-
-    # 2. Synthetic Aperture Radar (Workstream 1)
-    sar_dict = fetch_and_process_sar(dem, H, W)
-
-    # 3. Optical Multispectral & Gate 2 Vegetation Masking (Workstream 2)
-    opt_dict = fetch_and_process_optical(dem, H, W)
-
-    # 4. Thermal Infrared (Workstream 3)
-    thermal_dict = fetch_and_process_thermal(dem, opt_dict["spec_ndvi"], H, W)
-
-    # 5. Bedrock Geology, Tectonic Faults & Sediment Thickness (Workstream 5)
-    geol_dict = fetch_and_process_geology_and_faults(dem, H, W, REF_TRANSFORM)
-
-    # 6. Potential Fields Geophysics (Workstream 6)
-    geophys_dict = fetch_and_process_geophysics(dem, H, W, REF_TRANSFORM)
-
-    # 7. Ground-Truth Deposits, Transport & Labels with Gate 3 (Workstream 7)
-    deposit_dict = fetch_and_process_deposits_and_covariates(H, W, REF_TRANSFORM)
-
-    # Combine all feature channels
-    all_channels: dict[str, np.ndarray] = {}
-    all_channels.update(sar_dict)
-    all_channels.update(opt_dict)
-    all_channels.update(thermal_dict)
-    all_channels.update(dem_dict)
-    all_channels.update(geol_dict)
-    all_channels.update(geophys_dict)
-    all_channels.update(deposit_dict)
-
-    # Generate Hotspot 50m derivatives
-    export_hotspots_50m(all_channels)
-
-    # Valid land mask: elevation >= -20m and within shelf
-    valid_mask = (dem >= -20.0) & (all_channels["coastal_shelf_dist_km"] <= 150.0)
-    lats_1d = np.linspace(MAX_LAT, MIN_LAT, H, dtype=np.float32)
-    lons_1d = np.linspace(MIN_LON, MAX_LON, W, dtype=np.float32)
-    lat_grid, lon_grid = np.meshgrid(lats_1d, lons_1d, indexing="ij")
-    non_id_mask = (
-        ((lat_grid > 4.35) & (lon_grid > 113.0) & (lon_grid < 119.2))
-        | ((lat_grid > 1.45) & (lon_grid > 109.6) & (lon_grid < 115.2))
-        | ((lat_grid > 4.10) & (lon_grid > 117.5))
+    Real layers are built by ``scripts/fetch_real_layers.py`` + ``scripts/build_real_feature_cubes.py``.
+    """
+    raise RuntimeError(
+        "build_kalimantan_multimodal_pipeline fabricated several input layers (see the functions above) and has been removed. "
+        "Use scripts/build_real_feature_cubes.py (real data only)."
     )
-    valid_mask = valid_mask & (~non_id_mask)
-    valid_count = int(valid_mask.sum())
-    logger.info("Valid Kalimantan land cells: %d (%.1f%% of grid)", valid_count, 100.0 * valid_count / (H * W))
-
-    # -------------------------------------------------------------------------
-    # Save All Harmonized GeoTIFFs at 250m (Gate 1 Verification)
-    # -------------------------------------------------------------------------
-    logger.info("Exporting all harmonized GeoTIFFs to %s...", PROCESSED_DIR)
-    feature_arrays = []
-    feature_names = []
-
-    LABEL_KEYS = {
-        "label_coal", "label_k0_porphyry_cu", "label_k1_skarn_fe_cu",
-        "label_k2_epithermal_au", "label_k3_laterite_fe_ni",
-        "explored_footprint", "alteration_benchmark",
-    }
-
-    for name, arr in all_channels.items():
-        out_tif = PROCESSED_DIR / f"{name}.tif"
-        save_raster(arr, REF_PROFILE, str(out_tif))
-        if name not in LABEL_KEYS:
-            feature_names.append(name)
-            feature_arrays.append(arr)
-
-    # Save feature_stack.joblib
-    stacked_arr = np.stack(feature_arrays, axis=0).astype(np.float32)
-    stack_prof = dict(REF_PROFILE)
-    stack_prof["count"] = len(feature_names)
-    stack = FeatureStack(
-        array=stacked_arr,
-        feature_names=feature_names,
-        profile=stack_prof,
-        data_quality_mask=~valid_mask,
-    )
-    joblib.dump(stack, PROCESSED_DIR / "feature_stack.joblib")
-    logger.info("Saved feature_stack.joblib (%d channels, %dx%d px)", len(feature_names), H, W)
-
-    # General deposit label (1 if any metallic deposit positive, else -1; coal decoupled)
-    pos_metals = (
-        (all_channels["label_k0_porphyry_cu"] == 1)
-        | (all_channels["label_k1_skarn_fe_cu"] == 1)
-        | (all_channels["label_k2_epithermal_au"] == 1)
-        | (all_channels["label_k3_laterite_fe_ni"] == 1)
-    )
-    general_label = np.where(pos_metals, 1, -1).astype(np.int32)
-    np.save(PROCESSED_DIR / "labels.npy", general_label)
-
-    # -------------------------------------------------------------------------
-    # Compile Unified Feature Table Parquet Export (Gate 4)
-    # -------------------------------------------------------------------------
-    logger.info("Compiling Unified Feature Table Parquet Export (Gate 4)...")
-    rows, cols = np.where(valid_mask)
-    rows = rows.astype(np.int32)
-    cols = cols.astype(np.int32)
-
-    data_dict: dict[str, Any] = {
-        "row": rows,
-        "col": cols,
-        "lon": lon_grid[rows, cols].astype(np.float32),
-        "lat": lat_grid[rows, cols].astype(np.float32),
-    }
-
-    for name in feature_names:
-        data_dict[name] = all_channels[name][rows, cols]
-
-    for lk in LABEL_KEYS:
-        data_dict[lk] = all_channels[lk][rows, cols].astype(np.int32)
-    data_dict["label"] = general_label[rows, cols].astype(np.int32)
-
-    df_parquet = pd.DataFrame(data_dict)
-    parquet_path = PROCESSED_DIR / "dataset.parquet"
-    df_parquet.to_parquet(parquet_path, index=False)
-    logger.info("Saved dataset.parquet with %d rows and %d columns (%.2f MB)",
-                len(df_parquet), len(df_parquet.columns), parquet_path.stat().st_size / 1024 / 1024)
-
-    # -------------------------------------------------------------------------
-    # Enrich with Dual-Domain Multimodal Features & K=3 Coal Halo Targets
-    # -------------------------------------------------------------------------
-    enrich_summary = enrich_with_dual_domain_multimodal_features(PROCESSED_DIR)
-    gate_results = enrich_summary["gate_results"]
-
-    dt = time.time() - t0
-    logger.info("==========================================================================")
-    logger.info("AUTONOMOUS INGESTION COMPLETE in %.2f minutes!", dt / 60.0)
-    logger.info("==========================================================================")
-
-    return {
-        "execution_time_sec": round(dt, 2),
-        "valid_land_cells": valid_count,
-        "n_features": len(feature_names),
-        "feature_names": feature_names,
-        "parquet_rows": enrich_summary["parquet_rows"],
-        "parquet_cols": enrich_summary["parquet_cols"],
-        "positives_k0": int((all_channels["label_k0_porphyry_cu"] == 1).sum()),
-        "positives_coal": int((all_channels["label_coal"] == 1).sum()),
-        "positives_coal_k0": enrich_summary["positives_coal_k0"],
-        "positives_coal_k1": enrich_summary["positives_coal_k1"],
-        "positives_coal_k2": enrich_summary["positives_coal_k2"],
-        "gate_results": gate_results,
-    }
 
 
 if __name__ == "__main__":

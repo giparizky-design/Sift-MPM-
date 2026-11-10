@@ -2,9 +2,11 @@
 
 Provides 100% leak-free and placer-hygiene-enforced label extraction for the
 Borneo K=4 deposit mechanics discovery engine:
-  - Head 0: Porphyry Cu-Au (GeoRIMA COPPER_ORE + Cu-bearing BASE_METALS + MRDS Cu-Au, N ≈ 35-45)
-  - Head 1: Contact Fe-Cu Skarn (ESDM Besi Primer [57] + GeoRIMA carbonate_skarn [14] = 71)
-  - Head 2: Epithermal Au-Ag (GeoRIMA Emas Primer [87] + MRDS primary Au-Ag)
+  - Head 0: Cu-Mo deposits (GeoRIMA COPPER_ORE [Tembaga, Molibdenum] + MRDS records with a CU code).
+            Key kept as ``porphyry_cu``; the records are copper deposits of any style, not a
+            verified porphyry classification (v4.15; Pb-Zn, Hg-Sb and rock-type quarry nodes removed).
+  - Head 1: Primary Fe (ESDM Besi Primer only; marble is a possible skarn host, not a deposit)
+  - Head 2: Primary Au-Ag (GeoRIMA Emas Primer + MRDS Au records that are not placers or excluded sites)
   - Head 3: Lateritic Fe-Ni (ESDM Besi Laterit [21] + GeoRIMA NICKEL_COBALT along Meratus/Sebuku)
   - Alteration Benchmark: Exact strings argillic_alteration, advanced_argillic, propylitic_zeolite,
     Kaolin, Pirofilit, Zeolit
@@ -53,25 +55,66 @@ K4_LABEL_COLS = [
 # ---------------------------------------------------------------------------
 
 
+# Sites removed from every positive set by name (lower-case site name -> reason).
+# A decision, not a default: add a name here only with a documented reason.
+EXCLUDED_DEPOSIT_SITES: dict[str, str] = {
+    "busang": "Bre-X fraud (1997): the reported gold resource was fabricated; minor real mineralisation only.",
+}
+
+# MRDS site names that denote alluvial / placer workings (whole-word match).
+PLACER_SITE_NAME_PATTERN = r"\b(?:river|alluvial|paleochannels?|placers?)\b"
+# MRDS commodity code for gem diamonds, which in Borneo marks alluvial diamond-gold workings.
+PLACER_MRDS_CODES = frozenset({"GEM_D"})
+
+
+def mrds_code_tokens(code_list: pd.Series) -> pd.Series:
+    """Split MRDS ``code_list`` strings into upper-case token lists (whole-token matching)."""
+    return code_list.fillna("").astype(str).str.upper().str.split()
+
+
+def mrds_has_code(code_list: pd.Series, code: str) -> pd.Series:
+    """True where ``code`` is one of the whitespace-separated tokens ('CU' does not match 'CUR')."""
+    code = code.upper()
+    return mrds_code_tokens(code_list).apply(lambda toks: code in toks)
+
+
+def _site_name_series(df: Union[pd.DataFrame, gpd.GeoDataFrame]) -> pd.Series:
+    for col in ("site_name", "deposit_name", "name"):
+        if col in df.columns:
+            return df[col].fillna("").astype(str).str.strip().str.lower()
+    return pd.Series("", index=df.index)
+
+
 def filter_valid_ore_candidates(df: Union[pd.DataFrame, gpd.GeoDataFrame]) -> Union[pd.DataFrame, gpd.GeoDataFrame]:
-    """Apply the Global Hygiene Guard to exclude alluvial placers and centroid artifacts.
+    """Apply the Global Hygiene Guard to exclude alluvial placers, named exclusions and centroid artifacts.
 
     Enforces Reconciled Engineering Rule 3:
-      River placers ("Emas Alluvial") and island/province centroid artifacts
-      must never contaminate bedrock positive ore training sets (P_k).
+      River placers and island/province centroid artifacts must never contaminate bedrock
+      positive ore training sets (P_k).
+
+    A record is dropped when any of the following holds:
+      - ``is_placer`` is True (set by the loaders: GeoRIMA ``Emas Alluvial``; MRDS ``GEM_D`` code or a
+        placer word in the site name);
+      - ``commodity_label == "Emas Alluvial"`` (kept for frames that do not carry ``is_placer``);
+      - the site name is in ``EXCLUDED_DEPOSIT_SITES``;
+      - ``is_centroid_artifact`` is True.
 
     Args:
-        df: DataFrame or GeoDataFrame with columns 'commodity_label' and
-            optional 'is_centroid_artifact'.
+        df: DataFrame or GeoDataFrame with optional columns 'commodity_label', 'is_placer',
+            'site_name' and 'is_centroid_artifact'.
 
     Returns:
         Filtered DataFrame / GeoDataFrame retaining only valid bedrock ore candidates.
     """
     comm_label = df["commodity_label"] if "commodity_label" in df.columns else pd.Series("", index=df.index)
     artifact_series = df["is_centroid_artifact"] if "is_centroid_artifact" in df.columns else pd.Series(False, index=df.index)
+    placer_series = df["is_placer"] if "is_placer" in df.columns else pd.Series(False, index=df.index)
+    excluded_site = _site_name_series(df).isin(set(EXCLUDED_DEPOSIT_SITES))
 
     is_valid_ore_candidate = (
         (comm_label != "Emas Alluvial")
+        & (~placer_series.fillna(False).astype(bool))
+        & (~excluded_site)
         & (~artifact_series.fillna(False).astype(bool))
     )
     return df[is_valid_ore_candidate].copy()
@@ -127,6 +170,7 @@ def load_borneo_vector_sources(
     b_geo = df_geo_raw[mask_borneo].copy()
     if "is_centroid_artifact" not in b_geo.columns:
         b_geo["is_centroid_artifact"] = False
+    b_geo["is_placer"] = b_geo["commodity_label"].eq("Emas Alluvial") if "commodity_label" in b_geo.columns else False
 
     gdf_iron = gpd.read_file(p_iron)
     if gdf_iron.crs is None or gdf_iron.crs.to_epsg() != 4326:
@@ -143,6 +187,14 @@ def load_borneo_vector_sources(
         gdf_mrds["is_centroid_artifact"] = False
     if "commodity_label" not in gdf_mrds.columns:
         gdf_mrds["commodity_label"] = gdf_mrds.get("site_name", "")
+    # Placer flag: MRDS carries no commodity_label of its own, so the placer test must read the
+    # commodity codes (GEM_D = gem diamond, alluvial in Borneo) and the site name (v4.14 B/C: Riam
+    # Kanan River and Cempaka-Danau Seran Paleochannels passed the old string test).
+    _codes = mrds_code_tokens(gdf_mrds["code_list"]) if "code_list" in gdf_mrds.columns else pd.Series([[]] * len(gdf_mrds), index=gdf_mrds.index)
+    gdf_mrds["is_placer"] = (
+        _codes.apply(lambda toks: bool(PLACER_MRDS_CODES.intersection(toks)))
+        | _site_name_series(gdf_mrds).str.contains(PLACER_SITE_NAME_PATTERN, regex=True)
+    )
 
     gdf_coal = None
     if p_coal.exists():
@@ -214,23 +266,15 @@ def build_k4_deposit_targets(
     # ------------------------------------------------------------------
     # Head k=0: Porphyry Cu-Au & Intrusive-Hosted Magmatic-Hydrothermal Systems
     # ------------------------------------------------------------------
-    east_kal_intrusive_mask = (
-        clean_geo["geological_role"].isin(["felsic_intrusive", "potassic_host"])
-        & clean_geo["lon"].between(114.50, 119.50)
-        & clean_geo["lat"].between(-2.80, 3.20)
-    )
-    k0_geo_mask = (
-        (clean_geo["resource_group"] == "COPPER_ORE")
-        | (clean_geo["commodity_label"] == "Tembaga")
-        | (clean_geo["resource_group"] == "BASE_METALS")
-        | (clean_geo["geological_role"] == "porphyry_intrusive")
-        | east_kal_intrusive_mask
-    )
+    # v4.15: deposit records only. The Pb-Zn / Hg-Sb (BASE_METALS), rock-type
+    # (porphyry_intrusive, felsic_intrusive, potassic_host) and East-Kalimantan-box rules were removed:
+    # they put quarry / industrial-mineral occurrences into the head (v4.13 section 1.1).
+    k0_geo_mask = clean_geo["resource_group"] == "COPPER_ORE"  # Tembaga (Cu) and Molibdenum (Mo)
     k0_geo = clean_geo[k0_geo_mask].copy()
 
-    # MRDS Cu-bearing porphyry / stockwork nodes
+    # MRDS Cu-bearing nodes (whole-token match on the commodity code list)
     mrds_code = clean_mrds.get("code_list", pd.Series("", index=clean_mrds.index)).fillna("")
-    k0_mrds_mask = mrds_code.str.contains("CU", case=False, na=False)
+    k0_mrds_mask = mrds_has_code(mrds_code, "CU")
     k0_mrds = clean_mrds[k0_mrds_mask].copy()
 
     pts_k0: list[Point] = [Point(float(r["lon"]), float(r["lat"])) for _, r in k0_geo.iterrows()]
@@ -247,12 +291,9 @@ def build_k4_deposit_targets(
     k1_iron_mask = clean_iron["commodity_type"] == "Besi Primer"
     k1_iron = clean_iron[k1_iron_mask].copy()
 
-    # Exact string carbonate_skarn in GeoRIMA
-    k1_geo_mask = clean_geo["geological_role"] == "carbonate_skarn"
-    # Ensure Kalimantan (Borneo) constraint matches the N=14 exactly
-    if "island_region" in clean_geo.columns:
-        k1_geo_mask = k1_geo_mask & (clean_geo["island_region"] == "Kalimantan (Borneo)")
-    k1_geo = clean_geo[k1_geo_mask].copy()
+    # v4.15: GeoRIMA marble (``carbonate_skarn`` role) is a possible skarn host, not a deposit, so it is
+    # no longer a positive. The empty frame keeps the downstream concatenation unchanged.
+    k1_geo = clean_geo.iloc[0:0].copy()
 
     pts_k1: list[Point] = list(k1_iron.geometry)
     pts_k1.extend([Point(float(r["lon"]), float(r["lat"])) for _, r in k1_geo.iterrows()])
@@ -268,7 +309,7 @@ def build_k4_deposit_targets(
     k2_geo_mask = (clean_geo["resource_group"] == "GOLD_ORE") & (clean_geo["commodity_label"] == "Emas Primer")
     k2_geo = clean_geo[k2_geo_mask].copy()
 
-    k2_mrds_mask = mrds_code.str.contains("AU", case=False, na=False)
+    k2_mrds_mask = mrds_has_code(mrds_code, "AU")
     k2_mrds = clean_mrds[k2_mrds_mask].copy()
 
     pts_k2: list[Point] = [Point(float(r["lon"]), float(r["lat"])) for _, r in k2_geo.iterrows()]
@@ -288,7 +329,7 @@ def build_k4_deposit_targets(
     k3_geo_mask = clean_geo["resource_group"] == "NICKEL_COBALT"
     k3_geo = clean_geo[k3_geo_mask].copy()
 
-    k3_mrds_mask = mrds_code.str.contains("NI", case=False, na=False)
+    k3_mrds_mask = mrds_has_code(mrds_code, "NI")
     k3_mrds = clean_mrds[k3_mrds_mask].copy()
 
     pts_k3: list[Point] = list(k3_iron.geometry)
@@ -864,7 +905,7 @@ def build_k3_coal_rank_targets(
       1. Rim-Anchored Origin (d=0 at Disturbance Boundary):
          Traces along the bedding strike ray through any contiguous bare-earth/mine
          disturbance zone (NDVI < 0.20, active_mine_mask == 1, gfw_forest_disturbance >= 0.5,
-         or sar_hh_db > -2.0 dB) to find the outer boundary pixel (r_rim, c_rim).
+         (sar_hh_db is ignored since v4.15)) to find the outer boundary pixel (r_rim, c_rim).
          Sets d = 0 at (r_rim, c_rim) and steps out by d in [d_min^(k), d_max^(k)].
       2. Same-Formation Polygon Lock:
          Candidate (r', c') must satisfy:
@@ -898,11 +939,10 @@ def build_k3_coal_rank_targets(
         if gfw_forest_disturbance is not None
         else np.zeros((H, W), dtype=np.float32)
     )
-    hh_arr = (
-        np.asarray(sar_hh_db, dtype=np.float32)
-        if sar_hh_db is not None
-        else np.full((H, W), -10.0, dtype=np.float32)
-    )
+    # v4.15: ``sar_hh_db`` is accepted for API compatibility but no longer used. The old rule treated
+    # HH > -2 dB as disturbed ground, but L-band HH is about -7 dB over forest and about -13 dB over
+    # sparsely vegetated land in this region, so the clause selected almost nothing and none of it bare
+    # (audit v4.13 section 2.7).
 
     # Load or standardize concessions DataFrame
     if concessions is None or isinstance(concessions, (Path, str)):
@@ -940,7 +980,6 @@ def build_k3_coal_rank_targets(
         (ndvi_arr < float(disturbance_ndvi_max))
         | (mine_arr > 0)
         | (gfw_arr >= 0.5)
-        | (hh_arr > -2.0)
         | ~np.isfinite(ndvi_arr)
     )
 
@@ -951,7 +990,6 @@ def build_k3_coal_rank_targets(
         & (ndvi_arr >= float(canopy_ndvi_min))
         & (mine_arr == 0)
         & (gfw_arr < 0.5)
-        & (hh_arr <= -2.0)
     )
     k_size = max(3, int(round(750.0 / max(1.0, float(px_size_m)))))
     if k_size % 2 == 0:
@@ -1005,9 +1043,12 @@ def build_k3_coal_rank_targets(
         if not np.isfinite(theta_deg):
             theta_deg = 45.0
         theta_rad = np.deg2rad(theta_deg)
-        # Unit strike vector (ur, uc)
-        ur_base = float(np.sin(theta_rad))
-        uc_base = float(np.cos(theta_rad))
+        # Unit strike vector (ur, uc) in (row, col). v4.15: matches the convention of
+        # coal_and_multimodal_features._structure_tensor_eigen_and_strike, (row, col) = (cos theta, sin theta),
+        # where theta = 0 is a north-south (along-row) bedding strike. It was (sin, cos) before, which laid
+        # the halo across strike whenever theta was 0 or 90 deg (audit v4.13 section 1.5).
+        ur_base = float(np.cos(theta_rad))
+        uc_base = float(np.sin(theta_rad))
 
         # Step along both strike directions (+1 and -1)
         for sign in (+1.0, -1.0):
@@ -1209,8 +1250,9 @@ def build_pooled_exploration_footprint(
     pooled = base_fp | coal_pts
     if active_mine_mask is not None:
         pooled |= np.asarray(active_mine_mask) > 0
-    if gfw_forest_disturbance is not None:
-        pooled |= np.asarray(gfw_forest_disturbance) >= 0.75
+    # v4.15: forest loss is no longer treated as exploration. 77% of the old footprint was cells with
+    # loss >= 0.75, i.e. plantation, logging and fire, not prospecting (audit v4.13 section 2.8).
+    # ``gfw_forest_disturbance`` is accepted for API compatibility and ignored.
 
     return pooled.astype(np.int8)
 

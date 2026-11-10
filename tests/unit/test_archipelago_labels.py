@@ -51,8 +51,8 @@ def test_targets_apply_hygiene_and_archipelago_substitutes():
     assert not ((k2.lon == 121.2)).any()
     assert ((k2.lon == 121.1)).any() and ((k2.lon == 125.0)).any()
     assert not ((k2.lon == 115.5)).any()
-    # Skarn: carbonate_skarn + GeoRIMA Besi Primer outside Borneo only
-    assert set(k1.lon) == {121.4, 121.6}
+    # Primary Fe: GeoRIMA Besi Primer outside Borneo only; marble (carbonate_skarn, 121.6) is a host, not a deposit (v4.15)
+    assert set(k1.lon) == {121.4}
     # Laterite: nickel + Besi Laterit; flagged MRDS nickel dropped
     assert set(k3.lon) == {121.3, 121.5}
 

@@ -197,8 +197,9 @@ def _rasterize_faults_fast(
         az_raster = np.full((H, W), 115.0, dtype=np.float32)
 
     if not line_mask.any():
-        # Fallback to synthetic central shear axis if window has no mapped global fault
-        line_mask[H // 2, :] = True
+        # No mapped fault in the window: distances are unknown (never a synthetic shear axis)
+        nan = np.full((H, W), np.nan, dtype=np.float32)
+        return nan, nan.copy(), np.zeros((H, W), dtype=np.float32)
 
     dist_px, nearest_idx = distance_transform_edt(~line_mask, return_indices=True)
     nearest_strike = az_raster[nearest_idx[0], nearest_idx[1]]

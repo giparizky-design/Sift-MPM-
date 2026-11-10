@@ -240,8 +240,9 @@ def compute_hydro_twi_and_censored_upslope_amd(
     """
     dem_arr = np.nan_to_num(np.asarray(dem, dtype=np.float32), nan=0.0)
     slope_deg = np.nan_to_num(np.asarray(slope, dtype=np.float32), nan=0.5)
-    ndre_arr = np.nan_to_num(np.asarray(ndre, dtype=np.float32), nan=0.5)
-    ficr_arr = np.nan_to_num(np.asarray(ficr, dtype=np.float32), nan=1.0)
+    # Missing optical data stays NaN (no neutral fill values); the AMD index is NaN there
+    ndre_arr = np.asarray(ndre, dtype=np.float32)
+    ficr_arr = np.asarray(ficr, dtype=np.float32)
     mine_mask = (np.nan_to_num(np.asarray(active_mine_mask, dtype=np.float32), nan=0.0) >= 0.5)
 
     H, W = dem_arr.shape
@@ -353,7 +354,7 @@ def compute_hydro_twi_and_censored_upslope_amd(
             propagated = upslope_amd[r_dst_0:r_dst_1, c_dst_0:c_dst_1] * atten
             next_up[r_src_0:r_src_1, c_src_0:c_src_1] = np.where(
                 mask_slice,
-                np.maximum(next_up[r_src_0:r_src_1, c_src_0:c_src_1], propagated),
+                np.fmax(next_up[r_src_0:r_src_1, c_src_0:c_src_1], propagated),
                 next_up[r_src_0:r_src_1, c_src_0:c_src_1],
             )
         upslope_amd = next_up
@@ -636,7 +637,8 @@ def compute_lithologic_and_stratigraphic_contacts(
             distance_transform_edt(~intrusive_mask) * km_per_px, 0.0, 15.0
         ).astype(np.float32)
     else:
-        dist_calc_alkaline_km = np.full((H, W), 15.0, dtype=np.float32)
+        # No mapped intrusive unit: the distance is unknown, not 15 km
+        dist_calc_alkaline_km = np.full((H, W), np.nan, dtype=np.float32)
 
     # 2. Distance to Pluton-Carbonate Contact (km) - Skarn k1 (capped at local physical limit 15.0 km)
     if marine_carbonate_mask.any():
@@ -644,7 +646,7 @@ def compute_lithologic_and_stratigraphic_contacts(
             distance_transform_edt(~marine_carbonate_mask) * km_per_px, 0.0, 15.0
         ).astype(np.float32)
     else:
-        dist_carb_km = np.full((H, W), 15.0, dtype=np.float32)
+        dist_carb_km = np.full((H, W), np.nan, dtype=np.float32)
 
     # Contact zone is where both pluton and carbonate are proximate (within 2.5 km of each other)
     skarn_contact_seed = (dist_calc_alkaline_km <= 2.5) & (dist_carb_km <= 2.5)
@@ -676,7 +678,7 @@ def compute_lithologic_and_stratigraphic_contacts(
             distance_transform_edt(~marine_deltaic_seed) * km_per_px, 0.0, 15.0
         ).astype(np.float32)
     else:
-        dist_marine_deltaic_km = np.full((H, W), 15.0, dtype=np.float32)
+        dist_marine_deltaic_km = np.full((H, W), np.nan, dtype=np.float32)
 
     # 4b. Clean distance to sedimentary formation contacts from true polygons (Gemini Argon Item 1 & 2)
     if poly_shapes:
@@ -689,7 +691,7 @@ def compute_lithologic_and_stratigraphic_contacts(
             distance_transform_edt(~coal_mask) * km_per_px, 0.0, 15.0
         ).astype(np.float32)
     else:
-        dist_sed_poly_km = np.full((H, W), 15.0, dtype=np.float32)
+        dist_sed_poly_km = np.full((H, W), np.nan, dtype=np.float32)
 
     in_coal_formation = coal_mask.astype(np.float32)
 
@@ -776,9 +778,8 @@ def compute_potential_field_derivatives(
     elif rtp is not None:
         tmi_arr = np.nan_to_num(np.asarray(rtp, dtype=np.float64), nan=0.0)
     else:
-        # Derive a deterministic basement susceptibility proxy when TMI is not provided
-        rng = np.random.default_rng(555)
-        tmi_arr = gaussian_filter(rng.normal(0.0, 35.0, size=(H, W)), sigma=max(1.5, min(H, W) / 16.0))
+        # Never fabricate magnetics: a real TMI grid (e.g. EMAG2v3) is required
+        raise ValueError("compute_potential_field_derivatives requires a real tmi or rtp grid; none supplied")
 
     if rtp is not None:
         rtp_arr = np.nan_to_num(np.asarray(rtp, dtype=np.float64), nan=0.0)
@@ -828,6 +829,7 @@ def compute_metallic_and_coal_gated_optical(
     in_coal_bearing_formation: Optional[np.ndarray] = None,
     res_m: float = 250.0,
     gate2_ndvi_max: Optional[float] = 0.20,
+    water_mask: Optional[np.ndarray] = None,
 ) -> dict[str, np.ndarray]:
     """Compute gated optical & thermal features for K=4 Metals and K=3 Coal (Patches 2, 7, 8).
 
@@ -854,6 +856,9 @@ def compute_metallic_and_coal_gated_optical(
         in_coal_bearing_formation: Optional binary mask of mapped coal-bearing formations, shape (H, W).
         res_m: Grid cell resolution in metres (default 250.0).
         gate2_ndvi_max: Optional hard NaN censoring threshold on NDVI for Gate 2 compatibility (default 0.20).
+        water_mask: Optional boolean surface-water mask (True = water). Water has negative NDVI and
+            would otherwise pass the canopy gate (v4.13 section 2.6); masked cells become NaN in every
+            gated raster. See ``src.features.real_sources.water.compute_water_mask``.
 
     Returns:
         Dictionary containing:
@@ -870,55 +875,27 @@ def compute_metallic_and_coal_gated_optical(
     w_can = np.asarray(w_canopy, dtype=np.float32)
     H, W = w_can.shape
 
+    # Real inputs only: an index that was not supplied is simply not produced.
+    # (Earlier versions filled absent indices with constants such as 0.12 or 1.35.)
+    _keys = ("ndvi", "albedo", "wcdi", "oci", "ficr", "clay_hydroxyl", "ferrous_ultramafic")
     if isinstance(s2_stack, dict):
-        ndvi = np.asarray(s2_stack.get("ndvi", s2_stack.get("spec_ndvi", np.zeros((H, W)))), dtype=np.float32)
-        raw_albedo = np.asarray(
-            s2_stack.get("albedo", s2_stack.get("spec_albedo_gated", np.full((H, W), 0.12))), dtype=np.float32
-        )
-        raw_wcdi = np.asarray(
-            s2_stack.get("wcdi", s2_stack.get("spec_wcdi_gated", np.full((H, W), 1.35))), dtype=np.float32
-        )
-        raw_oci = np.asarray(
-            s2_stack.get("oci", s2_stack.get("spec_oci_gated", np.full((H, W), 1.05))), dtype=np.float32
-        )
-        raw_ficr = np.asarray(
-            s2_stack.get("ficr", s2_stack.get("spec_ficr_gated", np.full((H, W), 1.20))), dtype=np.float32
-        )
-        raw_clay = np.asarray(
-            s2_stack.get(
-                "clay_hydroxyl",
-                s2_stack.get("spec_clay_hydroxyl_gated", 1.15 + 0.35 * np.nan_to_num(raw_ficr, nan=1.0)),
-            ),
-            dtype=np.float32,
-        )
-        raw_ferrous = np.asarray(
-            s2_stack.get(
-                "ferrous_ultramafic",
-                s2_stack.get("spec_ferrous_ultramafic_gated", 1.10 + 0.25 * np.nan_to_num(raw_wcdi, nan=1.0)),
-            ),
-            dtype=np.float32,
-        )
+        def _get(k):
+            v = s2_stack.get(k, s2_stack.get(f"spec_{k}", s2_stack.get(f"spec_{k}_gated")))
+            return None if v is None else np.asarray(v, dtype=np.float32)
+        raw = {k: _get(k) for k in _keys}
     else:
         arr = np.asarray(s2_stack, dtype=np.float32)
-        if arr.ndim == 3 and arr.shape[0] >= 5:
-            ndvi = arr[0]
-            raw_albedo = arr[1]
-            raw_wcdi = arr[2]
-            raw_oci = arr[3]
-            raw_ficr = arr[4]
-            raw_clay = arr[5] if arr.shape[0] > 5 else (1.15 + 0.35 * np.nan_to_num(raw_ficr, nan=1.0))
-            raw_ferrous = arr[6] if arr.shape[0] > 6 else (1.10 + 0.25 * np.nan_to_num(raw_wcdi, nan=1.0))
-        else:
-            ndvi = np.zeros((H, W), dtype=np.float32)
-            raw_albedo = np.full((H, W), 0.12, dtype=np.float32)
-            raw_wcdi = np.full((H, W), 1.35, dtype=np.float32)
-            raw_oci = np.full((H, W), 1.05, dtype=np.float32)
-            raw_ficr = np.full((H, W), 1.20, dtype=np.float32)
-            raw_clay = np.full((H, W), 1.30, dtype=np.float32)
-            raw_ferrous = np.full((H, W), 1.25, dtype=np.float32)
+        if arr.ndim != 3 or arr.shape[0] < 1:
+            raise ValueError("s2_stack array must be (C, H, W) ordered as ndvi, albedo, wcdi, oci, ficr, clay_hydroxyl, ferrous_ultramafic")
+        raw = {k: (arr[i] if i < arr.shape[0] else None) for i, k in enumerate(_keys)}
+    if raw["ndvi"] is None:
+        raise ValueError("compute_metallic_and_coal_gated_optical requires a real NDVI layer")
+    ndvi = raw["ndvi"]
+    raw_albedo, raw_wcdi, raw_oci = raw["albedo"], raw["wcdi"], raw["oci"]
+    raw_ficr, raw_clay, raw_ferrous = raw["ficr"], raw["clay_hydroxyl"], raw["ferrous_ultramafic"]
 
-    raw_si = np.asarray(aster_tir_silica, dtype=np.float32)
-    raw_th = np.nan_to_num(np.asarray(thermal_st, dtype=np.float32), nan=0.0)
+    raw_th = None if thermal_st is None else np.asarray(thermal_st, dtype=np.float32)
+    raw_si = None if aster_tir_silica is None else np.asarray(aster_tir_silica, dtype=np.float32)
     dist_arr = np.nan_to_num(np.asarray(disturbance_mask, dtype=np.float32), nan=0.0)
     riv_arr = np.asarray(river_mask)
 
@@ -936,42 +913,41 @@ def compute_metallic_and_coal_gated_optical(
 
     # Canopy censoring mask: opaque canopy (w_canopy <= 0 or NDVI >= gate2_ndvi_max)
     opaque_canopy = w_can <= 0.0
-    if gate2_ndvi_max is not None and np.any(ndvi != 0.0):
+    if gate2_ndvi_max is not None:
         opaque_canopy = opaque_canopy | (ndvi >= float(gate2_ndvi_max))
+    if water_mask is not None:
+        opaque_canopy = opaque_canopy | np.asarray(water_mask).astype(bool)
 
-    spec_albedo_gated = np.where(opaque_canopy, np.nan, raw_albedo).astype(np.float32)
-    # Apply Patch 8 waterway buffer to WCDI and OCI (blackwater river & mangrove disambiguation)
-    spec_wcdi_gated = np.where(opaque_canopy | waterway_buffer_60m, np.nan, raw_wcdi).astype(np.float32)
-    spec_oci_gated = np.where(opaque_canopy | waterway_buffer_60m, np.nan, raw_oci).astype(np.float32)
-    spec_ficr_gated = np.where(opaque_canopy, np.nan, raw_ficr).astype(np.float32)
+    def _gate(a, extra=None):
+        if a is None:
+            return None
+        m = opaque_canopy if extra is None else (opaque_canopy | extra)
+        return np.where(m, np.nan, a).astype(np.float32)
 
-    # Metallic gated alteration indices
-    spec_clay_hydroxyl_gated = np.where(opaque_canopy, np.nan, raw_clay).astype(np.float32)
-    spec_ferrous_ultramafic_gated = np.where(opaque_canopy, np.nan, raw_ferrous).astype(np.float32)
-    aster_tir_silica_gated = np.where(opaque_canopy, np.nan, raw_si).astype(np.float32)
-
-    # Patch 7: Biomass Fire vs. Spontaneous Coal Seam Fire Disambiguation
-    # Suppress thermal anomalies co-located with recent deforestation (disturbance >= 0.5)
-    # unless corroborated by baked ferric clinker (spec_ficr_gated > 1.5) or mapped coal formation
-    is_deforested = dist_arr >= 0.5
-    has_clinker = np.nan_to_num(raw_ficr, nan=0.0) > 1.5
-    in_coal = (
-        (np.nan_to_num(np.asarray(in_coal_bearing_formation, dtype=np.float32), nan=0.0) >= 0.5)
-        if in_coal_bearing_formation is not None
-        else np.zeros((H, W), dtype=bool)
-    )
-    corroborated_coal_fire = has_clinker | in_coal
-    suppress_biomass_fire = is_deforested & (~corroborated_coal_fire)
-    thermal_filtered = np.where(suppress_biomass_fire, np.minimum(raw_th, 0.0), raw_th).astype(np.float32)
-
-    return {
-        "w_canopy": w_can,
-        "spec_albedo_gated": spec_albedo_gated,
-        "spec_wcdi_gated": spec_wcdi_gated,
-        "spec_oci_gated": spec_oci_gated,
-        "spec_ficr_gated": spec_ficr_gated,
-        "thermal_anomaly_st_filtered": thermal_filtered,
-        "spec_clay_hydroxyl_gated": spec_clay_hydroxyl_gated,
-        "spec_ferrous_ultramafic_gated": spec_ferrous_ultramafic_gated,
-        "aster_tir_silica_gated": aster_tir_silica_gated,
+    out: dict[str, np.ndarray] = {"w_canopy": w_can}
+    gated = {
+        "spec_albedo_gated": _gate(raw_albedo),
+        # Patch 8 waterway buffer (blackwater river & mangrove disambiguation)
+        "spec_wcdi_gated": _gate(raw_wcdi, waterway_buffer_60m),
+        "spec_oci_gated": _gate(raw_oci, waterway_buffer_60m),
+        "spec_ficr_gated": _gate(raw_ficr),
+        "spec_clay_hydroxyl_gated": _gate(raw_clay),
+        "spec_ferrous_ultramafic_gated": _gate(raw_ferrous),
+        "aster_tir_silica_gated": _gate(raw_si),
     }
+    out.update({k: v for k, v in gated.items() if v is not None})
+
+    # Patch 7: Biomass Fire vs. Spontaneous Coal Seam Fire Disambiguation.
+    # Thermal anomalies co-located with recent deforestation (disturbance >= 0.5) are censored
+    # (set to NaN, i.e. unknown) unless corroborated by ferric clinker or a mapped coal formation.
+    if raw_th is not None:
+        is_deforested = dist_arr >= 0.5
+        has_clinker = (np.nan_to_num(raw_ficr, nan=0.0) > 1.5) if raw_ficr is not None else np.zeros((H, W), dtype=bool)
+        in_coal = (
+            (np.nan_to_num(np.asarray(in_coal_bearing_formation, dtype=np.float32), nan=0.0) >= 0.5)
+            if in_coal_bearing_formation is not None
+            else np.zeros((H, W), dtype=bool)
+        )
+        suppress_biomass_fire = is_deforested & ~(has_clinker | in_coal)
+        out["thermal_anomaly_st_filtered"] = np.where(suppress_biomass_fire, np.nan, raw_th).astype(np.float32)
+    return out

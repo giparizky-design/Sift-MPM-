@@ -39,7 +39,7 @@ Elkan, C., & Noto, K. (2008). Learning classifiers from only positive and
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, Sequence, Union
 
 import numpy as np
 from sklearn.ensemble import IsolationForest
@@ -523,10 +523,15 @@ def compute_inverse_propensity_weights(
 # ---------------------------------------------------------------------------
 
 
+# v4.15 (audit v4.14 T20): the names of the real-cube layers that implement the documented covariates.
+#   dist_roads_km        nearest public road (OSM motorway..tertiary), roads only
+#   dist_major_rivers_km nearest OSM waterway=river
+#   dist_ports_km        nearest OSM ferry_terminal (OSM has no port class; this is a proxy)
+# They were "dist_roads / dist_rivers / dist_ports", which exist in no cube, so the orchestrator never used them.
 CANONICAL_PROPENSITY_COLS: list[str] = [
-    "dist_roads",
-    "dist_rivers",
-    "dist_ports",
+    "dist_roads_km",
+    "dist_major_rivers_km",
+    "dist_ports_km",
 ]
 
 FORBIDDEN_PROPENSITY_PATTERNS: tuple[str, ...] = (
@@ -542,6 +547,105 @@ FORBIDDEN_PROPENSITY_PATTERNS: tuple[str, ...] = (
     "outcrop",
     "regolith",
 )
+
+
+class ExplorationPropensity:
+    """Exploration-propensity model e(x) that can be fitted once and then score any rows.
+
+    The library function ``fit_pooled_exploration_propensity`` fits and predicts on the same rows
+    and returns only the probabilities, so the chunked full-raster path and the deposit-level
+    harness each wrote their own model, with covariates the policy forbids (audit v4.13 section 2.8:
+    forest disturbance, DEM, slope). This class owns the covariate policy:
+
+    * ``columns`` default to ``CANONICAL_PROPENSITY_COLS`` (roads, rivers, ports);
+    * a column matching ``FORBIDDEN_PROPENSITY_PATTERNS`` raises ``ValueError`` (no silent fallback);
+    * a missing column raises ``KeyError`` (no first-column or constant fallback);
+    * NaNs go to a training-median imputer inside the pipeline, identically at fit and score time;
+    * a single-class target gives a constant base-rate model and sets ``degenerate_``.
+
+    Model: median imputation, standardisation, L2 logistic regression (C=0.1), as used in production.
+    """
+
+    def __init__(
+        self,
+        columns: Optional[Sequence[str]] = None,
+        min_propensity: float = 0.05,
+        max_propensity: float = 1.0,
+        C: float = 0.1,
+        max_iter: int = 500,
+        random_state: int = 42,
+    ) -> None:
+        cols = list(columns) if columns is not None else list(CANONICAL_PROPENSITY_COLS)
+        if not cols:
+            raise ValueError("ExplorationPropensity needs at least one covariate column")
+        bad = [c for c in cols if any(f in str(c).lower() for f in FORBIDDEN_PROPENSITY_PATTERNS)]
+        if bad:
+            raise ValueError(
+                f"propensity covariates {bad} match FORBIDDEN_PROPENSITY_PATTERNS {FORBIDDEN_PROPENSITY_PATTERNS}; "
+                "use roads / rivers / ports distances only"
+            )
+        if not (0.0 < min_propensity < 1.0) or not (min_propensity < max_propensity <= 1.0):
+            raise ValueError(f"need 0 < min_propensity < max_propensity <= 1, got {min_propensity}, {max_propensity}")
+        self.columns = cols
+        self.min_propensity = float(min_propensity)
+        self.max_propensity = float(max_propensity)
+        self.C = float(C)
+        self.max_iter = int(max_iter)
+        self.random_state = int(random_state)
+        self.pipeline_ = None
+        self.degenerate_ = False
+        self.base_rate_ = float("nan")
+        self.n_fit_ = 0
+
+    def _matrix(self, X: Any) -> np.ndarray:
+        if hasattr(X, "columns"):
+            missing = [c for c in self.columns if c not in X.columns]
+            if missing:
+                raise KeyError(f"propensity covariates missing from the data: {missing}")
+            arr = np.asarray(X[self.columns], dtype=np.float64)
+        else:
+            arr = np.asarray(X, dtype=np.float64)
+            if arr.ndim != 2 or arr.shape[1] != len(self.columns):
+                raise ValueError(f"expected an array with {len(self.columns)} columns {self.columns}, got shape {arr.shape}")
+        return arr
+
+    def fit(self, X: Any, target: Any) -> "ExplorationPropensity":
+        from sklearn.impute import SimpleImputer
+        from sklearn.linear_model import LogisticRegression
+        from sklearn.pipeline import make_pipeline
+        from sklearn.preprocessing import StandardScaler
+
+        arr = self._matrix(X)
+        y = (np.asarray(target) > 0).astype(np.int32).ravel()
+        if len(y) != arr.shape[0]:
+            raise ValueError(f"target length {len(y)} != rows {arr.shape[0]}")
+        all_nan = [c for c, a in zip(self.columns, np.isnan(arr).all(axis=0)) if a]
+        if all_nan:
+            raise ValueError(f"propensity covariates {all_nan} have no finite value in the training rows")
+        self.n_fit_ = int(len(y))
+        self.base_rate_ = float(np.mean(y)) if len(y) else float("nan")
+        self.degenerate_ = len(np.unique(y)) < 2
+        if self.degenerate_:
+            self.pipeline_ = None
+            logger.warning("ExplorationPropensity: single-class target; using constant base rate %.4f", self.base_rate_)
+            return self
+        self.pipeline_ = make_pipeline(
+            SimpleImputer(strategy="median"),
+            StandardScaler(),
+            LogisticRegression(C=self.C, max_iter=self.max_iter, random_state=self.random_state),
+        )
+        self.pipeline_.fit(arr, y)
+        return self
+
+    def score(self, X: Any) -> np.ndarray:
+        """Return e(x) clipped to [min_propensity, max_propensity] for any rows with the fitted columns."""
+        arr = self._matrix(X)
+        if self.pipeline_ is None:
+            if not np.isfinite(self.base_rate_):
+                raise RuntimeError("ExplorationPropensity.score called before fit")
+            return np.full(arr.shape[0], np.clip(self.base_rate_, self.min_propensity, self.max_propensity), dtype=np.float64)
+        e = self.pipeline_.predict_proba(arr)[:, 1]
+        return np.clip(e, self.min_propensity, self.max_propensity).astype(np.float64)
 
 
 def fit_pooled_exploration_propensity(

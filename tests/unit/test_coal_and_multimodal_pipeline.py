@@ -73,8 +73,8 @@ class TestHaloSamplerAndSpatialGuardrails:
         # Uniform host formation polygon ID = 7 everywhere
         formation_2d = np.full((h, w), 7, dtype=np.int32)
 
-        # Strike = 0 deg (along columns: sin(0)=0 -> dr=0, cos(0)=1 -> dc=+-1)
-        strike_2d = np.zeros((h, w), dtype=np.float32)
+        # Strike = 90 deg (v4.15 convention, (row, col) = (cos, sin)): the halo runs east-west along columns
+        strike_2d = np.full((h, w), 90.0, dtype=np.float32)  # theta=90: strike runs east-west along columns (v4.15 convention)
 
         for rank_class, (d_min, d_max) in RANK_ADAPTIVE_OFFSETS_CELLS.items():
             coal_df = pd.DataFrame(
@@ -119,7 +119,7 @@ class TestHaloSamplerAndSpatialGuardrails:
         bounds, center_lat, center_lon = _grid_bounds_and_center(h, w, cr, cc)
 
         # Strike = 0 deg -> steps along columns (East-West)
-        strike_2d = np.zeros((h, w), dtype=np.float32)
+        strike_2d = np.full((h, w), 90.0, dtype=np.float32)  # theta=90: strike runs east-west along columns
         ndvi_2d = np.full((h, w), 0.80, dtype=np.float32)
         mine_2d = np.zeros((h, w), dtype=np.int8)
         mine_2d[cr, cc] = 1
@@ -158,7 +158,7 @@ class TestHaloSamplerAndSpatialGuardrails:
         cr, cc = 27, 27
         bounds, center_lat, center_lon = _grid_bounds_and_center(h, w, cr, cc)
 
-        strike_2d = np.zeros((h, w), dtype=np.float32)  # East-West along columns
+        strike_2d = np.full((h, w), 90.0, dtype=np.float32)  # theta=90: East-West along columns
         formation_2d = np.full((h, w), 3, dtype=np.int32)
         ndvi_2d = np.full((h, w), 0.78, dtype=np.float32)
         mine_2d = np.zeros((h, w), dtype=np.int8)
@@ -399,3 +399,41 @@ class TestDualDomainEnsembleEndToEnd:
         assert np.all((probs_k3 >= 0.0) & (probs_k3 <= 1.0))
         assert np.all((p_any >= 0.0) & (p_any <= 1.0))
         assert set(np.unique(exp_cal)).issubset({0, 1, 2})
+
+
+class TestV415StrikeConvention:
+    """Audit v4.14 T18 / v4.13 section 1.5: the halo must follow the strike returned by the SAR/DEM
+    structure tensor, not run across it."""
+
+    def _halo_for_stripes(self, stripes_vary_along: str):
+        from src.features.coal_and_multimodal_features import _structure_tensor_eigen_and_strike
+
+        h, w = 91, 91
+        cr, cc = 45, 45
+        bounds, center_lat, center_lon = _grid_bounds_and_center(h, w, cr, cc)
+        idx = np.arange(h if stripes_vary_along == "rows" else w, dtype=np.float32)
+        wave = np.sin(idx * 0.6)
+        field = np.tile(wave[:, None], (1, w)) if stripes_vary_along == "rows" else np.tile(wave[None, :], (h, 1))
+        _, _, strike = _structure_tensor_eigen_and_strike(field.astype(np.float32))
+
+        coal_df = pd.DataFrame({"latitude": [center_lat], "longitude": [center_lon], "coal_rank_head": [2], "totsdbb": [50.0]})
+        res = build_k3_coal_rank_targets(
+            concessions=coal_df,
+            ndvi=np.full((h, w), 0.78, dtype=np.float32),
+            active_mine_mask=np.zeros((h, w), dtype=np.int8),
+            formation_polygon_id=np.full((h, w), 7, dtype=np.int32),
+            sar_bedding_strike_deg=strike,
+            bounds=bounds,
+        )
+        pos_r, pos_c = np.where(res[COAL_HEAD_NAMES[2]] == 1)
+        assert len(pos_r) > 0
+        return pos_r, pos_c, cr, cc
+
+    def test_north_south_stripes_give_a_north_south_halo(self):
+        # intensity varies along columns -> stripes run north-south (along rows)
+        pos_r, pos_c, cr, cc = self._halo_for_stripes("cols")
+        assert np.ptp(pos_r) > 2 * max(1, np.ptp(pos_c))  # extends along rows, not columns
+
+    def test_east_west_stripes_give_an_east_west_halo(self):
+        pos_r, pos_c, cr, cc = self._halo_for_stripes("rows")
+        assert np.ptp(pos_c) > 2 * max(1, np.ptp(pos_r))

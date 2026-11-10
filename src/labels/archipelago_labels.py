@@ -29,6 +29,7 @@ from src.labels.borneo_labels import (
     DEFAULT_GEORIMA_PATH,
     DEFAULT_IRON_PATH,
     DEFAULT_MRDS_PATH,
+    mrds_has_code,
     filter_valid_ore_candidates,
 )
 
@@ -91,16 +92,14 @@ def build_archipelago_k4_targets(
     out: dict[str, list[pd.DataFrame]] = {t: [] for t in K4_TARGETS}
 
     # k0 porphyry Cu-Au
-    ek_intrusive = geo["geological_role"].isin(["felsic_intrusive", "potassic_host"]) & _in_bbox(geo["lon"], geo["lat"], EK_BBOX)
-    k0 = ((geo["resource_group"] == "COPPER_ORE") | (geo["commodity_label"] == "Tembaga")
-          | (geo["resource_group"] == "BASE_METALS") | (geo["geological_role"] == "porphyry_intrusive") | ek_intrusive)
+    # v4.15: Cu-Mo deposit records only (same rule as borneo_labels.build_k4_deposit_targets).
+    k0 = geo["resource_group"] == "COPPER_ORE"
     out["k0_porphyry_cu"].append(_points(geo[k0], "lon", "lat", "georima"))
     if b_mrds is not None:
-        out["k0_porphyry_cu"].append(_points(b_mrds[b_mrds["_code"].str.contains("CU", case=False)], "_lon", "_lat", "mrds_borneo"))
+        out["k0_porphyry_cu"].append(_points(b_mrds[mrds_has_code(b_mrds["_code"], "CU")], "_lon", "_lat", "mrds_borneo"))
     out["k0_porphyry_cu"].append(_points(mrds_out[_mrds_commodity(mrds_out, "Copper")], "longitude", "latitude", "mrds_indonesia"))
 
-    # k1 contact Fe-Cu skarn. Production restricts GeoRIMA carbonate_skarn to Kalimantan; here every island.
-    out["k1_skarn_fe_cu"].append(_points(geo[geo["geological_role"] == "carbonate_skarn"], "lon", "lat", "georima_skarn"))
+    # k1 primary Fe. v4.15: GeoRIMA marble (carbonate_skarn) is a possible host, not a deposit, so it is not a positive.
     if iron is not None:
         out["k1_skarn_fe_cu"].append(_points(iron[iron["commodity_type"] == "Besi Primer"], "_lon", "_lat", "esdm_iron"))
     k1_out = (geo["resource_group"] == "IRON_ORE") & (geo["commodity_label"] == "Besi Primer") & ~in_borneo_src
@@ -110,7 +109,7 @@ def build_archipelago_k4_targets(
     k2 = (geo["resource_group"] == "GOLD_ORE") & (geo["commodity_label"] == "Emas Primer")
     out["k2_epithermal_au"].append(_points(geo[k2], "lon", "lat", "georima_gold"))
     if b_mrds is not None:
-        out["k2_epithermal_au"].append(_points(b_mrds[b_mrds["_code"].str.contains("AU", case=False)], "_lon", "_lat", "mrds_borneo"))
+        out["k2_epithermal_au"].append(_points(b_mrds[mrds_has_code(b_mrds["_code"], "AU")], "_lon", "_lat", "mrds_borneo"))
     out["k2_epithermal_au"].append(_points(mrds_out[_mrds_commodity(mrds_out, "Gold")], "longitude", "latitude", "mrds_indonesia"))
 
     # k3 lateritic Fe-Ni
@@ -120,7 +119,7 @@ def build_archipelago_k4_targets(
     k3_out = (geo["resource_group"] == "IRON_ORE") & (geo["commodity_label"] == "Besi Laterit") & ~in_borneo_src
     out["k3_laterite_fe_ni"].append(_points(geo[k3_out], "lon", "lat", "georima_besi_laterit"))
     if b_mrds is not None:
-        out["k3_laterite_fe_ni"].append(_points(b_mrds[b_mrds["_code"].str.contains("NI", case=False)], "_lon", "_lat", "mrds_borneo"))
+        out["k3_laterite_fe_ni"].append(_points(b_mrds[mrds_has_code(b_mrds["_code"], "NI")], "_lon", "_lat", "mrds_borneo"))
     out["k3_laterite_fe_ni"].append(_points(mrds_out[_mrds_commodity(mrds_out, "Nickel")], "longitude", "latitude", "mrds_indonesia"))
 
     result = {}
