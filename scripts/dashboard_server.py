@@ -25,11 +25,13 @@ from __future__ import annotations
 import argparse
 import base64
 import copy
+import hmac
 import io
 import json
 import logging
 import os
 import re
+import secrets
 import subprocess
 import sys
 import threading
@@ -103,6 +105,86 @@ def _load_env_file() -> None:
 
 
 _load_env_file()
+
+# ==================== API ACCESS CONTROL (v4.16, audit v4.14 B01/B02/T04) ====================
+# Every POST route must carry the dashboard token in the X-MPM-Token header and a JSON body.
+# The token reaches the UI in one of two ways: the server injects it into the page it
+# serves to a loopback, same-origin navigation, or (file:// mode) the user pastes it once
+# from the token file and the page keeps it in localStorage.
+API_TOKEN_HEADER = "X-MPM-Token"
+API_TOKEN_PLACEHOLDER = b"__MPM_API_TOKEN__"
+API_TOKEN_FILE = Path(os.path.expanduser("~/.config/geospatials/dashboard_token"))
+LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
+MAX_POST_BODY_BYTES = 64 * 1024 * 1024  # custom polygon GeoJSON is the largest legitimate body
+_API_TOKEN: str | None = None
+
+
+def _load_or_create_api_token() -> str:
+    """Return the dashboard API token: $MPM_DASHBOARD_TOKEN, else the 0600 token file (created once)."""
+    global _API_TOKEN
+    if _API_TOKEN:
+        return _API_TOKEN
+    env_tok = os.environ.get("MPM_DASHBOARD_TOKEN", "").strip()
+    if env_tok:
+        _API_TOKEN = env_tok
+        return _API_TOKEN
+    try:
+        tok = API_TOKEN_FILE.read_text(encoding="utf-8").strip()
+    except FileNotFoundError:
+        tok = ""
+    if not tok:
+        tok = secrets.token_urlsafe(32)
+        API_TOKEN_FILE.parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(API_TOKEN_FILE, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fh.write(tok + "\n")
+        logger.info("Created dashboard API token file %s", API_TOKEN_FILE)
+    try:
+        os.chmod(API_TOKEN_FILE, 0o600)
+    except OSError:
+        pass
+    _API_TOKEN = tok
+    return _API_TOKEN
+
+
+def _host_is_loopback(host_header: str | None) -> bool:
+    """True when the HTTP Host header names a loopback address (any port)."""
+    if not host_header:
+        return False
+    h = host_header.strip().lower()
+    if h.startswith("["):  # [::1]:8765
+        h = h[1:h.find("]")] if "]" in h else h
+    elif h.count(":") == 1:
+        h = h.split(":", 1)[0]
+    return h in LOOPBACK_HOSTS
+
+
+def _is_loopback_bind(host: str) -> bool:
+    return host.strip().strip("[]").lower() in LOOPBACK_HOSTS or host.startswith("127.")
+
+
+def _render_index_html(raw: bytes, headers) -> bytes:
+    """Inject the API token into the UI page only for a trusted (loopback, non-cross-origin) request.
+
+    A cross-origin fetch() always sends Origin, so a foreign page that reads "/" through the
+    `Access-Control-Allow-Origin: *` header gets the page without the token. Requiring a
+    loopback Host blocks DNS-rebinding hosts.
+    """
+    if headers.get("Origin"):
+        return raw
+    if (headers.get("Sec-Fetch-Site") or "").lower() in ("cross-site", "same-site"):
+        return raw
+    if not _host_is_loopback(headers.get("Host")):
+        return raw
+    return raw.replace(API_TOKEN_PLACEHOLDER, _load_or_create_api_token().encode("ascii"), 1)
+
+
+def _is_under_outputs(p: Path) -> bool:
+    """True when p (after resolving symlinks and '..') lies inside <repo>/outputs."""
+    try:
+        return p.resolve().is_relative_to((ROOT_DIR / "outputs").resolve())
+    except (OSError, ValueError):
+        return False
 
 # Global state for background training job
 _TRAIN_LOCK = threading.Lock()
@@ -2211,14 +2293,25 @@ def _list_available_models() -> list[dict]:
 
 
 def _resolve_base_model_dir(base_run_id: str | None, base_model_dir: str | None, fallback_region: str = "EAST_KALIMANTAN") -> Path | None:
-    """Resolve a model run_id or relative directory path to a valid models/ checkpoint directory."""
+    """Resolve a model run_id or relative directory path to a valid models/ checkpoint directory.
+
+    v4.16 (audit v4.14 B01/T04): every candidate must resolve inside <repo>/outputs. The
+    orchestrator joblib-loads files from the returned directory, so a path from a request
+    must never point anywhere else on disk. Rejected candidates are logged and skipped.
+    """
+    def _allowed(p: Path, source: str) -> bool:
+        if _is_under_outputs(p):
+            return True
+        logger.warning("Refusing %s model dir outside outputs/: %s", source, p)
+        return False
+
     if base_model_dir:
         cand = Path(base_model_dir)
         if not cand.is_absolute():
             cand = ROOT_DIR / cand
         if (cand / "models").exists():
             cand = cand / "models"
-        if cand.exists():
+        if cand.exists() and _allowed(cand, "requested"):
             return cand
 
     if base_run_id:
@@ -2233,7 +2326,7 @@ def _resolve_base_model_dir(base_run_id: str | None, base_model_dir: str | None,
         for m in _list_available_models():
             if m["run_id"] in (rid, alt_rid) or m.get("model_id") in (rid, alt_rid) or m["models_dir"] == rid:
                 p = ROOT_DIR / m["models_dir"]
-                if p.exists():
+                if p.exists() and _allowed(p, "catalog"):
                     return p
 
     # Fallback to active East Kalimantan or Kalimantan checkpoint
@@ -2244,7 +2337,7 @@ def _resolve_base_model_dir(base_run_id: str | None, base_model_dir: str | None,
         "outputs/seven_pass_borneo/models",
     ]:
         p = ROOT_DIR / cand_rel
-        if (p / "k4_ensemble.joblib").exists() or (p / "k3_coal_ensemble.joblib").exists():
+        if ((p / "k4_ensemble.joblib").exists() or (p / "k3_coal_ensemble.joblib").exists()) and _allowed(p, "fallback"):
             return p
     return None
 
@@ -2781,7 +2874,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         if parsed.path in ("/", "/index.html"):
             html_path = ROOT_DIR / "ui" / "index.html"
-            raw = html_path.read_bytes()
+            raw = _render_index_html(html_path.read_bytes(), self.headers)
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(raw)))
@@ -2800,14 +2893,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Private-Network", "true")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, HEAD")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        self.send_header("Access-Control-Allow-Headers", f"Content-Type, Authorization, {API_TOKEN_HEADER}")
         self.end_headers()
 
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
         if parsed.path in ("/", "/index.html"):
             html_path = ROOT_DIR / "ui" / "index.html"
-            raw = html_path.read_bytes()
+            raw = _render_index_html(html_path.read_bytes(), self.headers)
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(raw)))
@@ -2954,10 +3047,47 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
         self._send_json({"status": "error", "error": "Not Found"}, status=404)
 
+    def _read_authorized_json_body(self) -> dict | None:
+        """Gate every POST (v4.16, audit v4.14 B01/T04): token, JSON media type, JSON object body.
+
+        Sends the error response and returns None when the request is refused.
+        """
+        # Checks run before the body is read, so an unauthenticated request costs nothing.
+        # BaseHTTPRequestHandler speaks HTTP/1.0 here and closes the connection after each response.
+        self.close_connection = True
+        supplied = (self.headers.get(API_TOKEN_HEADER) or "").strip()
+        if not supplied or not hmac.compare_digest(supplied.encode("utf-8"), _load_or_create_api_token().encode("utf-8")):
+            self._send_json({"status": "error", "error": f"Missing or invalid {API_TOKEN_HEADER} header."}, status=403)
+            return None
+        media_type = (self.headers.get("Content-Type") or "").split(";", 1)[0].strip().lower()
+        if media_type != "application/json":
+            self._send_json({"status": "error", "error": "Content-Type must be application/json."}, status=415)
+            return None
+        try:
+            length = int(self.headers.get("Content-Length", "0") or "0")
+        except ValueError:
+            length = -1
+        if length < 0 or length > MAX_POST_BODY_BYTES:
+            self._send_json({"status": "error", "error": "Invalid or oversized Content-Length."}, status=400)
+            return None
+        raw = self.rfile.read(length) if length > 0 else b""
+        if not raw:
+            return {}
+        try:
+            body = json.loads(raw.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            self._send_json({"status": "error", "error": f"Request body is not valid JSON: {exc}"}, status=400)
+            return None
+        if not isinstance(body, dict):
+            self._send_json({"status": "error", "error": "Request body must be a JSON object."}, status=400)
+            return None
+        return body
+
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
-        length = int(self.headers.get("Content-Length", "0"))
-        body = json.loads(self.rfile.read(length).decode("utf-8")) if length > 0 else {}
+        body = self._read_authorized_json_body()
+        if body is None:
+            return
 
         if parsed.path == "/api/rerank":
             region = str(body.get("region", "YILGARN"))
@@ -3073,12 +3203,29 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self._send_json({"status": "error", "error": "Not Found"}, status=404)
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="MPM 7-Pass Web UI & OpenStreetMap Viewer")
     parser.add_argument("--port", type=int, default=8765, help="Port to serve on")
-    parser.add_argument("--host", type=str, default="127.0.0.1", help="Host address")
-    args = parser.parse_args()
+    parser.add_argument("--host", type=str, default="127.0.0.1", help="Host address (loopback only unless --allow-remote)")
+    parser.add_argument(
+        "--allow-remote", action="store_true",
+        help="Allow binding a non-loopback address. The API token is still required on every POST.",
+    )
+    args = parser.parse_args(argv)
 
+    if not _is_loopback_bind(args.host):
+        if not args.allow_remote:
+            parser.error(
+                f"--host {args.host} is not a loopback address. The dashboard can start training, delete runs "
+                "and load model files; keep it on 127.0.0.1 and use an SSH tunnel, or pass --allow-remote."
+            )
+        logger.warning("Dashboard bound to non-loopback address %s (--allow-remote). POST routes still require the API token.", args.host)
+
+    _load_or_create_api_token()
+    logger.info(
+        "POST routes require the %s header. Token: $MPM_DASHBOARD_TOKEN if set, else %s.",
+        API_TOKEN_HEADER, API_TOKEN_FILE,
+    )
     server = ThreadingHTTPServer((args.host, args.port), DashboardHandler)
     logger.info("MPM 7-Pass Control Center serving at http://%s:%d", args.host, args.port)
     try:

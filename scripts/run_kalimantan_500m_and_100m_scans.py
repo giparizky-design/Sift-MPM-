@@ -32,7 +32,6 @@ from __future__ import annotations
 import json
 import logging
 import math
-import subprocess
 import sys
 import time
 from pathlib import Path
@@ -451,10 +450,16 @@ def stage_3_run_100m_hotspot_scans(hotspots: list[dict], c_hat: float = 0.5062, 
     return results
 
 
-def stage_4_integrate_ui_and_git(kal_500m_summary: dict, hotspot_results: list[dict]) -> None:
-    """Update UI bundles, sync artifacts, test JS, and commit to Git."""
+def stage_4_write_report(kal_500m_summary: dict, hotspot_results: list[dict]) -> None:
+    """Merge the scan summaries into outputs/seven_pass_report.json.
+
+    v4.16 (audit v4.14 B03/T03): this stage used to rewrite dashboard_server.py and
+    ui/index.html in place, write into ~/.gemini/, pkill and relaunch the dashboard,
+    and run `git add -A && git commit && git push origin main`. All of that is removed.
+    Rebuild the UI with `.venv/bin/python scripts/build_purged_ui.py` and commit by hand.
+    """
     logger.info("=======================================================================")
-    logger.info("STAGE 4: INTEGRATING 500m & 100m HOTSPOTS INTO CONTROL CENTER & REPO")
+    logger.info("STAGE 4: WRITING 500m & 100m HOTSPOT SUMMARIES TO seven_pass_report.json")
     logger.info("=======================================================================")
 
     report_path = ROOT / "outputs" / "seven_pass_report.json"
@@ -463,94 +468,10 @@ def stage_4_integrate_ui_and_git(kal_500m_summary: dict, hotspot_results: list[d
     for h in hotspot_results:
         report[h["code"].lower()] = h["summary"]
     report_path.write_text(json.dumps(report, indent=2) + "\n")
-
-    # Update dashboard_server.py to recognize the new 100m hotspots
-    srv_file = ROOT / "scripts" / "dashboard_server.py"
-    srv_code = srv_file.read_text(encoding="utf-8")
-
-    # Ensure all hotspot codes are in hd_meta
-    for h in hotspot_results:
-        code = h["code"]
-        title = h["title"]
-        c_lon = h["centroid_lon"]
-        c_lat = h["centroid_lat"]
-        span = 0.225 / 2.0
-        if f'"{code}":' not in srv_code:
-            snippet = f'''            "{code}": {{
-                "title": "{title} (100m Ultra-HD Blind Discovery)",
-                "center": [{c_lat}, {c_lon}],
-                "zoom": 12,
-                "bbox": ({c_lon - span:.4f}, {c_lat - span:.4f}, {c_lon + span:.4f}, {c_lat + span:.4f}),
-            }},
-'''
-            srv_code = srv_code.replace('}[region_up]', snippet + '        }[region_up]')
-
-    srv_file.write_text(srv_code, encoding="utf-8")
-
-    from scripts.dashboard_server import _load_region_bundle
-
-    active_regions = [
-        "YILGARN", "BORNEO", "KALIMANTAN", "PAPUA", "SUMBAWA", "SUMATRA", "SULAWESI", "INDONESIA_GEORIMA"
-    ]
-    for h in hotspot_results:
-        active_regions.append(h["code"])
-
-    bundles = {}
-    for r in active_regions:
-        try:
-            bundles[r] = _load_region_bundle(r)
-        except Exception as e:
-            logger.warning("Error bundling %s: %s", r, e)
-
-    html_path = ROOT / "ui" / "index.html"
-    html = html_path.read_text(encoding="utf-8")
-
-    # Add hotspot buttons to UI topbar if not already there
-    for h in hotspot_results:
-        code = h["code"]
-        btn_id = f"btn-{code.lower()}"
-        if btn_id not in html:
-            btn_html = f'''        <button id="{btn_id}" class="btn-tab-inactive" onclick="selectRegion('{code}')">
-          {code.replace("HOTSPOT_", "100m: ")}
-        </button>
-'''
-            html = html.replace('id="btn-kalimantan"', f'id="btn-kalimantan"')
-            html = html.replace('</button>\n        <button id="btn-papua"', f'</button>\n{btn_html}        <button id="btn-papua"')
-            # Also add to btnMap
-            html = html.replace('"INDONESIA_GEORIMA": "btn-indonesia",', f'"INDONESIA_GEORIMA": "btn-indonesia",\n        "{code}": "{btn_id}",')
-
-    new_line = "    const EMBEDDED_BUNDLES = " + json.dumps(bundles) + ";"
-    import re
-    html = re.sub(r"^\s*const EMBEDDED_BUNDLES = .*?;$", lambda _: new_line, html, count=1, flags=re.MULTILINE)
-    html_path.write_text(html, encoding="utf-8")
-
-    # Update artifact
-    artifact_path = Path("/Users/gip/.gemini/antigravity/brain/414f8ab3-36b9-4ec4-aa54-488c73e00c00/mpm_control_center.html")
-    if artifact_path.parent.exists():
-        artifact_path.write_text(html, encoding="utf-8")
-
-    # Restart dashboard server
-    logger.info("Restarting dashboard server on port 8765...")
-    try:
-        subprocess.run(["pkill", "-f", "dashboard_server.py"], check=False)
-        time.sleep(1)
-        subprocess.Popen([sys.executable, str(ROOT / "scripts" / "dashboard_server.py"), "--port", "8765"])
-        logger.info("Dashboard server restarted on port 8765.")
-    except Exception as e:
-        logger.warning("Server restart: %s", e)
-
-    # Git push
-    logger.info("Committing and pushing to Git...")
-    try:
-        subprocess.run(["git", "add", "-A"], check=True, cwd=str(ROOT))
-        subprocess.run(
-            ["git", "commit", "-m", "Complete Kalimantan 500m Island Scan and 100m Greenfield Hotspot Scans"],
-            check=True, cwd=str(ROOT)
-        )
-        subprocess.run(["git", "push", "origin", "main"], check=True, cwd=str(ROOT))
-        logger.info("Pushed to GitHub main successfully.")
-    except Exception as e:
-        logger.warning("Git commit/push: %s", e)
+    logger.info(
+        "Report written to %s. To show the results in the dashboard, rebuild the UI with "
+        "`.venv/bin/python scripts/build_purged_ui.py`.", report_path,
+    )
 
 
 def main() -> None:
@@ -569,7 +490,7 @@ def main() -> None:
     hotspot_results = stage_3_run_100m_hotspot_scans(hotspots, c_hat=c_hat, q_hat=q_hat)
 
     # Stage 4: Integrate and deliver
-    stage_4_integrate_ui_and_git(kal_500m_summary, hotspot_results)
+    stage_4_write_report(kal_500m_summary, hotspot_results)
 
     elapsed_min = (time.time() - t0) / 60.0
     logger.info("=======================================================================")

@@ -148,6 +148,14 @@ All open discrepancies and pipeline audit findings from v2.0, v3.1, and the v4.0
    - [`scripts/dashboard_server.py`](file:///Volumes/Seagate%202/Geospatials/scripts/dashboard_server.py) MUST send `Access-Control-Allow-Origin: *` on all responses (including 200, 204 `OPTIONS` preflight, 400, and 404 error responses).
    - Before testing new server routes or modifying API endpoints, check for stale server processes (`lsof -i :8765`), terminate obsolete PIDs, and relaunch the daemon process.
 
+4. **API Access Control (v4.16, audit v4.14 `B01`/`B02`):**
+   - Every POST route requires the `X-MPM-Token` header and `Content-Type: application/json`. A missing or wrong token gets 403, a wrong media type 415, and a body that is not a JSON object 400. The check runs in `DashboardHandler._read_authorized_json_body` before any route. New POST routes must not bypass it.
+   - The token is `$MPM_DASHBOARD_TOKEN` if set, else the 0600 file `~/.config/geospatials/dashboard_token`, created on first start. Never log or commit its value.
+   - The server injects the token into the `<meta name="mpm-api-token">` placeholder only when serving `/` to a request with no `Origin` header, a non-cross-site `Sec-Fetch-Site`, and a loopback `Host`. In `file://` mode the UI asks for the token once and keeps it in `localStorage`. `apiFetch` adds the header and content type to every non-GET call, so all POSTs must go through it.
+   - `Access-Control-Allow-Origin: *` stays on every response (item 3). The token, not CORS, is what keeps other web pages from driving the server.
+   - `_resolve_base_model_dir` returns only directories that resolve inside `outputs/`, because the orchestrator `joblib.load`s from that directory.
+   - The server binds loopback only. A non-loopback `--host` needs `--allow-remote`. Do not run it on `0.0.0.0` (the EC2 bootstrap no longer does); use `ssh -L 8765:127.0.0.1:8765` instead.
+
 ---
 
 <!-- BEGIN AWS Agent Toolkit rules -->

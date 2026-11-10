@@ -119,6 +119,7 @@ def main():
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="mpm-api-token" content="__MPM_API_TOKEN__" />
   <title>SIFT // Spatial Inference & Fault Targeting</title>
 
   <!-- 4-Tier Non-Cliché Typography -->
@@ -3107,8 +3108,44 @@ def main():
       return cleanPath;
     }
 
+    // v4.16 (audit v4.14 B01/T04): POST routes need the X-MPM-Token header and a JSON body.
+    // Served by dashboard_server.py on loopback, the token is injected into the meta tag below.
+    // Opened from disk (file://), the page asks for it once and keeps it in localStorage.
+    const MPM_TOKEN_STORAGE_KEY = "mpm_api_token";
+    function getApiToken() {
+      const meta = document.querySelector('meta[name="mpm-api-token"]');
+      const embedded = meta ? (meta.getAttribute("content") || "") : "";
+      if (embedded && embedded !== "__MPM_" + "API_TOKEN__") return embedded;
+      let stored = "";
+      try { stored = window.localStorage.getItem(MPM_TOKEN_STORAGE_KEY) || ""; } catch (e) { stored = ""; }
+      if (stored) return stored;
+      const entered = (window.prompt(
+        "Dashboard API token required for this action.\\n" +
+        "Paste the contents of ~/.config/geospatials/dashboard_token (or $MPM_DASHBOARD_TOKEN):"
+      ) || "").trim();
+      if (entered) {
+        try { window.localStorage.setItem(MPM_TOKEN_STORAGE_KEY, entered); } catch (e) { /* storage unavailable */ }
+      }
+      return entered;
+    }
+
     function apiFetch(url, opts) {
-      return fetch(getApiEndpoint(url), opts);
+      const options = Object.assign({}, opts || {});
+      const method = String(options.method || "GET").toUpperCase();
+      if (method === "GET" || method === "HEAD") {
+        return fetch(getApiEndpoint(url), options);
+      }
+      const headers = new Headers(options.headers || {});
+      if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+      const token = getApiToken();
+      if (token) headers.set("X-MPM-Token", token);
+      options.headers = headers;
+      return fetch(getApiEndpoint(url), options).then((res) => {
+        if (res.status === 403) {
+          try { window.localStorage.removeItem(MPM_TOKEN_STORAGE_KEY); } catch (e) { /* storage unavailable */ }
+        }
+        return res;
+      });
     }
 
     // ==================== STATE & DATA MODELS ====================

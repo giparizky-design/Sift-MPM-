@@ -7,6 +7,209 @@ All notable modifications, bug fixes, architectural updates, and audits across t
 
 ---
 
+## [v4.16] — 2026-11-11 (`2026-11-11T02:45:00+08:00`)
+
+### Phase 0 of the v4.14 plan (T03, T04): runner side effects removed, dashboard access control
+- **T03 (`B03`)** — [`scripts/run_kalimantan_500m_and_100m_scans.py`](file:///Volumes/Seagate%202/Geospatials/scripts/run_kalimantan_500m_and_100m_scans.py): `stage_4_integrate_ui_and_git` is replaced by `stage_4_write_report`, which only merges the summaries into `outputs/seven_pass_report.json`. Removed: the in-place rewrite of `dashboard_server.py`, the regex rewrite of `ui/index.html`, the write under `~/.gemini/`, `pkill` and relaunch of the dashboard, and `git add -A` / `git commit` / `git push origin main`. The hard-coded ĉ/q̂ in this script (`B36`) are left for the A6 quarantine.
+- **T04 (`B01`, `B02`)** — [`scripts/dashboard_server.py`](file:///Volumes/Seagate%202/Geospatials/scripts/dashboard_server.py):
+  - Every POST requires `X-MPM-Token` (403), `Content-Type: application/json` (415), a body under 64 MiB that parses to a JSON object (400; this also covers the body-parsing half of `B30`). The check is `DashboardHandler._read_authorized_json_body` and runs before the body is read.
+  - The token is `$MPM_DASHBOARD_TOKEN`, else `~/.config/geospatials/dashboard_token` (0600, created on first start; only the path is logged).
+  - `GET`/`HEAD /` inject the token into the page only for a request with no `Origin`, a non-cross-site `Sec-Fetch-Site`, and a loopback `Host`, so a cross-origin read or a DNS-rebinding host gets the page without it. `Access-Control-Allow-Origin: *` is unchanged. `OPTIONS` allows the `X-MPM-Token` header.
+  - `_resolve_base_model_dir` returns only directories that resolve (symlinks and `..` included) inside `outputs/`, for the request path, the catalogue lookup and the region fallback. Catalogue entries that point into the old repository copy (`B25`) are now refused with a warning.
+  - `main()` refuses a non-loopback `--host` unless `--allow-remote` is passed; `main` takes an optional `argv`.
+- [`scripts/build_purged_ui.py`](file:///Volumes/Seagate%202/Geospatials/scripts/build_purged_ui.py): `<meta name="mpm-api-token">` placeholder in `<head>`; `getApiToken()` (meta, else `localStorage`, else one prompt, for `file://` mode); `apiFetch` adds the token and JSON content type to every non-GET call and clears a stored token on 403. UI bundle rebuilt (`ui/index.html`, `index.html`).
+- [`scripts/ec2_train_bootstrap.sh`](file:///Volumes/Seagate%202/Geospatials/scripts/ec2_train_bootstrap.sh): step 7 (dashboard on `--host 0.0.0.0 --network host --restart always`) removed; comment points to an SSH tunnel.
+- [`AGENTS.md`](file:///Volumes/Seagate%202/Geospatials/AGENTS.md) §6 item 4: the access-control invariants above.
+- **Tests:** new [`tests/unit/test_dashboard_server_security.py`](file:///Volumes/Seagate%202/Geospatials/tests/unit/test_dashboard_server_security.py) (21 tests, runs the real handler on an ephemeral loopback port against a temporary `ROOT_DIR`). Full unit suite: 332 passed, 7 warnings (362 s).
+- **Checked by hand:** the dashboard served from `scripts/dashboard_server.py` injects the token, `/api/rerank` through `apiFetch` returns 200, a POST without the token returns 403, a token-bearing `text/plain` POST to `/api/train` returns 415, and `curl` with `Origin: http://evil.example` or `Host: evil.example` gets no token.
+- **Audit drift:** v4.14 T04 lists `C13` among the items it closes; C13 is the site-card metadata item and is not touched here.
+- **T01/T02 (`B39`):** `/index.html` and `/ui/index.html` added to `.gitignore` and untracked (files stay on disk). The unpushed `8681f3b` was amended to `beaf754` without them. The v4.9–v4.15 code, tests and audits, the project skills, and this change were committed as three commits and pushed to `origin/v4-claude-migration`. Tracked `data/` and `outputs/` changes (87 files) and ~1,290 untracked data files are not committed; whether they stay in git is still open.
+
+---
+
+## [v4.15] — 2026-11-10 (`2026-11-10T21:25:00+08:00`)
+
+### Phase 2 of the v4.14 plan (T17–T21): labels, real cube, feature lists, propensity, validation split
+- **Added [`audits/2026-11-10_v4.15_phase2_label_cube_split_fixes.md`](file:///Volumes/Seagate%202/Geospatials/audits/2026-11-10_v4.15_phase2_label_cube_split_fixes.md)** and its row in [`audits/INDEX.md`](file:///Volumes/Seagate%202/Geospatials/audits/INDEX.md).
+- **T17 labels** — [`src/labels/borneo_labels.py`](file:///Volumes/Seagate%202/Geospatials/src/labels/borneo_labels.py), [`src/labels/archipelago_labels.py`](file:///Volumes/Seagate%202/Geospatials/src/labels/archipelago_labels.py): head 0 = GeoRIMA `COPPER_ORE` + MRDS `CU` token (16 records, was 50); head 1 = ESDM `Besi Primer` only (56, was 70); head 2 excludes placers (`is_placer`: MRDS `GEM_D` code or placer word in the site name) and `EXCLUDED_DEPOSIT_SITES` (Busang) (90, was 93); MRDS codes matched by whole token (`mrds_has_code`).
+- **T18 real cube** — [`scripts/build_real_feature_cubes.py`](file:///Volumes/Seagate%202/Geospatials/scripts/build_real_feature_cubes.py), new [`src/features/real_sources/water.py`](file:///Volumes/Seagate%202/Geospatials/src/features/real_sources/water.py), [`src/features/real_sources/osm_transport.py`](file:///Volumes/Seagate%202/Geospatials/src/features/real_sources/osm_transport.py), [`src/features/coal_and_multimodal_features.py`](file:///Volumes/Seagate%202/Geospatials/src/features/coal_and_multimodal_features.py), [`src/schema/canonical.py`](file:///Volumes/Seagate%202/Geospatials/src/schema/canonical.py): land mask `dem >= 0`; `water_mask` (NDVI<0 | MNDWI>0 | OSM water | DEM<0) applied to every gated optical layer (new `water_mask` argument); `active_mine_mask` = OSM quarries; HH clauses removed from the mine mask and the coal label rule; forest loss removed from `build_pooled_exploration_footprint`; coal halo now steps along `(cos θ, sin θ)`; `LABEL_DERIVED_COLS` excluded from automatic features.
+- **T19 features** — Td/Ts use GEM fault distance only and are NaN beyond 5 km; new `config/features/metals_k4.txt` (12) and `coal_k3.txt` (18); `load_feature_list`; `--feature-list-metals/--feature-list-coal` in the orchestrator, `--features-file` in [`scripts/run_deposit_cv.py`](file:///Volumes/Seagate%202/Geospatials/scripts/run_deposit_cv.py).
+- **T20 propensity** — new `ExplorationPropensity` and `CANONICAL_PROPENSITY_COLS = dist_roads_km, dist_major_rivers_km, dist_ports_km` in [`src/labels/pu_negatives.py`](file:///Volumes/Seagate%202/Geospatials/src/labels/pu_negatives.py); new layers `dist_roads_km`, `dist_ports_km`, `osm_water_mask`, `osm_quarry_mask`; orchestrator Pass 2, the chunked path and the harness use it; no first-column or flat-0.20 fallback.
+- **T21 split** — [`src/labels/spatial_splits.py`](file:///Volumes/Seagate%202/Geospatials/src/labels/spatial_splits.py) (`positive_cluster_raster`, `count_clusters_spanning_folds`, `training_buffer_exclusion`); orchestrator applies `enforce_cluster_integrity` and a 5 km buffer (`--cluster-integrity`, `--split-buffer-m`, both off under `--legacy-v47`); summary records `split_protocol`, `propensity_model`, `pinned_feature_lists`, `feature_columns`.
+- **Data:** both real cubes rebuilt (`data/kalimantan_real/processed`, `data/east_kalimantan_real/processed`); old cubes kept in `processed_v4.11/`.
+- **Tests:** 311 passed (232 s); new files `tests/unit/test_v415_label_rules.py`, `test_v415_cube_fixes.py`, `test_v415_split_and_feature_lists.py`; five existing tests adjusted.
+- **Harness outputs:** [`outputs/deposit_cv/v415/`](file:///Volumes/Seagate%202/Geospatials/outputs/deposit_cv/v415/) (script `run_v415.sh`).
+- **Not changed:** no model was retrained or deployed; `outputs/seven_pass_*` and the UI bundle are untouched. Nothing committed.
+
+---
+
+## [v4.14-audit] — 2026-11-10 (`2026-11-10T20:05:00+08:00`)
+
+### Code quality, architecture and ML-training audit (no model, data, pipeline or UI code changed)
+- **Added [`audits/2026-11-10_v4.14_code_quality_architecture_ml_training_audit.md`](file:///Volumes/Seagate%202/Geospatials/audits/2026-11-10_v4.14_code_quality_architecture_ml_training_audit.md)** and its row in [`audits/INDEX.md`](file:///Volumes/Seagate%202/Geospatials/audits/INDEX.md). It is a planning backlog: a bug list (`B01`–`B42`, plus 17 open items carried from v4.10–v4.13), improvement items, and 34 ordered tasks.
+- **Method:** `/code-review` (whole tree), `/improve-codebase-architecture`, `/ml-model-training` as a checklist. `/thermo-nuclear-code-quality-review` is user-invocation-only and was not run.
+- **Findings (new):**
+  - **Repository.** Commit `8681f3b` cannot be pushed to GitHub (two HTML bundles of 105.7 MB each); 4,222 lines of untracked code, 7 modified files and audits v4.9–v4.13 are not backed up.
+  - **Dashboard.** Every train or scan it launches fails the provenance gate; named custom polygons are rejected by a region-name mismatch; a request can make it unpickle a model from any directory; `/api/runs/delete` raises `NameError`; the stop route has a race. `scripts/ec2_train_bootstrap.sh` serves it on 0.0.0.0.
+  - **Runner scripts.** Three write hard-coded PR-AUC, ĉ and q̂ (ten summary files on disk); `run_kalimantan_500m_and_100m_scans.py` runs `git add -A` and `git push origin main`.
+  - **Pipeline.** `--head0-stacking off` crashes in the validation gate (reproduced); coal-only summaries report ĉ = 0.5; site-card "conformal" sets are a threshold rule; the warm-start gate compares against a PR-AUC from another validation set; the validation split cuts 4 of 33 metal deposit clusters across folds with no buffer (measured); the U-Net cube can mislabel its channels (measured on two datasets); PyTorch is not seeded in production.
+  - **Other.** The MCP server's PDF ingestion raises `NameError`; 19 of 21 run-catalogue paths point into the old repository copy.
+  - **Architecture.** Eleven deepening candidates; the first three are quarantining the legacy runners, one scoring module, and one training recipe shared with the deposit-level harness.
+- **Unit tests:** 285 passed (205 s). Check scripts were run from the session scratchpad and are not in the repo.
+
+---
+
+## [v4.13.2-tooling] — 2026-11-10
+
+### Added two third-party Claude Code skills (no pipeline code changed)
+- **Added [`.claude/skills/thermo-nuclear-code-quality-review/SKILL.md`](file:///Volumes/Seagate%202/Geospatials/.claude/skills/thermo-nuclear-code-quality-review/SKILL.md)** from `cursor/plugins` (`cursor-team-kit`). Strict maintainability review prompt; `disable-model-invocation: true`.
+- **Added [`.claude/skills/improve-codebase-architecture/`](file:///Volumes/Seagate%202/Geospatials/.claude/skills/improve-codebase-architecture/SKILL.md)** (`SKILL.md`, `HTML-REPORT.md`) from `mattpocock/skills`. It calls three companion skills, also added from `mattpocock/skills` (OpenAI `agents/openai.yaml` files omitted):
+- **Added `.claude/skills/codebase-design/`** (`SKILL.md`, `DEEPENING.md`, `DESIGN-IT-TWICE.md`), **`.claude/skills/domain-modeling/`** (`SKILL.md`, `ADR-FORMAT.md`, `GLOSSARY-FORMAT.md`) and **`.claude/skills/grilling/`** (`SKILL.md`).
+
+---
+
+## [v4.13.1-docs] — 2026-11-10
+
+### CLAUDE.md guidance update (no code, data or pipeline changes)
+- **Modified [`CLAUDE.md`](file:///Volumes/Seagate%202/Geospatials/CLAUDE.md):** added the standard header, single-test and integration-test commands, notes that `README.md` and `HANDOFF.md` are stale and that test counts in the docs disagree, a short architecture-flow section (including the two diverged inference paths in `run_seven_pass_training.py`), and a "Which data to trust" section (real-data cubes, provenance gate, v4.13 open leaks).
+
+---
+
+## [v4.13-audit] — 2026-11-10 (`2026-11-10T14:10:00+08:00`)
+
+### Full-Stack Review: physics, geology, math, execution and training process (no model, data or pipeline code changed)
+- **Added [`audits/2026-11-10_v4.13_full_stack_physics_geology_code_review.md`](file:///Volumes/Seagate%202/Geospatials/audits/2026-11-10_v4.13_full_stack_physics_geology_code_review.md)** and its row in [`audits/INDEX.md`](file:///Volumes/Seagate%202/Geospatials/audits/INDEX.md). It complements v4.10 and v4.12 and does not repeat their deposit-level results.
+- **Findings (new):**
+  - **Labels.** The EK "porphyry Cu" head has 10 deposits and 1 is copper; the rest are granite, feldspar, potash-rock and zinc records. The skarn head includes 14 marble occurrences. Two MRDS alluvial placers pass the placer guard.
+  - **Features.** `dilation_tendency_Td` / `slip_tendency_Ts` take the strike of the nearest GEM fault at any distance, so they partition the map into regions of about 3,000 km²; Td is the top feature by gain in three metal heads. `dist_active_faults_m` is a terrain-curvature distance on 77% of real-cube land. Short-wavelength Bouguer is inverted topography (r = −0.77 at 10 km).
+  - **Real cube.** `dist_calc_alkaline_intrusive_km` is built from the porphyry label points. Coal halo labels step across strike. 79% of valid gated-optical cells are below sea level. `active_mine_mask` is 98% forest loss. The propensity model uses the forbidden covariate list and predicts its own target definition.
+  - **Models.** The top 1% of the deployed coal map is the basin gate (r = 0.986), which runs on defaults for 5 of 7 inputs. The in-memory and chunked inference paths compute different bounds; this is the cause of the zero lower bound and the target fallback. `max_delta_step` caps raw scores near 0.48, which keeps ĉ on its floor. Bag spread is not epistemic uncertainty (all positives are in every bag).
+  - **Execution.** The default data directories fail the provenance gate; `--train-10x` is a no-op; the default buffered spatial CV keeps 11–14% of training cells and is not called.
+- **Verified correct:** RTP filter, vertical derivative, analytic signal, tilt, plan curvature, aspect, slip/dilation formulas, nnPU loss, Sentinel-2 / Landsat / ASTER / PALSAR-2 calibrations.
+- **Unit tests:** 285 passed (373 s). Check scripts were run from the session scratchpad and are not in the repo.
+
+---
+
+## [v4.12.1] — 2026-11-10 (`2026-11-10T17:30:00+08:00`)
+
+### Open Source Data Fetch (download only; no feature, cube or model change)
+Five new download scripts, written by four delegated agents. Each writes only under its own `data/raw_real/<source>/` folder with a `provenance.json` and `FETCH_REPORT.md`, never fills or substitutes data, and resumes from what is already on disk.
+- **Added [`scripts/fetch_cop_dem30.py`](file:///Volumes/Seagate%202/Geospatials/scripts/fetch_cop_dem30.py):** Copernicus GLO-30 DEM from the AWS open bucket for Indonesia plus Borneo.
+  - 507 tiles, 9.7 GB, in `data/raw_real/cop_dem30/` with a `cop_dem30.vrt` mosaic (nodata −32767 set in the VRT).
+  - r = 0.997 against the 250 m Kalimantan DEM; no land gaps.
+- **Added [`scripts/fetch_palsar2_25m.py`](file:///Volumes/Seagate%202/Geospatials/scripts/fetch_palsar2_25m.py):** ALOS-2 PALSAR-2 2021 mosaic at native 25 m for East Kalimantan.
+  - 42 tiles (DN originals plus HH/HV dB, `dB = 10·log10(DN²) − 83`), 7.0 GB in `data/raw_real/palsar2_25m/`.
+  - 91.8% of land valid; r = 0.92 (HH) and 0.96 (HV) against the existing 250 m layers.
+- **Added [`scripts/fetch_sentinel1_ek.py`](file:///Volumes/Seagate%202/Geospatials/scripts/fetch_sentinel1_ek.py):** Sentinel-1 RTC dry-season median (2021–2023, descending orbit) for East Kalimantan.
+  - Stopped after a 7-block pilot: the server's throughput puts the full run at about 48 hours. No finished tiles yet; pilot blocks in `data/raw_real/sentinel1/_work/`.
+- **Added [`scripts/fetch_esdm_geology.py`](file:///Volumes/Seagate%202/Geospatials/scripts/fetch_esdm_geology.py):** geological map and faults for Kalimantan.
+  - ESDM GeoPortal still returns HTTP 503 on every endpoint; failures recorded in `data/raw_real/esdm_geology/provenance.json`.
+  - BIG Atlas 250K (separate source) in `data/raw_real/big_atlas_geologi/`: 4,320 geological units (about 99% of Indonesian Kalimantan land), 121 faults, mineral points. **Use restriction stated by the service ("intended only for the atlas.big.go.id application"): not to be used in a model until the owner decides.**
+  - BNPB inaRISK active faults (PuSGeN-like layers) in `data/raw_real/bnpb_inarisk_faults/`.
+- **Added [`scripts/fetch_emit.py`](file:///Volumes/Seagate%202/Geospatials/scripts/fetch_emit.py):** NASA EMIT L2B mineral scene search over Borneo.
+  - 2,536 unique acquisitions; 292 below 50% cloud (about 49% of Kalimantan land by footprint), 119 below 20%.
+  - Catalogue in `data/raw_real/emit/`. No download: no Earthdata credentials on this machine. The script reads them only from `~/.netrc` or `EARTHDATA_TOKEN`.
+
+---
+
+## [v4.12-audit] — 2026-11-10 (`2026-11-10T13:35:00+08:00`)
+
+### State-of-the-Model Audit (no model, data or pipeline code changed)
+- **Added [`audits/2026-11-10_v4.12_model_state_audit.md`](file:///Volumes/Seagate%202/Geospatials/audits/2026-11-10_v4.12_model_state_audit.md)** and its row in [`audits/INDEX.md`](file:///Volumes/Seagate%202/Geospatials/audits/INDEX.md).
+- **Added run scripts and outputs under `outputs/deposit_cv/v412/`:** `run_v412.sh` (8 runs), `run_v412_b.sh` (1 run), `run_v412_seeds.sh` (12 runs). They only call `scripts/run_deposit_cv.py`.
+- **Findings:**
+  - The deployed metals model (20 features, with SAR) scores 0.844 median-cell AUC against 0.870 for the evaluated 14-feature model (4 seeds).
+  - Real cube: 0.861 on the same 14 features, 0.813 with default feature selection (44 features). Logistic regression ties XGBoost.
+  - Coal rank labels are generated from feature layers and differ almost entirely between the old and real cubes. On the real cube `dist_sedimentary_polygon_km` reproduces the label rule, so the 0.965 coal AUC is circular.
+  - The U-Net is out of the deployed model but on by default in the orchestrator and the dashboard.
+  - All deployed targets come from the polygonisation fallback. Card `lower_bound_L` equals the map value; coal `upper_bound_U` is below the point estimate on 65% of cells.
+- **Unit tests:** 285 passed.
+
+---
+
+## [v4.11.0] — 2026-11-10 (`2026-11-10T04:30:00+08:00`)
+
+### Real Input Layers Only (no synthesized data)
+- **Added `src/features/real_sources/`** ([`core.py`](file:///Volumes/Seagate%202/Geospatials/src/features/real_sources/core.py), [`sentinel2.py`](file:///Volumes/Seagate%202/Geospatials/src/features/real_sources/sentinel2.py), [`landsat_thermal.py`](file:///Volumes/Seagate%202/Geospatials/src/features/real_sources/landsat_thermal.py), [`aster_tir.py`](file:///Volumes/Seagate%202/Geospatials/src/features/real_sources/aster_tir.py), [`global_grids.py`](file:///Volumes/Seagate%202/Geospatials/src/features/real_sources/global_grids.py), [`osm_transport.py`](file:///Volumes/Seagate%202/Geospatials/src/features/real_sources/osm_transport.py)):
+  - Grid spec, `LayerProvenance` / `ProvenanceManifest` (`layer_provenance.json`), decimated COG reads from Planetary Computer, median compositing.
+  - Builders: Sentinel-2 L2A indices (dark-reflectance mask `MIN_REFLECTANCE=0.005`), Landsat 8/9 surface-temperature anomaly (cold-cloud mask `MIN_SEA_LEVEL_LST_C=18`), ASTER TIR silica/quartz, EMAG2v3 (error-grid fill codes masked), Hansen GFC, SoilGrids depth to bedrock, OSM/Geofabrik transport distances.
+  - `assert_feature_provenance()` training gate; override `MPM_ALLOW_UNVERIFIED_LAYERS=1`.
+- **Added [`scripts/fetch_real_layers.py`](file:///Volumes/Seagate%202/Geospatials/scripts/fetch_real_layers.py)** (per-source fetch to `data/kalimantan_real/cache`, `data/raw_real`) and **[`scripts/build_real_feature_cubes.py`](file:///Volumes/Seagate%202/Geospatials/scripts/build_real_feature_cubes.py)**:
+  - Builds `data/kalimantan_real/processed` and the exact EK window `data/east_kalimantan_real/processed` with one structural recipe.
+  - Refuses layers without provenance.
+  - No `volcanic_arc_halo` (identically 0 over Kalimantan).
+  - `--reuse-potential-fields` reuses the previous build's gravity/magnetics rasters.
+- **Modified [`src/features/coal_and_multimodal_features.py`](file:///Volumes/Seagate%202/Geospatials/src/features/coal_and_multimodal_features.py):**
+  - Unmapped lithology distances are NaN (were 15 km).
+  - A missing TMI raises (was random field).
+  - Gated optical emits only supplied indices (no constant/formula defaults); thermal censoring gives NaN.
+- **Modified [`scripts/harvest_kalimantan_multimodal.py`](file:///Volumes/Seagate%202/Geospatials/scripts/harvest_kalimantan_multimodal.py):**
+  - The six fabricating functions now raise `RuntimeError`.
+  - Fault, ESDM-circle, CRUST1.0 and coal-contact fallbacks give NaN or raise.
+- **Modified [`scripts/run_indonesia_hd_upgrade.py`](file:///Volumes/Seagate%202/Geospatials/scripts/run_indonesia_hd_upgrade.py):** the synthetic fault axis is replaced by NaN.
+- **Modified [`scripts/run_seven_pass_training.py`](file:///Volumes/Seagate%202/Geospatials/scripts/run_seven_pass_training.py)** and **[`scripts/run_deposit_cv.py`](file:///Volumes/Seagate%202/Geospatials/scripts/run_deposit_cv.py):**
+  - Provenance gate added.
+  - New `--allow-unverified-layers` flag.
+  - Warm-start missing channels are NaN, not 0.
+- **Modified [`src/schema/canonical.py`](file:///Volumes/Seagate%202/Geospatials/src/schema/canonical.py):** quality/meta layers (`tree_cover_2000`, `s2_clear_obs`, `emag2_error_nt`, `emag2_source_code`, `thermal_lst_c`, `w_canopy`, `alteration_benchmark`) are excluded from features.
+- **Added [`tests/unit/test_real_sources.py`](file:///Volumes/Seagate%202/Geospatials/tests/unit/test_real_sources.py)** (24 tests):
+  - No `np.random` in 14 layer-builder modules.
+  - Manifest and gate behaviour, index math, dark-reflectance and cold-cloud masks.
+  - No-fill gated optical, required TMI, NaN lithology distances, disabled fabricators.
+- **Added [`audits/2026-11-10_v4.11_real_input_layers_rebuild.md`](file:///Volumes/Seagate%202/Geospatials/audits/2026-11-10_v4.11_real_input_layers_rebuild.md)** and its `audits/INDEX.md` row.
+- **Data:** the new cubes have 8,586,975 / 2,903,598 land cells, 50 features, and the provenance gate passes. The old `data/kalimantan/processed` and `data/east_kalimantan/processed` are untouched and now fail the gate. No model retrained.
+
+---
+
+## [v4.9.0] — 2026-11-09 (`2026-11-09T23:10:00+08:00`)
+
+### Deposit-Level Test of the DAE U-Net (harness only; no production default changed)
+- **Modified [`scripts/run_deposit_cv.py`](file:///Volumes/Seagate%202/Geospatials/scripts/run_deposit_cv.py):**
+  - **New `--models unet` adapter.** Per fold, it trains the production XGBoost and one production `DistrictDAEUNet` on that fold's training cells only. The 15 km buffer exclusion covers both the U-Net's labels and its unlabeled pool.
+    - The U-Net mirrors production in its input cube, z-scoring on training cells, decimation rule, nnPU and reconstruction loss, 1/e(x) weights, subsampling, windows and optimiser.
+    - New classes and functions: `UNetCube`, `production_dae_decimate_factor`, `xgb_components`, `blend_outputs`.
+  - **Variants:**
+    - `alone`;
+    - `xgb_*` (reproduces the XGBoost-only run exactly);
+    - `srauc_*`: `w_unet` chosen by nested deposit-level CV on the training folds, 4 inner fits per outer fold;
+    - `prauc_*`: the production PR-AUC-proportional rule on the same inner held-out cells;
+    - `wX.XX_*`: fixed weights.
+  - **New options:** `--unet-epochs`, `--unet-decimate`, `--unet-window`, `--unet-inner`, `--unet-inner-bg-sample`, `--unet-fixed-w`, `--unet-neg-excl`.
+  - **Fold construction refactored** into `make_fold()` and `coal_negative_exclusion()`. Outer folds are unchanged: the XGBoost results are identical to v4.8.
+  - **`fit_propensity()`** can also score other rows with the same model.
+  - **OpenMP fix.** When `unet` is requested, the script sets `OMP_NUM_THREADS=1` and imports torch first, as the orchestrator does. Without this, torch and XGBoost in one process deadlocked or segfaulted.
+- **Modified [`scripts/compare_deposit_cv.py`](file:///Volumes/Seagate%202/Geospatials/scripts/compare_deposit_cv.py):**
+  - `--cand-model` and `--pairs base_variant:cand_variant` pair different models or variant names.
+  - `--metric median_cell` compares median-cell area fractions (the v4.10 bias-free score).
+- **Modified [`tests/unit/test_deposit_cv.py`](file:///Volumes/Seagate%202/Geospatials/tests/unit/test_deposit_cv.py):** 3 new tests (14 pass):
+  - the blend at w = 0 and w = 1 reproduces the coal gated and raw scores;
+  - a metals zero-positive head stays at 0;
+  - cross-model pairing in the compare script.
+- **Added [`audits/2026-11-09_v4.9_unet_deposit_level.md`](file:///Volumes/Seagate%202/Geospatials/audits/2026-11-09_v4.9_unet_deposit_level.md)** and its row in `audits/INDEX.md`.
+- **Outputs and run scripts:** `outputs/deposit_cv/v49/`.
+- **Result.** Keep the U-Net off for both domains.
+  - U-Net alone: metals −0.102 and coal −0.145 AUC against the v4.8 XGBoost.
+  - Weights selected on the training folds are about 0 and change nothing.
+  - The old coal weight 0.66 costs −0.019 (max-cell) and −0.028 (median-cell).
+  - At 15 epochs (`--train-10x`) the U-Net overfits: −0.21 for metals and −0.23 for coal when used alone.
+
+---
+
+## [v4.10-audit] — 2026-11-09 (`2026-11-09T22:30:00+08:00`)
+
+### Independent Model Review (no code changed)
+- **Added [`audits/2026-11-09_v4.10_independent_model_review.md`](file:///Volumes/Seagate%202/Geospatials/audits/2026-11-09_v4.10_independent_model_review.md)** and its row in [`audits/INDEX.md`](file:///Volumes/Seagate%202/Geospatials/audits/INDEX.md).
+- **Findings:**
+  - The success-rate AUC's random baseline is not 0.5.
+  - Epithermal got worse under v4.8.
+  - The deployed 20-feature metals model, with SAR, was never evaluated at deposit level.
+  - ĉ sits on the 0.10 floor while production withholds a fold.
+  - The conformal sets are degenerate.
+  - The v4.8 gain was selected on its own test folds.
+- **No code, model or data was modified.**
+
+---
+
 ## [v4.8.2] — 2026-11-09 (`2026-11-09T21:25:00+08:00`)
 
 ### Dashboard: Z-Depth Slider and Reset Fixed
