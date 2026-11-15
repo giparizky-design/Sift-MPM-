@@ -361,9 +361,9 @@ def plan_curvature(
     and analytically differentiates it. The plan curvature formula in terms
     of the polynomial coefficients is:
 
-        plan_curv = −2·(D·G² + E·F² − F·G·H) / (G² + H²)
+        plan_curv = −2·(D·H² + E·G² − F·G·H) / (G² + H² + ε)
 
-    where D = d²z/dx², E = d²z/dy², F = d²z/dxdy, G = dz/dx, H = dz/dy
+    where D = 0.5·d²z/dx², E = 0.5·d²z/dy², F = d²z/dxdy, G = dz/dx, H = dz/dy
     (all evaluated at the central cell).
 
     Args:
@@ -387,24 +387,21 @@ def plan_curvature(
     # Compute first and second partial derivatives using numpy.gradient.
     # gradient() uses central differences (2nd order accurate).
     dz_dy, dz_dx = np.gradient(dem, L)               # G (dz/dx), H (dz/dy)
-    d2z_dxdx, _ = np.gradient(dz_dx, L)              # D = d²z/dx²
-    _, d2z_dydy = np.gradient(dz_dy, L)              # E = d²z/dy²
-    d2z_dxdy, _ = np.gradient(dz_dy, L)              # F = d²z/dxdy
+    d2z_dxdy, d2z_dxdx = np.gradient(dz_dx, L)       # F = d²z/dxdy, d²z/dx²
+    d2z_dydy, _ = np.gradient(dz_dy, L)              # d²z/dy²
 
     G = dz_dx
     H = dz_dy
-    D = d2z_dxdx
-    E = d2z_dydy
+    D = 0.5 * d2z_dxdx
+    E = 0.5 * d2z_dydy
     F = d2z_dxdy
 
-    denom = G**2 + H**2
-    # Avoid division by zero on flat terrain
-    with np.errstate(invalid="ignore", divide="ignore"):
-        plan_curv = np.where(
-            denom == 0,
-            0.0,
-            -2.0 * (D * G**2 + E * F**2 - F * G * H) / denom,
-        )
+    # Replace the defective numerator with the Evans (1980) formulation:
+    eps = 1e-12
+    denom = G**2 + H**2 + eps
+    plan_curv = -2.0 * (D * (H**2) + E * (G**2) - F * G * H) / denom
+    # Zero out curvature on perfectly flat floodplains/ocean cells where slope is negligible
+    plan_curv = np.where((G**2 + H**2) < 1e-10, 0.0, plan_curv)
     return plan_curv
 
 

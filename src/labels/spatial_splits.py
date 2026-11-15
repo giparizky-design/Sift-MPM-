@@ -46,6 +46,13 @@ import numpy as np
 import pandas as pd
 import rasterio.transform
 
+from src.evaluation.spatial_cv import (
+    BufferedSpatialBlockKFold,
+    assemble_oof_prediction_cube,
+    compute_physical_buffer_m,
+    spatial_buffered_block_kfold,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -485,3 +492,86 @@ def enforce_cluster_integrity(
 
     logger.info("enforce_cluster_integrity: unified %d positive clusters", n_clusters)
     return out
+
+
+def positive_cluster_raster(row_idx: np.ndarray, col_idx: np.ndarray, positive_mask: np.ndarray, H: int, W: int) -> np.ndarray:
+    """(H, W) int32 raster of 8-connected positive-cell clusters (-1 elsewhere), from per-sample positives.
+
+    Cluster ids are those of ``src.evaluation.deposit_cv.label_deposit_clusters``, the definition the
+    deposit-level harness uses, so production and harness agree on what one deposit is.
+    """
+    from src.evaluation.deposit_cv import label_deposit_clusters
+
+    pos_2d = np.zeros((int(H), int(W)), dtype=bool)
+    pos_2d[np.asarray(row_idx)[np.asarray(positive_mask, dtype=bool)], np.asarray(col_idx)[np.asarray(positive_mask, dtype=bool)]] = True
+    return label_deposit_clusters(pos_2d)
+
+
+def count_clusters_spanning_folds(
+    cluster_2d: np.ndarray, row_idx: np.ndarray, col_idx: np.ndarray, folds: list,
+) -> int:
+    """Number of positive clusters whose cells fall in more than one fold's validation set.
+
+    ``folds`` is the ``spatial_block_kfold`` output, a list of (train_idx, val_idx).
+    """
+    n = len(row_idx)
+    fold_of = np.full(n, -1, dtype=np.int32)
+    for f, (_, va) in enumerate(folds):
+        fold_of[np.asarray(va)] = f
+    cid = cluster_2d[row_idx, col_idx]
+    ok = cid >= 0
+    if not ok.any():
+        return 0
+    pairs = np.unique(np.column_stack([cid[ok], fold_of[ok]]), axis=0)
+    _, per_cluster = np.unique(pairs[:, 0], return_counts=True)
+    return int((per_cluster > 1).sum())
+
+
+def training_buffer_exclusion(
+    val_idx: np.ndarray,
+    row_idx: np.ndarray,
+    col_idx: np.ndarray,
+    positive_mask: np.ndarray,
+    cluster_2d: np.ndarray,
+    buffer_px: float,
+) -> np.ndarray:
+    """Per-sample boolean: True for samples that must not train while ``val_idx`` is held out.
+
+    A sample is excluded when it lies in, or within ``buffer_px`` pixels of, any positive cluster that
+    has a positive cell in ``val_idx``. This is the rule of the deposit-level harness
+    (``deposit_cv.training_exclusion_mask``). Returns all-False when ``buffer_px <= 0`` or the
+    validation set holds no positive.
+    """
+    from src.evaluation.deposit_cv import training_exclusion_mask
+
+    n = len(row_idx)
+    out = np.zeros(n, dtype=bool)
+    val_idx = np.asarray(val_idx)
+    if buffer_px <= 0 or len(val_idx) == 0:
+        return out
+    val_pos = val_idx[np.asarray(positive_mask, dtype=bool)[val_idx]]
+    if len(val_pos) == 0:
+        return out
+    ids = np.unique(cluster_2d[row_idx[val_pos], col_idx[val_pos]])
+    ids = ids[ids >= 0]
+    if len(ids) == 0:
+        return out
+    excl_2d = training_exclusion_mask(cluster_2d, ids, float(buffer_px))
+    return excl_2d[row_idx, col_idx]
+
+
+__all__ = [
+    "positive_cluster_raster",
+    "count_clusters_spanning_folds",
+    "training_buffer_exclusion",
+    "assign_spatial_blocks",
+    "spatial_block_kfold",
+    "ensure_camp_integrity",
+    "reserve_blind_holdout",
+    "blind_holdout_masks",
+    "enforce_cluster_integrity",
+    "spatial_buffered_block_kfold",
+    "BufferedSpatialBlockKFold",
+    "compute_physical_buffer_m",
+    "assemble_oof_prediction_cube",
+]

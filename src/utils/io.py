@@ -149,8 +149,22 @@ def save_raster(
         dtype=str(data.dtype),
     )
 
-    # Handle NaN → nodata substitution
+    # Ensure nodata is compatible with output dtype
     nodata = out_profile.get("nodata")
+    if nodata is not None:
+        if np.issubdtype(data.dtype, np.integer):
+            info = np.iinfo(data.dtype)
+            if nodata < info.min or nodata > info.max:
+                out_profile["nodata"] = None
+                nodata = None
+            else:
+                out_profile["nodata"] = int(nodata)
+                nodata = int(nodata)
+        elif data.dtype == bool:
+            out_profile["nodata"] = None
+            nodata = None
+
+    # Handle NaN → nodata substitution
     write_data = data.copy()
     if np.issubdtype(data.dtype, np.floating) and nodata is not None:
         write_data[np.isnan(write_data)] = nodata

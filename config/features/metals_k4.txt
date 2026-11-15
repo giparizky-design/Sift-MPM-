@@ -1,0 +1,27 @@
+# Pinned feature list for the K=4 metals heads (audit v4.14 T19, written 2026-11-10 for the v4.15 cube).
+# Read by scripts/run_seven_pass_training.py (--feature-list-metals) and scripts/run_deposit_cv.py (--features-file).
+# A column named here that is missing from the dataset, or that is a label/mask/label-derived column, is an error.
+#
+# Basis: the 14-feature set that scored best at deposit level on the real cube (audit v4.12 section 2: 0.861 vs 0.813
+# for the 44-feature default), MINUS dilation_tendency_Td and slip_tendency_Ts. Those two were a nearest-fault
+# Voronoi map (v4.13 section 2.1); since v4.15 they exist only within 5 km of a mapped fault (5.4% of cells) and are
+# not part of the default set. The harness ablation with them added is in audit v4.15.
+#
+# Not included on purpose: regional smooth fields (bouguer, crustal thickness, moho step, plate/arc distances,
+# coastal shelf: location surrogates, v4.8), SAR channels (v4.12 section 2.1), magnetics and residual gravity,
+# lithology distances, optical layers (0.3% valid cells after the water mask), and the label-derived distances
+# dist_calc_alkaline_intrusive_km / dist_pluton_carbonate_contact_km (canonical.LABEL_DERIVED_COLS).
+#
+# Still open (v4.13 section 2.2): dist_active_faults_m and active_fault_density are mostly terrain-curvature distances.
+dist_active_faults_m
+active_fault_density
+dist_topo_lineaments_km
+dem_elevation
+dem_slope
+dem_aspect
+dem_tpi_local
+dem_tpi_regional
+dem_plan_curvature
+terrain_ruggedness_tri
+depth_to_bedrock_m
+outcrop_exposure_index

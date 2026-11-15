@@ -136,7 +136,7 @@ In addition to gold, porphyry, and bauxite, Kalimantan is globally significant f
 
 ### 6.1 Iron (Fe) Deposit Systems in Kalimantan (79 Sites)
 
-* **Source File:** [`data/borneo/kalimantan_iron_deposits.gpkg`](file:///Users/gip/Geospatials/data/borneo/kalimantan_iron_deposits.gpkg) & [`.csv`](file:///Users/gip/Geospatials/data/borneo/kalimantan_iron_deposits.csv)
+* **Source File:** [`data/borneo/kalimantan_iron_deposits.gpkg`](file:///Volumes/Seagate%202/Geospatials/data/borneo/kalimantan_iron_deposits.gpkg) & [`.csv`](file:///Volumes/Seagate%202/Geospatials/data/borneo/kalimantan_iron_deposits.csv)
 * **Commodity Breakdown:**
   * **Besi Primer (57 sites):** Contact metasomatic skarn and hydrothermal magnetite-hematite deposits associated with Cretaceous granitic plutons intruding Paleozoic-Mesozoic carbonates and volcanic-sedimentary strata in West Kalimantan (Sambas, Sanggau, Ketapang, Bengkayang) and Central Kalimantan.
   * **Besi Laterit (21 sites):** Supergene lateritic iron / nickel-iron caps formed by tropical humid weathering of obducted Cretaceous Meratus ultramafic ophiolites in South Kalimantan (Sebuku Island, Pulau Laut, Tanah Bumbu, Kotabaru).
@@ -149,7 +149,7 @@ In addition to gold, porphyry, and bauxite, Kalimantan is globally significant f
 
 ### 6.2 Coal (Batubara) Basins & Concessions in Kalimantan (850 Sites)
 
-* **Source File:** [`data/borneo/kalimantan_coal_deposits.gpkg`](file:///Users/gip/Geospatials/data/borneo/kalimantan_coal_deposits.gpkg) & [`.csv`](file:///Users/gip/Geospatials/data/borneo/kalimantan_coal_deposits.csv)
+* **Source File:** [`data/borneo/kalimantan_coal_deposits.gpkg`](file:///Volumes/Seagate%202/Geospatials/data/borneo/kalimantan_coal_deposits.gpkg) & [`.csv`](file:///Volumes/Seagate%202/Geospatials/data/borneo/kalimantan_coal_deposits.csv)
 * **Total Resource Base Recorded:**
   * **Total Coal Resources:** 71,076.5 Million Tonnes (71.1 Billion Tonnes)
   * **Total Coal Reserves:** 23,042.7 Million Tonnes (23.0 Billion Tonnes)

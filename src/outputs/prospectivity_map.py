@@ -552,16 +552,103 @@ def save_conformal_bounds_geotiff(
     logger.info("Conformal bounds GeoTIFF saved → %s", out_path)
 
 
+def resolve_physical_layers(stack: Any) -> dict[str, Optional[np.ndarray]]:
+    """Resolve physical layers from a FeatureStack by canonical name aliases.
+
+    Looks up physical layers like dilation tendency ($T_d$), alteration index,
+    regolith cover depth, and crustal thickness using canonical feature name variants.
+    Returns None for any layer that is not physically present in the stack.
+
+    Args:
+        stack: A FeatureStack or object containing ``feature_names`` and ``array``.
+
+    Returns:
+        dict[str, Optional[np.ndarray]]: Mapping from standard physical layer keys
+            to 2-D numpy float64 arrays (or None if missing).
+    """
+    if stack is None or not hasattr(stack, "feature_names") or not hasattr(stack, "array"):
+        return {
+            "dilation_tendency_Td": None,
+            "alteration_index": None,
+            "regolith_cover_depth_m": None,
+            "crustal_thickness_km": None,
+            "bouguer_worm": None,
+        }
+
+    name_to_idx = {str(n).strip().lower(): i for i, n in enumerate(stack.feature_names)}
+    layers: dict[str, Optional[np.ndarray]] = {}
+
+    def _get_band(aliases: tuple[str, ...], invert: bool = False) -> Optional[np.ndarray]:
+        for alias in aliases:
+            a_low = alias.strip().lower()
+            if a_low in name_to_idx:
+                raw = stack.array[name_to_idx[a_low]].astype(np.float64)
+                valid = np.isfinite(raw)
+                if not np.any(valid):
+                    continue
+                v_min = float(np.nanmin(raw[valid]))
+                v_max = float(np.nanmax(raw[valid]))
+                if (v_max - v_min) < 1e-9:
+                    normed = np.full_like(raw, 0.5)
+                else:
+                    normed = np.clip((raw - v_min) / (v_max - v_min), 0.0, 1.0)
+                return (1.0 - normed) if invert else normed
+        return None
+
+    # Dilation tendency Td
+    layers["dilation_tendency_Td"] = _get_band(
+        ("dilation_tendency_td", "dilation_tendency", "td", "geomech_dilation_td")
+    )
+    if layers["dilation_tendency_Td"] is None:
+        # Physical proxy: inverse fault proximity
+        layers["dilation_tendency_Td"] = _get_band(
+            ("dist_active_faults_m", "dist_faults_m", "dist_to_faults", "fault_dist_m"),
+            invert=True,
+        )
+
+    # Alteration index
+    layers["alteration_index"] = _get_band(
+        (
+            "swir_clay_iron_alteration",
+            "hydrothermal_alteration_idx",
+            "aster_aloh",
+            "s2_clay",
+            "fe_oxide_intensity",
+            "alteration_mean",
+        )
+    )
+
+    # Regolith cover depth in metres (non-normalised)
+    layers["regolith_cover_depth_m"] = None
+    for alias in ("regolith_cover_m", "regolith_cover_depth_m", "cover_depth_m", "regolith_depth_m"):
+        a_low = alias.lower()
+        if a_low in name_to_idx:
+            raw = stack.array[name_to_idx[a_low]].astype(np.float64)
+            layers["regolith_cover_depth_m"] = np.clip(np.nan_to_num(raw, nan=25.0), 1.0, 300.0)
+            break
+
+    # Deep crustal architecture & gravity worms
+    layers["crustal_thickness_km"] = _get_band(
+        ("crustal_thickness_km", "f_crustal_thickness_km", "crustal_thickness", "moho_depth_km")
+    )
+    layers["bouguer_worm"] = _get_band(
+        ("bouguer_worm_30km", "bouguer_worm_15km", "bouguer_worm_5km", "bouguer_worm")
+    )
+
+    return layers
+
+
 def _norm_01(vals: np.ndarray) -> np.ndarray:
-    """Normalise an array to $[0, 1]$ across targets (constant arrays map to $0.5$)."""
+    """Normalise an array to $[0, 1]$ across targets with 2nd-98th percentile clipping (constant arrays map to $0.5$)."""
     arr = np.asarray(vals, dtype=np.float64)
     if len(arr) == 0:
         return arr
-    vmin = float(np.nanmin(arr))
-    vmax = float(np.nanmax(arr))
-    if not np.isfinite(vmin) or not np.isfinite(vmax) or (vmax - vmin) < 1e-12:
+    p2 = float(np.nanpercentile(arr, 2))
+    p98 = float(np.nanpercentile(arr, 98))
+    if not np.isfinite(p2) or not np.isfinite(p98) or (p98 - p2) < 1e-12:
         return np.full_like(arr, 0.5, dtype=np.float64)
-    return (arr - vmin) / (vmax - vmin)
+    arr_clipped = np.clip(arr, p2, p98)
+    return (arr_clipped - p2) / (p98 - p2)
 
 
 def polygonize_and_rank_targets(
@@ -578,6 +665,7 @@ def polygonize_and_rank_targets(
     weights: tuple[float, float, float, float] = (0.40, 0.25, 0.20, 0.15),
     region_prefix: str = "YILGARN",
     extra_layers: Optional[dict[str, np.ndarray]] = None,
+    domain: str = "metals",
 ) -> gpd.GeoDataFrame:
     """Pass 6: Threshold conformal lower bound $L(x) \\ge 0.50$, close, vectorise, and rank targets.
 
@@ -726,29 +814,83 @@ def polygonize_and_rank_targets(
 
     gdf = gpd.GeoDataFrame(records, geometry="geometry", crs=crs_obj)
 
-    w1, w2, w3, w4 = [float(w) for w in weights]
-    p_norm = _norm_01(gdf["calibrated_deposit_prob"].to_numpy())
-    td_norm = _norm_01(gdf["dilation_tendency_Td_max"].to_numpy())
-    alt_norm = _norm_01(gdf["alteration_mean"].to_numpy())
-    cov_norm = _norm_01(gdf["regolith_cover_depth_m"].to_numpy())
+    if str(domain).lower() == "coal":
+        p_cal = np.clip(gdf["calibrated_deposit_prob"].to_numpy(), 0.0, 1.0)
 
-    raw_rank_score = w1 * p_norm + w2 * td_norm + w3 * alt_norm - w4 * cov_norm
-    # Normalise across multiple targets to [0.15, 0.98] so even the lowest-ranked
-    # candidate polygon that passed L(x) >= 0.50 retains a positive priority score
-    if len(raw_rank_score) > 1 and np.ptp(raw_rank_score) > 1e-9:
-        r_min = float(np.min(raw_rank_score))
-        r_max = float(np.max(raw_rank_score))
-        norm_rank = 0.25 + 0.70 * ((raw_rank_score - r_min) / (r_max - r_min))
-    else:
-        norm_rank = np.clip(
-            w1 * gdf["calibrated_deposit_prob"].to_numpy()
-            + w2 * gdf["dilation_tendency_Td_max"].to_numpy()
-            + w3 * np.clip(gdf["alteration_mean"].to_numpy(), 0.0, 1.0)
-            - w4 * np.clip(gdf["regolith_cover_depth_m"].to_numpy() / 100.0, 0.0, 1.0),
-            0.05,
-            1.0,
+        # 1. Slope: extract from dem_slope or slope column in gdf if present
+        if "dem_slope" in gdf.columns:
+            slope_raw = gdf["dem_slope"].to_numpy()
+            norm_slope = (
+                _norm_01(slope_raw)
+                if len(slope_raw) > 1 and np.ptp(slope_raw) > 1e-9
+                else np.clip(slope_raw / 30.0, 0.0, 1.0)
+            )
+        elif "slope" in gdf.columns:
+            slope_raw = gdf["slope"].to_numpy()
+            norm_slope = (
+                _norm_01(slope_raw)
+                if len(slope_raw) > 1 and np.ptp(slope_raw) > 1e-9
+                else np.clip(slope_raw / 30.0, 0.0, 1.0)
+            )
+        else:
+            norm_slope = np.full(len(gdf), 0.5, dtype=np.float64)
+
+        # 2. Fault dilation tendency
+        td_raw = gdf["dilation_tendency_Td_max"].to_numpy()
+        norm_fault_dilation = (
+            _norm_01(td_raw)
+            if len(td_raw) > 1 and np.ptp(td_raw) > 1e-9
+            else np.clip(td_raw, 0.0, 1.0)
         )
-    gdf["rank_score"] = np.round(np.clip(norm_rank, 0.0, 1.0), 4)
+
+        # 3. Epistemic uncertainty
+        if "epistemic_uncertainty" in gdf.columns:
+            sigma_raw = gdf["epistemic_uncertainty"].to_numpy()
+        elif "epistemic_std" in gdf.columns:
+            sigma_raw = gdf["epistemic_std"].to_numpy()
+        elif "upper_bound_U" in gdf.columns and "lower_bound_L" in gdf.columns:
+            sigma_raw = (gdf["upper_bound_U"].to_numpy() - gdf["lower_bound_L"].to_numpy()) / 2.0
+        else:
+            sigma_raw = np.zeros(len(gdf), dtype=np.float64)
+        sigma_epistemic = (
+            _norm_01(sigma_raw)
+            if len(sigma_raw) > 1 and np.ptp(sigma_raw) > 1e-9
+            else np.clip(sigma_raw, 0.0, 1.0)
+        )
+
+        # R3.4 Sedimentary Coal Target Ranking:
+        # Score_coal = 0.55 * P_cal + 0.20 * (1 - norm_slope) + 0.15 * (1 - norm_fault_dilation) - 0.10 * sigma_epistemic
+        raw_rank_score = (
+            0.55 * p_cal
+            + 0.20 * (1.0 - norm_slope)
+            + 0.15 * (1.0 - norm_fault_dilation)
+            - 0.10 * sigma_epistemic
+        )
+        gdf["rank_score"] = np.round(np.clip(raw_rank_score, 0.0, 1.0), 4)
+    else:
+        w1, w2, w3, w4 = [float(w) for w in weights]
+        p_norm = _norm_01(gdf["calibrated_deposit_prob"].to_numpy())
+        td_norm = _norm_01(gdf["dilation_tendency_Td_max"].to_numpy())
+        alt_norm = _norm_01(gdf["alteration_mean"].to_numpy())
+        cov_norm = _norm_01(gdf["regolith_cover_depth_m"].to_numpy())
+
+        raw_rank_score = w1 * p_norm + w2 * td_norm + w3 * alt_norm - w4 * cov_norm
+        # Normalise across multiple targets to [0.15, 0.98] so even the lowest-ranked
+        # candidate polygon that passed L(x) >= 0.50 retains a positive priority score
+        if len(raw_rank_score) > 1 and np.ptp(raw_rank_score) > 1e-9:
+            r_min = float(np.min(raw_rank_score))
+            r_max = float(np.max(raw_rank_score))
+            norm_rank = 0.25 + 0.70 * ((raw_rank_score - r_min) / (r_max - r_min))
+        else:
+            norm_rank = np.clip(
+                w1 * gdf["calibrated_deposit_prob"].to_numpy()
+                + w2 * gdf["dilation_tendency_Td_max"].to_numpy()
+                + w3 * np.clip(gdf["alteration_mean"].to_numpy(), 0.0, 1.0)
+                - w4 * np.clip(gdf["regolith_cover_depth_m"].to_numpy() / 100.0, 0.0, 1.0),
+                0.05,
+                1.0,
+            )
+        gdf["rank_score"] = np.round(np.clip(norm_rank, 0.0, 1.0), 4)
 
     gdf = gdf.sort_values("rank_score", ascending=False).reset_index(drop=True)
     gdf["rank"] = np.arange(1, len(gdf) + 1, dtype=int)
@@ -768,6 +910,70 @@ SKIRROW_MINERAL_SYSTEMS_BUCKETS: list[str] = [
     "3_physicochemical_traps",
     "4_alteration_and_anomaly",
 ]
+
+
+def split_targets_by_known_ground(
+    ranked_gdf: gpd.GeoDataFrame,
+    known_mask_2d: np.ndarray,
+    profile: dict,
+    greenfield_km: float = 5.0,
+    top_n_each: int = 15,
+) -> gpd.GeoDataFrame:
+    """Tag ranked targets as greenfield or brownfield and keep the top N of each (v4.8).
+
+    A target is **brownfield** when any of its cells lies within ``greenfield_km`` of a
+    known labelled deposit cell, and **greenfield** otherwise. Each class keeps its own
+    ``top_n_each`` best targets by ``rank_score``, so polygons sitting on known deposits
+    can no longer crowd new ground out of the list.
+
+    Adds columns ``dist_to_known_km`` (minimum over the polygon), ``exploration_class``
+    and ``class_rank`` (1 = best within its class). The overall ``rank`` / ``target_id``
+    are left untouched. A ``_source_pos`` column records each kept row's position in the
+    input so callers can re-align per-target side lists.
+
+    Args:
+        ranked_gdf: Output of :func:`polygonize_and_rank_targets`.
+        known_mask_2d: (H, W) boolean raster of known labelled deposit cells.
+        profile: Rasterio profile with ``transform`` and ``crs``.
+        greenfield_km: Distance from known ground beyond which a target is greenfield.
+        top_n_each: Targets kept per class (``0`` or less keeps all).
+
+    Returns:
+        GeoDataFrame sorted by ``rank_score`` (descending) with the new columns.
+    """
+    gdf = ranked_gdf.copy()
+    gdf["_source_pos"] = np.arange(len(gdf), dtype=int)
+    if len(gdf) == 0:
+        for c in ("dist_to_known_km", "exploration_class", "class_rank"):
+            gdf[c] = []
+        return gdf
+    transform = profile["transform"]
+    crs_obj = CRS.from_user_input(profile["crs"])
+    known = np.asarray(known_mask_2d, dtype=bool)
+    H, W = known.shape
+    px_m = abs(float(transform.a)) * (111_320.0 if crs_obj.is_geographic else 1.0)
+    if known.any():
+        dist_km = ndimage.distance_transform_edt(~known) * px_m / 1000.0
+    else:
+        dist_km = np.full((H, W), np.inf)
+
+    d_min = []
+    for geom in gdf.geometry:
+        m = rasterio.features.geometry_mask([geom], out_shape=(H, W), transform=transform, invert=True)
+        if not m.any():  # sub-pixel polygon: fall back to the centroid cell
+            col_f, row_f = ~transform * (geom.centroid.x, geom.centroid.y)
+            r = int(np.clip(round(row_f), 0, H - 1))
+            c = int(np.clip(round(col_f), 0, W - 1))
+            d_min.append(float(dist_km[r, c]))
+        else:
+            d_min.append(float(np.min(dist_km[m])))
+    gdf["dist_to_known_km"] = np.round(np.asarray(d_min, dtype=np.float64), 3)
+    gdf["exploration_class"] = np.where(gdf["dist_to_known_km"] > float(greenfield_km), "greenfield", "brownfield")
+    gdf = gdf.sort_values("rank_score", ascending=False, kind="stable")
+    gdf["class_rank"] = gdf.groupby("exploration_class").cumcount() + 1
+    if top_n_each and top_n_each > 0:
+        gdf = gdf[gdf["class_rank"] <= int(top_n_each)]
+    return gdf.reset_index(drop=True)
 
 
 def classify_skirrow_bucket(feature_name: str) -> str:
@@ -903,12 +1109,35 @@ def extract_target_shap_attribution(
     x_arr = np.asarray(x_sample, dtype=np.float32)
 
     if hasattr(model, "compute_head_shap"):
-        # Multi-head TwoStageK4Ensemble
+        # Multi-head TwoStageK4Ensemble and TwoStageK3CoalEnsemble
+        base_feat_dict = (
+            dict(zip(feature_names, x_arr.ravel()))
+            if feature_names is not None and len(feature_names) == len(x_arr.ravel())
+            else {}
+        )
+        if hasattr(model, "head_1_") and hasattr(model, "head_2_"):
+            x_2d = x_arr if x_arr.ndim == 2 else x_arr[np.newaxis, :]
+            if hasattr(model, "select_model_inputs"):
+                x_2d = model.select_model_inputs(x_2d)
+            try:
+                base_feat_dict["stage1_prob_skarn_fe_cu"] = float(model.head_1_.predict_proba(x_2d).ravel()[0])
+                base_feat_dict["stage1_prob_epithermal_au"] = float(model.head_2_.predict_proba(x_2d).ravel()[0])
+                if hasattr(model, "head_3_"):
+                    base_feat_dict["stage1_prob_laterite_fe_ni"] = float(model.head_3_.predict_proba(x_2d).ravel()[0])
+            except Exception:
+                pass
+
         for tgt in active_targets:
             try:
                 sv, head_feats = model.compute_head_shap(tgt, x_arr, feature_names)
-                if len(head_feats) > len(x_arr.ravel()) and hasattr(model, "head_1_") and hasattr(model, "head_2_"):
+                if sv is not None and hasattr(sv, "ndim") and sv.ndim > 1:
+                    sv = sv.ravel()
+                if base_feat_dict:
+                    x_full = np.array([base_feat_dict.get(fn, 0.0) for fn in head_feats], dtype=np.float64)
+                elif len(head_feats) > len(x_arr.ravel()) and hasattr(model, "head_1_") and hasattr(model, "head_2_"):
                     x_2d = x_arr if x_arr.ndim == 2 else x_arr[np.newaxis, :]
+                    if hasattr(model, "select_model_inputs"):
+                        x_2d = model.select_model_inputs(x_2d)
                     p1 = model.head_1_.predict_proba(x_2d)
                     p2 = model.head_2_.predict_proba(x_2d)
                     x_full = np.concatenate([x_arr.ravel(), p1.ravel(), p2.ravel()])
@@ -967,8 +1196,9 @@ def emit_site_cards_json(
     profile: Optional[dict] = None,
     tau_drill: float = 0.50,
     conformal_target_sets: Optional[Union[list[list[str]], dict[int, list[str]]]] = None,
-    outmogc_gates: Optional[Union[dict[str, float], list[dict[str, float]]]] = None,
+    outmogc_gates: Optional[Union[dict[str, float], list[dict[str, float]], np.ndarray]] = None,
     shap_attributions: Optional[Union[list[dict], dict[int, dict]]] = None,
+    basin_gate: Optional[Union[float, np.ndarray, dict[int, float], list[float]]] = None,
 ) -> list[dict]:
     """Pass 7: Export ranked drill targets as structured JSON Site Cards for LLM synthesis.
 
@@ -1040,19 +1270,89 @@ def emit_site_cards_json(
         if "lower_bound_k4" in row and isinstance(row["lower_bound_k4"], (list, np.ndarray)):
             l_max = float(np.max(row["lower_bound_k4"]))
 
-        al_oh_val = float(row.get("al_oh_crystallinity", 1.15))
-        if al_oh_val >= 1.10:
-            al_oh_label = "high"
-        elif al_oh_val >= 0.95:
-            al_oh_label = "moderate"
+        al_oh_raw = row.get("al_oh_crystallinity")
+        if al_oh_raw is not None and not (isinstance(al_oh_raw, float) and np.isnan(al_oh_raw)):
+            al_oh_val = float(al_oh_raw)
+            if al_oh_val >= 1.10:
+                al_oh_label = "high"
+            elif al_oh_val >= 0.95:
+                al_oh_label = "moderate"
+            else:
+                al_oh_label = "low"
         else:
-            al_oh_label = "low"
+            al_oh_val = None
+            al_oh_label = None
 
-        doublet_val = float(row.get("kaolinite_alunite_doublet", 1.0))
-        aem_cond = float(row.get("aem_conductance_0_300m_S", 15.0))
-        reductant_flag = bool(
-            row.get("reductant_trap_inferred", aem_cond >= 10.0)
+        doublet_raw = row.get("kaolinite_alunite_doublet")
+        doublet_val = (
+            bool(float(doublet_raw) > 0.05)
+            if (doublet_raw is not None and not (isinstance(doublet_raw, float) and np.isnan(doublet_raw)))
+            else None
         )
+
+        fe_carb_raw = row.get("fe_mg_carbonate_shift_nm")
+        fe_carb = (
+            round(float(fe_carb_raw), 2)
+            if (fe_carb_raw is not None and not (isinstance(fe_carb_raw, float) and np.isnan(fe_carb_raw)))
+            else None
+        )
+
+        fe_ox_raw = row.get("fe_oxide_intensity", row.get("alteration_mean"))
+        fe_ox = (
+            round(float(fe_ox_raw), 3)
+            if (fe_ox_raw is not None and not (isinstance(fe_ox_raw, float) and np.isnan(fe_ox_raw)))
+            else None
+        )
+
+        ts_raw = row.get("slip_tendency_Ts_mean")
+        ts_mean = (
+            round(float(ts_raw), 3)
+            if (ts_raw is not None and not (isinstance(ts_raw, float) and np.isnan(ts_raw)))
+            else None
+        )
+
+        td_raw = row.get("dilation_tendency_Td_max")
+        td_max = (
+            round(float(td_raw), 3)
+            if (td_raw is not None and not (isinstance(td_raw, float) and np.isnan(td_raw)))
+            else None
+        )
+
+        sar_raw = row.get("sar_cloude_pottier_alpha_deg")
+        sar_alpha = (
+            round(float(sar_raw), 2)
+            if (sar_raw is not None and not (isinstance(sar_raw, float) and np.isnan(sar_raw)))
+            else None
+        )
+
+        moho_raw = row.get("moho_gravity_gradient_step_mGal_km")
+        moho_grad = (
+            round(float(moho_raw), 2)
+            if (moho_raw is not None and not (isinstance(moho_raw, float) and np.isnan(moho_raw)))
+            else None
+        )
+
+        cov_raw = row.get("regolith_cover_depth_m")
+        cover_depth = (
+            round(float(cov_raw), 1)
+            if (cov_raw is not None and not (isinstance(cov_raw, float) and np.isnan(cov_raw)))
+            else None
+        )
+
+        aem_raw = row.get("aem_conductance_0_300m_S")
+        aem_cond = (
+            round(float(aem_raw), 2)
+            if (aem_raw is not None and not (isinstance(aem_raw, float) and np.isnan(aem_raw)))
+            else None
+        )
+
+        reductant_raw = row.get("reductant_trap_inferred")
+        if reductant_raw is not None and not (isinstance(reductant_raw, float) and np.isnan(reductant_raw)):
+            reductant_flag = bool(reductant_raw)
+        elif aem_cond is not None:
+            reductant_flag = bool(aem_cond >= 10.0)
+        else:
+            reductant_flag = None
 
         # ------------------------------------------------------------------
         # Multi-Mineral Phase 3 Attributes (Task 3.1)
@@ -1079,30 +1379,86 @@ def emit_site_cards_json(
             row.get("telescoped_system_flag", len(conformal_target_set) >= 2)
         )
 
+        # Identify centroid pixel indices (r_i, c_i) and cell_idx
+        cell_idx = None
+        r_i = None
+        c_i = None
+        if rows is not None and cols is not None and profile is not None:
+            centroid_proj = ranked_targets_gdf.geometry.loc[idx].centroid
+            inv_tr = ~profile["transform"]
+            c_f, r_f = inv_tr * (centroid_proj.x, centroid_proj.y)
+            r_i = int(np.clip(round(r_f), 0, profile.get("height", 1000) - 1))
+            c_i = int(np.clip(round(c_f), 0, profile.get("width", 1000) - 1))
+            matches = np.where((rows == r_i) & (cols == c_i))[0]
+            if len(matches) > 0:
+                cell_idx = int(matches[0])
+            else:
+                dists = (rows - r_i) ** 2 + (cols - c_i) ** 2
+                cell_idx = int(np.argmin(dists))
+        elif profile is not None:
+            centroid_proj = ranked_targets_gdf.geometry.loc[idx].centroid
+            inv_tr = ~profile["transform"]
+            c_f, r_f = inv_tr * (centroid_proj.x, centroid_proj.y)
+            r_i = int(np.clip(round(r_f), 0, profile.get("height", 1000) - 1))
+            c_i = int(np.clip(round(c_f), 0, profile.get("width", 1000) - 1))
+
         # 3. outmogc_boundary_gate
         outmogc_gate = row.get("outmogc_boundary_gate")
         if outmogc_gate is None:
             if outmogc_gates is not None:
-                if isinstance(outmogc_gates, dict) and any(isinstance(v, dict) for v in outmogc_gates.values()):
+                if isinstance(outmogc_gates, np.ndarray):
+                    if outmogc_gates.ndim == 2 and outmogc_gates.shape[1] >= 4 and cell_idx is not None and cell_idx < len(outmogc_gates):
+                        gate_vals = outmogc_gates[cell_idx]
+                        outmogc_gate = {
+                            "porphyry_cu": round(float(gate_vals[0]), 4),
+                            "skarn_fe_cu": round(float(gate_vals[1]), 4),
+                            "epithermal_au": round(float(gate_vals[2]), 4),
+                            "laterite_fe_ni": round(float(gate_vals[3]), 4),
+                        }
+                    elif idx < len(outmogc_gates):
+                        gate_vals = outmogc_gates[idx]
+                        if hasattr(gate_vals, "__len__") and len(gate_vals) >= 4:
+                            outmogc_gate = {
+                                "porphyry_cu": round(float(gate_vals[0]), 4),
+                                "skarn_fe_cu": round(float(gate_vals[1]), 4),
+                                "epithermal_au": round(float(gate_vals[2]), 4),
+                                "laterite_fe_ni": round(float(gate_vals[3]), 4),
+                            }
+                elif isinstance(outmogc_gates, dict) and any(isinstance(v, dict) for v in outmogc_gates.values()):
                     outmogc_gate = outmogc_gates.get(idx, {})
-                elif isinstance(outmogc_gates, dict):
+                elif isinstance(outmogc_gates, dict) and any(k in ("porphyry_cu", "skarn_fe_cu", "epithermal_au", "laterite_fe_ni") for k in outmogc_gates):
                     outmogc_gate = dict(outmogc_gates)
                 elif isinstance(outmogc_gates, list) and idx < len(outmogc_gates):
                     outmogc_gate = outmogc_gates[idx]
-                else:
-                    outmogc_gate = {
-                        "porphyry_cu": 1.0,
-                        "skarn_fe_cu": 1.0,
-                        "epithermal_au": 1.0,
-                        "laterite_fe_ni": 1.0,
-                    }
             else:
-                outmogc_gate = {
-                    "porphyry_cu": float(row.get("outmogc_gate_porphyry", 1.0)),
-                    "skarn_fe_cu": float(row.get("outmogc_gate_skarn", 1.0)),
-                    "epithermal_au": float(row.get("outmogc_gate_epithermal", 1.0)),
-                    "laterite_fe_ni": float(row.get("outmogc_gate_laterite", 1.0)),
-                }
+                if any(f"outmogc_gate_{k}" in row for k in ("porphyry", "skarn", "epithermal", "laterite")):
+                    outmogc_gate = {
+                        "porphyry_cu": float(row.get("outmogc_gate_porphyry", 1.0)),
+                        "skarn_fe_cu": float(row.get("outmogc_gate_skarn", 1.0)),
+                        "epithermal_au": float(row.get("outmogc_gate_epithermal", 1.0)),
+                        "laterite_fe_ni": float(row.get("outmogc_gate_laterite", 1.0)),
+                    }
+                else:
+                    outmogc_gate = None
+
+        # 3b. basin_gate (for Coal)
+        basin_gate_val = row.get("macro_basin_sequence_gate", row.get("basin_gate"))
+        if basin_gate_val is None and basin_gate is not None:
+            if isinstance(basin_gate, np.ndarray):
+                if basin_gate.ndim == 2 and r_i is not None and c_i is not None:
+                    r_b = int(np.clip(r_i, 0, basin_gate.shape[0] - 1))
+                    c_b = int(np.clip(c_i, 0, basin_gate.shape[1] - 1))
+                    basin_gate_val = round(float(basin_gate[r_b, c_b]), 4)
+                elif cell_idx is not None and cell_idx < len(basin_gate.ravel()):
+                    basin_gate_val = round(float(basin_gate.ravel()[cell_idx]), 4)
+                elif idx < len(basin_gate):
+                    basin_gate_val = round(float(basin_gate[idx]), 4)
+            elif isinstance(basin_gate, dict):
+                basin_gate_val = round(float(basin_gate.get(idx, 1.0)), 4)
+            elif isinstance(basin_gate, list) and idx < len(basin_gate):
+                basin_gate_val = round(float(basin_gate[idx]), 4)
+            elif isinstance(basin_gate, (float, int)):
+                basin_gate_val = round(float(basin_gate), 4)
 
         # 4. exploration_logistics_propensity
         exp_propensity = round(float(row.get("exploration_logistics_propensity", e_x)), 4)
@@ -1120,19 +1476,8 @@ def emit_site_cards_json(
             elif model is not None:
                 # Extract sample feature vector
                 x_s = None
-                if feature_matrix is not None and rows is not None and cols is not None and profile is not None:
-                    # Lookup nearest cell to centroid
-                    centroid_proj = ranked_targets_gdf.geometry.loc[idx].centroid
-                    inv_tr = ~profile["transform"]
-                    c_f, r_f = inv_tr * (centroid_proj.x, centroid_proj.y)
-                    r_i = int(np.clip(round(r_f), 0, profile.get("height", 1000) - 1))
-                    c_i = int(np.clip(round(c_f), 0, profile.get("width", 1000) - 1))
-                    matches = np.where((rows == r_i) & (cols == c_i))[0]
-                    if len(matches) > 0:
-                        x_s = feature_matrix[matches[0]]
-                    else:
-                        dists = (rows - r_i) ** 2 + (cols - c_i) ** 2
-                        x_s = feature_matrix[np.argmin(dists)]
+                if cell_idx is not None and feature_matrix is not None and cell_idx < len(feature_matrix):
+                    x_s = feature_matrix[cell_idx]
                 elif feature_names is not None:
                     # Check if columns are in row
                     vals = [float(row[fn]) for fn in feature_names if fn in row]
@@ -1162,6 +1507,19 @@ def emit_site_cards_json(
             "outmogc_boundary_gate": outmogc_gate,
             "exploration_logistics_propensity": exp_propensity,
             "mineral_systems_shap_attribution": shap_attr,
+        }
+        if "exploration_class" in row.index:
+            # v4.8: greenfield (> threshold from any known deposit) vs brownfield
+            d_known = row.get("dist_to_known_km")
+            card["exploration_class"] = str(row.get("exploration_class"))
+            card["class_rank"] = int(row.get("class_rank", 0))
+            card["dist_to_known_km"] = (
+                round(float(d_known), 2) if d_known is not None and np.isfinite(float(d_known)) else None
+            )
+        if basin_gate_val is not None:
+            card["macro_basin_sequence_gate"] = basin_gate_val
+            card["basin_gate"] = basin_gate_val
+        card.update({
             "geometry": {
                 "centroid_lat_lon": [lat, lon],
                 "area_sq_km": round(float(row.get("area_sq_km", 0.0)), 3),
@@ -1180,40 +1538,25 @@ def emit_site_cards_json(
             },
             "physics_and_geology_summary": {
                 "alteration": {
-                    "sensor_source": str(sensor_source),
+                    "sensor_source": str(sensor_source) if (al_oh_label is not None or doublet_val is not None) else "not_available",
                     "al_oh_crystallinity_2200nm": al_oh_label,
-                    "kaolinite_alunite_doublet": bool(doublet_val > 0.05),
-                    "fe_mg_carbonate_shift_nm": round(
-                        float(row.get("fe_mg_carbonate_shift_nm", 0.0)), 2
-                    ),
-                    "fe_oxide_intensity": round(
-                        float(row.get("fe_oxide_intensity", row.get("alteration_mean", 0.5))),
-                        3,
-                    ),
+                    "kaolinite_alunite_doublet": doublet_val,
+                    "fe_mg_carbonate_shift_nm": fe_carb,
+                    "fe_oxide_intensity": fe_ox,
                 },
                 "geomechanics_and_structure": {
-                    "slip_tendency_Ts_mean": round(
-                        float(row.get("slip_tendency_Ts_mean", 0.60)), 3
-                    ),
-                    "dilation_tendency_Td_max": round(
-                        float(row.get("dilation_tendency_Td_max", 0.80)), 3
-                    ),
-                    "sar_cloude_pottier_alpha_deg": round(
-                        float(row.get("sar_cloude_pottier_alpha_deg", 45.0)), 2
-                    ),
-                    "moho_gravity_gradient_step_mGal_km": round(
-                        float(row.get("moho_gravity_gradient_step_mGal_km", 1.5)), 2
-                    ),
+                    "slip_tendency_Ts_mean": ts_mean,
+                    "dilation_tendency_Td_max": td_max,
+                    "sar_cloude_pottier_alpha_deg": sar_alpha,
+                    "moho_gravity_gradient_step_mGal_km": moho_grad,
                 },
                 "cover_and_conductivity": {
-                    "regolith_cover_depth_m": round(
-                        float(row.get("regolith_cover_depth_m", 25.0)), 1
-                    ),
-                    "aem_conductance_0_300m_S": round(aem_cond, 2),
+                    "regolith_cover_depth_m": cover_depth,
+                    "aem_conductance_0_300m_S": aem_cond,
                     "reductant_trap_inferred": reductant_flag,
                 },
             },
-        }
+        })
         cards.append(card)
 
     out_file = Path(out_path)

@@ -129,14 +129,14 @@ def test_borneo_k4_deposit_targets_integration():
         sources["georima"], sources["iron"], sources["mrds"], sources["coal"]
     )
 
-    # Head k=0: Porphyry Cu-Au (N ≈ 35-45)
-    assert 30 <= len(targets["positives_k0"]) <= 55
+    # Head k=0: Cu-Mo deposit records only (v4.15; was 50 with Pb-Zn, Hg-Sb and quarry rock types)
+    assert 12 <= len(targets["positives_k0"]) <= 22
 
-    # Head k=1: Contact Fe-Cu Skarn (ESDM 57 + GeoRIMA 14 = 71)
-    assert 68 <= len(targets["positives_k1"]) <= 75
+    # Head k=1: primary Fe (ESDM Besi Primer only; marble removed in v4.15)
+    assert 54 <= len(targets["positives_k1"]) <= 58
 
-    # Head k=2: Epithermal Au-Ag (GeoRIMA 87 + MRDS primary)
-    assert 85 <= len(targets["positives_k2"]) <= 100
+    # Head k=2: primary Au (GeoRIMA 87 + MRDS non-placer, Busang excluded)
+    assert 85 <= len(targets["positives_k2"]) <= 95
 
     # Head k=3: Lateritic Fe-Ni (ESDM 21 + GeoRIMA 8 = 29)
     assert 25 <= len(targets["positives_k3"]) <= 35

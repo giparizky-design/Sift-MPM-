@@ -39,7 +39,7 @@ Elkan, C., & Noto, K. (2008). Learning classifiers from only positive and
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, Sequence, Union
 
 import numpy as np
 from sklearn.ensemble import IsolationForest
@@ -523,24 +523,157 @@ def compute_inverse_propensity_weights(
 # ---------------------------------------------------------------------------
 
 
+# v4.15 (audit v4.14 T20): the names of the real-cube layers that implement the documented covariates.
+#   dist_roads_km        nearest public road (OSM motorway..tertiary), roads only
+#   dist_major_rivers_km nearest OSM waterway=river
+#   dist_ports_km        nearest OSM ferry_terminal (OSM has no port class; this is a proxy)
+# They were "dist_roads / dist_rivers / dist_ports", which exist in no cube, so the orchestrator never used them.
+CANONICAL_PROPENSITY_COLS: list[str] = [
+    "dist_roads_km",
+    "dist_major_rivers_km",
+    "dist_ports_km",
+]
+
+FORBIDDEN_PROPENSITY_PATTERNS: tuple[str, ...] = (
+    "slope",
+    "elevation",
+    "dem",
+    "roughness",
+    "ruggedness",
+    "haul_road",
+    "haul_roads",
+    "disturbance",
+    "gfw",
+    "outcrop",
+    "regolith",
+)
+
+
+class ExplorationPropensity:
+    """Exploration-propensity model e(x) that can be fitted once and then score any rows.
+
+    The library function ``fit_pooled_exploration_propensity`` fits and predicts on the same rows
+    and returns only the probabilities, so the chunked full-raster path and the deposit-level
+    harness each wrote their own model, with covariates the policy forbids (audit v4.13 section 2.8:
+    forest disturbance, DEM, slope). This class owns the covariate policy:
+
+    * ``columns`` default to ``CANONICAL_PROPENSITY_COLS`` (roads, rivers, ports);
+    * a column matching ``FORBIDDEN_PROPENSITY_PATTERNS`` raises ``ValueError`` (no silent fallback);
+    * a missing column raises ``KeyError`` (no first-column or constant fallback);
+    * NaNs go to a training-median imputer inside the pipeline, identically at fit and score time;
+    * a single-class target gives a constant base-rate model and sets ``degenerate_``.
+
+    Model: median imputation, standardisation, L2 logistic regression (C=0.1), as used in production.
+    """
+
+    def __init__(
+        self,
+        columns: Optional[Sequence[str]] = None,
+        min_propensity: float = 0.05,
+        max_propensity: float = 1.0,
+        C: float = 0.1,
+        max_iter: int = 500,
+        random_state: int = 42,
+    ) -> None:
+        cols = list(columns) if columns is not None else list(CANONICAL_PROPENSITY_COLS)
+        if not cols:
+            raise ValueError("ExplorationPropensity needs at least one covariate column")
+        bad = [c for c in cols if any(f in str(c).lower() for f in FORBIDDEN_PROPENSITY_PATTERNS)]
+        if bad:
+            raise ValueError(
+                f"propensity covariates {bad} match FORBIDDEN_PROPENSITY_PATTERNS {FORBIDDEN_PROPENSITY_PATTERNS}; "
+                "use roads / rivers / ports distances only"
+            )
+        if not (0.0 < min_propensity < 1.0) or not (min_propensity < max_propensity <= 1.0):
+            raise ValueError(f"need 0 < min_propensity < max_propensity <= 1, got {min_propensity}, {max_propensity}")
+        self.columns = cols
+        self.min_propensity = float(min_propensity)
+        self.max_propensity = float(max_propensity)
+        self.C = float(C)
+        self.max_iter = int(max_iter)
+        self.random_state = int(random_state)
+        self.pipeline_ = None
+        self.degenerate_ = False
+        self.base_rate_ = float("nan")
+        self.n_fit_ = 0
+
+    def _matrix(self, X: Any) -> np.ndarray:
+        if hasattr(X, "columns"):
+            missing = [c for c in self.columns if c not in X.columns]
+            if missing:
+                raise KeyError(f"propensity covariates missing from the data: {missing}")
+            arr = np.asarray(X[self.columns], dtype=np.float64)
+        else:
+            arr = np.asarray(X, dtype=np.float64)
+            if arr.ndim != 2 or arr.shape[1] != len(self.columns):
+                raise ValueError(f"expected an array with {len(self.columns)} columns {self.columns}, got shape {arr.shape}")
+        return arr
+
+    def fit(self, X: Any, target: Any) -> "ExplorationPropensity":
+        from sklearn.impute import SimpleImputer
+        from sklearn.linear_model import LogisticRegression
+        from sklearn.pipeline import make_pipeline
+        from sklearn.preprocessing import StandardScaler
+
+        arr = self._matrix(X)
+        y = (np.asarray(target) > 0).astype(np.int32).ravel()
+        if len(y) != arr.shape[0]:
+            raise ValueError(f"target length {len(y)} != rows {arr.shape[0]}")
+        all_nan = [c for c, a in zip(self.columns, np.isnan(arr).all(axis=0)) if a]
+        if all_nan:
+            raise ValueError(f"propensity covariates {all_nan} have no finite value in the training rows")
+        self.n_fit_ = int(len(y))
+        self.base_rate_ = float(np.mean(y)) if len(y) else float("nan")
+        self.degenerate_ = len(np.unique(y)) < 2
+        if self.degenerate_:
+            self.pipeline_ = None
+            logger.warning("ExplorationPropensity: single-class target; using constant base rate %.4f", self.base_rate_)
+            return self
+        self.pipeline_ = make_pipeline(
+            SimpleImputer(strategy="median"),
+            StandardScaler(),
+            LogisticRegression(C=self.C, max_iter=self.max_iter, random_state=self.random_state),
+        )
+        self.pipeline_.fit(arr, y)
+        return self
+
+    def score(self, X: Any) -> np.ndarray:
+        """Return e(x) clipped to [min_propensity, max_propensity] for any rows with the fitted columns."""
+        arr = self._matrix(X)
+        if self.pipeline_ is None:
+            if not np.isfinite(self.base_rate_):
+                raise RuntimeError("ExplorationPropensity.score called before fit")
+            return np.full(arr.shape[0], np.clip(self.base_rate_, self.min_propensity, self.max_propensity), dtype=np.float64)
+        e = self.pipeline_.predict_proba(arr)[:, 1]
+        return np.clip(e, self.min_propensity, self.max_propensity).astype(np.float64)
+
+
 def fit_pooled_exploration_propensity(
-    accessibility_features: np.ndarray,
+    accessibility_features: Union[np.ndarray, Any],
     explored_footprint: np.ndarray,
+    feature_names: Optional[list[str]] = None,
     min_propensity: float = 0.05,
     max_propensity: float = 1.0,
     model_type: str = "logistic",
     random_state: int = 42,
 ) -> np.ndarray:
-    """Fit a single pooled observation propensity model on the exploration footprint.
+    """Fit a single pooled observation propensity model on pre-mining infrastructure (D10).
 
-    Enforces Task 1.3 Rule 1:
+    Enforces D10 & Reconciled Engineering Rule 1:
       Fits a single logistic or random forest propensity estimator on the pooled
-      exploration footprint (N ≈ 1,800) using accessibility covariates (distance to
-      navigable rivers, road tracks, coast, and DEM slope); clips predictions to [0.05, 1.0].
+      exploration footprint using pre-mining regional infrastructure and hydrological
+      access covariates:
+        - Distance to public road network ('dist_roads')
+        - Distance to major navigable rivers ('dist_rivers')
+        - Distance to coastal shipping ports ('dist_ports')
+      Strictly excludes topographic slope, elevation, roughness, mining clearance,
+      and post-discovery haul roads to prevent causal confounding and post-treatment bias.
+      Clips predictions to [0.05, 1.0].
 
     Args:
-        accessibility_features: 2-D array of shape (N, n_covariates).
+        accessibility_features: 2-D array or DataFrame of shape (N, n_covariates).
         explored_footprint: 1-D binary array of shape (N,) where 1 denotes explored.
+        feature_names: Optional list of covariate names if passing a raw NumPy array.
         min_propensity: Floor on observation propensity (default 0.05).
         max_propensity: Upper cap on observation propensity (default 1.0).
         model_type: 'logistic' or 'rf' (Random Forest). Defaults to 'logistic'.
@@ -556,7 +689,29 @@ def fit_pooled_exploration_propensity(
     if min_propensity <= 0.0 or min_propensity >= 1.0:
         raise ValueError(f"min_propensity must be in (0, 1), got {min_propensity}")
 
-    X_acc = np.asarray(accessibility_features, dtype=np.float64)
+    # Resolve dataframe columns or feature names to exclude forbidden post-discovery features
+    if hasattr(accessibility_features, "columns"):
+        col_names = [str(c) for c in accessibility_features.columns]
+        # Filter columns
+        allowed_cols = [
+            c for c in col_names
+            if not any(f in c.lower() for f in FORBIDDEN_PROPENSITY_PATTERNS)
+        ]
+        if not allowed_cols:
+            allowed_cols = col_names
+        X_acc = np.asarray(accessibility_features[allowed_cols], dtype=np.float64)
+    elif feature_names is not None:
+        valid_indices = [
+            i for i, c in enumerate(feature_names)
+            if not any(f in str(c).lower() for f in FORBIDDEN_PROPENSITY_PATTERNS)
+        ]
+        if not valid_indices:
+            valid_indices = list(range(len(feature_names)))
+        raw_arr = np.asarray(accessibility_features, dtype=np.float64)
+        X_acc = raw_arr[:, valid_indices] if raw_arr.ndim == 2 else raw_arr
+    else:
+        X_acc = np.asarray(accessibility_features, dtype=np.float64)
+
     if X_acc.ndim == 1:
         X_acc = X_acc[:, np.newaxis]
     if X_acc.ndim != 2:
@@ -718,35 +873,41 @@ def compute_k4_exclusion_mask(
     return M
 
 
-def compute_asymmetric_head_weights(
+def compute_asymmetric_pu_weights(
     labels_k: np.ndarray,
     e_logistics: np.ndarray,
-    exclusion_mask_k: np.ndarray,
+    exclusion_mask_k: Optional[np.ndarray] = None,
     min_propensity: float = 0.05,
+    hajek_normalize: bool = True,
 ) -> np.ndarray:
-    """Compute asymmetric 1D sample weights w_k for Head k.
+    """Compute Hájek self-normalized positive weights and neutral unlabeled weights (D3, D10).
 
-    Enforces Task 1.3 Rule 3 and Reconciled Engineering Rule 5:
-      - Positive cells (label_k == 1): receive inverse propensity weighting:
-            w_k[pos_mask] = 1.0 / np.clip(e_logistics[pos_mask], 0.05, 1.0)
-      - Unlabeled cells (label_k == -1): receive r_k* halo mask * exploration-confidence weight:
-            w_k[unl_mask] = M[unl_mask, k] * (0.25 + 0.75 * e_logistics[unl_mask])
-
-    Eliminates the double-division trap where unexplored jungle is penalised 20x relative
-    to roads.
+    Enforces D3 & Reconciled Engineering Rule 5 (eliminates SAR/SCAR double-correction):
+      - Positive cells (label_k == 1):
+            w_tilde_i = (1.0 / e(x_i)) / mean_{j in P_k}(1.0 / e(x_j))
+        ensuring E[w_tilde_i] = 1.0 over P_k when hajek_normalize is True.
+      - Unlabeled cells (label_k == -1 or 0):
+            w_unlab(x) = M[i, k] * 1.0
+        Outside exclusion zones (M == 1.0): neutral weight 1.0 (no double-division).
+        Inside exclusion zones (M == 0.0): weight 0.0 (masked from negative gradient).
 
     Args:
-        labels_k: 1-D array of shape (N,) with labels in {1, -1}.
-        e_logistics: 1-D array of shape (N,) of observation propensities e(s).
-        exclusion_mask_k: 1-D array of shape (N,) representing column k of M in {0.0, 1.0}.
+        labels_k: 1-D array of shape (N,) with labels in {1, -1, 0}.
+        e_logistics: 1-D array of shape (N,) of observation propensities e(s) in [0.05, 1.0].
+        exclusion_mask_k: Optional 1-D array of shape (N,) of exclusion buffer mask in {0.0, 1.0}.
         min_propensity: Floor on observation propensity for positive weighting (default 0.05).
+        hajek_normalize: Whether to apply Hájek self-normalization on positives (default True).
 
     Returns:
         1-D float64 array w_k of shape (N,).
     """
     labels = np.asarray(labels_k).ravel()
     e_prop = np.asarray(e_logistics, dtype=np.float64).ravel()
-    m_mask = np.asarray(exclusion_mask_k, dtype=np.float64).ravel()
+    m_mask = (
+        np.asarray(exclusion_mask_k, dtype=np.float64).ravel()
+        if exclusion_mask_k is not None
+        else np.ones_like(labels, dtype=np.float64)
+    )
 
     if len(labels) != len(e_prop) or len(labels) != len(m_mask):
         raise ValueError(
@@ -755,15 +916,48 @@ def compute_asymmetric_head_weights(
 
     w_k = np.zeros(len(labels), dtype=np.float64)
     pos_mask = (labels == 1)
-    unl_mask = (labels == -1)
+    unl_mask = (labels == -1) | (labels == 0)
 
-    # Positive cells (label_k == 1): inverse propensity weighting
-    w_k[pos_mask] = 1.0 / np.clip(e_prop[pos_mask], float(min_propensity), 1.0)
-
-    # Unlabeled cells (label_k == -1): r_k* halo masked + exploration-confidence weighted
-    w_k[unl_mask] = m_mask[unl_mask] * (0.25 + 0.75 * e_prop[unl_mask])
+    # Positive cells: inverse propensity
+    inv_e_pos = 1.0 / np.clip(e_prop[pos_mask], float(min_propensity), 1.0)
+    if hajek_normalize:
+        mean_inv_e = float(np.mean(inv_e_pos)) if len(inv_e_pos) > 0 else 1.0
+        w_k[pos_mask] = inv_e_pos / max(mean_inv_e, 1e-12)
+        # Unlabeled cells: neutral weights outside exclusion zone (eliminates SAR double-correction)
+        w_k[unl_mask] = m_mask[unl_mask] * 1.0
+    else:
+        w_k[pos_mask] = inv_e_pos
+        w_k[unl_mask] = m_mask[unl_mask] * (0.25 + 0.75 * e_prop[unl_mask])
 
     return w_k
+
+
+def compute_asymmetric_head_weights(
+    labels_k: np.ndarray,
+    e_logistics: np.ndarray,
+    exclusion_mask_k: np.ndarray,
+    min_propensity: float = 0.05,
+    hajek_normalize: bool = False,
+) -> np.ndarray:
+    """Compute asymmetric 1D sample weights w_k for Head k (Phase 1 legacy compatibility).
+
+    Args:
+        labels_k: 1-D array of shape (N,) with labels in {1, -1}.
+        e_logistics: 1-D array of shape (N,) of observation propensities e(s).
+        exclusion_mask_k: 1-D array of shape (N,) representing column k of M in {0.0, 1.0}.
+        min_propensity: Floor on observation propensity for positive weighting (default 0.05).
+        hajek_normalize: Whether to apply Hájek self-normalization (default False for Phase 1 tests).
+
+    Returns:
+        1-D float64 array w_k of shape (N,).
+    """
+    return compute_asymmetric_pu_weights(
+        labels_k=labels_k,
+        e_logistics=e_logistics,
+        exclusion_mask_k=exclusion_mask_k,
+        min_propensity=min_propensity,
+        hajek_normalize=hajek_normalize,
+    )
 
 
 class OUTMOGCGate:
@@ -786,20 +980,31 @@ class OUTMOGCGate:
         n_pca_components: int = 4,
         n_gmm_components: int = 2,
         random_state: int = 42,
+        standardize: bool = False,
+        feature_index: Optional[list[int]] = None,
     ) -> None:
         self.n_pca_components = n_pca_components
+        # v4.8: optional column subset (same columns the metals heads use)
+        self.feature_index = None if feature_index is None else [int(i) for i in feature_index]
         self.n_gmm_components = n_gmm_components
         self.random_state = random_state
+        # v4.8: z-score features before PCA so large-unit columns (metres, elevation)
+        # do not dominate the leading components. Off by default for backward compatibility.
+        self.standardize = bool(standardize)
+        self.scaler_mean_ = None
+        self.scaler_std_ = None
         self.pca = None
         self.gmm = None
         self.chi2_crit = None
         self.actual_df = None
 
-    def fit(self, X_positives: np.ndarray) -> OUTMOGCGate:
+    def fit(self, X_positives: np.ndarray, X_reference: Optional[np.ndarray] = None) -> OUTMOGCGate:
         """Fit PCA and GMM on the Merdith geophysical features of positive set P_k.
 
         Args:
             X_positives: 2-D array of shape (N_p, n_features).
+            X_reference: Optional background sample used for the z-score scaler when
+                ``standardize`` is True. Defaults to the positives themselves.
 
         Returns:
             Fitted self.
@@ -808,9 +1013,32 @@ class OUTMOGCGate:
         from sklearn.mixture import GaussianMixture
         from scipy.stats import chi2
 
-        X = np.asarray(X_positives, dtype=np.float64)
+        X = np.asarray(X_positives, dtype=np.float64).copy()
         if X.ndim != 2:
             raise ValueError(f"X_positives must be 2-D, got shape {X.shape}")
+        fidx = getattr(self, "feature_index", None)
+        if fidx is not None:
+            X = X[:, fidx]
+            if X_reference is not None:
+                X_reference = np.asarray(X_reference)[:, fidx]
+
+        if np.isnan(X).any():
+            meds = np.nanmedian(X, axis=0)
+            meds = np.where(np.isnan(meds), 0.0, meds)
+            nan_r, nan_c = np.where(np.isnan(X))
+            X[nan_r, nan_c] = meds[nan_c]
+            self.feature_medians_ = meds
+        else:
+            self.feature_medians_ = np.nanmedian(X, axis=0)
+
+        if getattr(self, "standardize", False):
+            ref = X if X_reference is None else np.asarray(X_reference, dtype=np.float64)
+            mu = np.nanmean(ref, axis=0)
+            sd = np.nanstd(ref, axis=0)
+            mu = np.where(np.isfinite(mu), mu, 0.0)
+            sd = np.where(np.isfinite(sd) & (sd > 1e-9), sd, 1.0)
+            self.scaler_mean_, self.scaler_std_ = mu, sd
+            X = (X - mu) / sd
 
         n_samples, n_features = X.shape
         actual_pca_comp = max(1, min(self.n_pca_components, n_samples - 1, n_features))
@@ -841,7 +1069,16 @@ class OUTMOGCGate:
         if self.pca is None or self.gmm is None:
             raise RuntimeError("OUTMOGCGate is not fitted yet. Call fit() first.")
 
-        X_arr = np.asarray(X, dtype=np.float64)
+        X_arr = np.asarray(X, dtype=np.float64).copy()
+        fidx = getattr(self, "feature_index", None)
+        if fidx is not None and X_arr.shape[1] != len(fidx):
+            X_arr = X_arr[:, fidx]
+        if np.isnan(X_arr).any() and hasattr(self, "feature_medians_"):
+            nan_r, nan_c = np.where(np.isnan(X_arr))
+            X_arr[nan_r, nan_c] = self.feature_medians_[nan_c]
+        if getattr(self, "standardize", False) and getattr(self, "scaler_mean_", None) is not None:
+            X_arr = (X_arr - self.scaler_mean_) / self.scaler_std_
+
         Z = self.pca.transform(X_arr)
 
         d2_components = []
