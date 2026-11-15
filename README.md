@@ -1,23 +1,10 @@
-# Mineral Prospectivity Mapping — Yilgarn Orogenic Gold Pilot
+# Mineral Prospectivity Mapping 
 
-> **Status:** Pre-data — pilot design and code scaffold complete. Data download pending.
 
 ## System Overview
 
-This repository implements an evidence-based **Mineral Prospectivity Mapping (MPM)** system for **Orogenic Gold** mineralisation across the **Eastern Goldfields Superterrane, Yilgarn Craton, Western Australia**. It operates on a 50 × 50 m prediction grid using a **Positive-Unlabeled (PU) learning** framework.
+This repository implements an evidence-based **Mineral Prospectivity Mapping (MPM)** system for **Orogenic Gold** mineralisation. It operates on a 50 × 50 m prediction grid using a **Positive-Unlabeled (PU) learning** framework.
 
-### Why Yilgarn Orogenic Gold?
-
-| Criterion | Status |
-|---|---|
-| Open high-res aeromagnetics (≤100 m line spacing) | ✅ Geoscience Australia CC BY 4.0 |
-| Open radiometrics + gravity | ✅ GA national grids |
-| Mandatory exploration reporting (WAMEX) | ✅ WA DMIRS |
-| Sub-100 m drillhole collar coordinates | ✅ Post-1990 WAMEX data |
-| Arid climate → minimal vegetation mask on ASTER | ✅ Yilgarn is predominantly semi-arid |
-| Well-characterised mineral systems model | ✅ Groves et al. 1998; Witt et al. 2013 |
-
----
 
 ## Critical Caveats
 
@@ -131,15 +118,7 @@ Field campaign →  Assay results → Geologist review (licensed reviewer ID req
                           (model v2 evaluated on v1's targets)
 ```
 
-> ⚠️ **Unverified AI predictions MUST NEVER enter the label lake.** This causes a catastrophic feedback loop that destroys model validity.
 
 ---
 
-## Key References
 
-- Groves, D.I. et al. (1998). Orogenic gold deposits: A proposed classification in the context of their crustal distribution and relationship to other gold deposit types. *Ore Geology Reviews*, 13, 7–27.
-- Roberts, D.R. et al. (2017). Cross-validation strategies for data with temporal, spatial, hierarchical, or phylogenetic structure. *Ecography*, 40, 913–929.
-- Rowan, L.C. & Mars, J.C. (2003). Lithologic mapping in the Mountain Pass, California area using Advanced Spaceborne Thermal Emission and Reflection Radiometer (ASTER) data. *Remote Sensing of Environment*, 84, 350–366.
-- Mordelet, F. & Vert, J.P. (2014). A bagging SVM to learn from positive and unlabeled examples. *Pattern Recognition Letters*, 37, 201–209.
-- Hewson, R.D. et al. (2005). Earthquake-induced changes in minerals on the southern flank of Mt. Etna detected using the ASTER satellite data. *Remote Sensing of Environment*, 95, 44–56.
-- Ninomiya, Y. (2002). A stabilized vegetation index and several mineralogic indices defined for ASTER SWIR data. *IGARSS 2002*.
